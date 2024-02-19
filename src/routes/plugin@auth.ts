@@ -3,7 +3,7 @@ import { type EnvGetter } from "@builder.io/qwik-city/middleware/request-handler
 import { Redis } from "@upstash/redis/cloudflare";
 import { Auth0, generateState } from "arctic";
 import type { Session } from "lucia";
-import { Lucia } from "lucia";
+import { Lucia, TimeSpan } from "lucia";
 import { UpstashRedisAdapter } from "~/redis/adapter";
 import type { UserAttributes } from "./app/auth/callback";
 
@@ -24,6 +24,7 @@ export const getSharedMap = <T extends keyof SharedMap>(
 
 export function initializeLucia(redis: Redis) {
   return new Lucia(UpstashRedisAdapter(redis), {
+    sessionExpiresIn: new TimeSpan(1, "d"),
     sessionCookie: {
       attributes: {
         secure: import.meta.env.PROD,

@@ -99,7 +99,6 @@ export default component$(() => {
     return output;
   });
 
-  // eslint-disable-next-line qwik/no-use-visible-task
   const greeting = useComputed$(async () => {
     let curHr;
 
