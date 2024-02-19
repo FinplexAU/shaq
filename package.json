@@ -51,6 +51,8 @@
     "@amcharts/amcharts5-fonts": "^5.0.1",
     "@amcharts/amcharts5-geodata": "^5.1.2",
     "@lucia-auth/adapter-sqlite": "^3.0.0",
+    "@upstash/redis": "^1.28.4",
+    "arctic": "^1.2.0",
     "flowbite": "^2.3.0",
     "lucia": "^3.0.1",
     "oslo": "^1.1.2"
