@@ -11,5 +11,8 @@ export default extendConfig(baseConfig, () => {
       },
     },
     plugins: [cloudflarePagesAdapter()],
+    optimizeDeps: {
+      exclude: ["oslo"],
+    },
   };
 });
