@@ -5,9 +5,9 @@ import { parseJWT } from "oslo/jwt";
 
 const UserAttributes = z.object({
   fin: z.string(),
-  given_name: z.string(),
-  family_name: z.string(),
-  nickname: z.string(),
+  given_name: z.string().optional(),
+  family_name: z.string().optional(),
+  nickname: z.string().optional(),
   name: z.string(),
   picture: z.string(),
   email: z.string(),
