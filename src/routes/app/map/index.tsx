@@ -1,6 +1,5 @@
 import { component$, useVisibleTask$ } from "@builder.io/qwik";
 import * as am5 from "@amcharts/amcharts5";
-import * as am5percent from "@amcharts/amcharts5/percent";
 import am5geodata_worldLow from "@amcharts/amcharts5-geodata/worldLow";
 import * as am5map from "@amcharts/amcharts5/map";
 import colors from "tailwindcss/colors";
@@ -49,7 +48,7 @@ const GlobeVis = component$(() => {
 
     root.container.children.push(chart);
 
-    let polygonSeries = chart.series.push(
+    chart.series.push(
       am5map.MapPolygonSeries.new(root, {
         geoJSON: am5geodata_worldLow,
         fill: am5.color(colors.stone[200]),

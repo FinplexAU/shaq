@@ -4,8 +4,10 @@ import { Table } from "~/components/table";
 import { Timeline } from "~/components/timeline";
 import data from "../../../public/data.json";
 import { DieselTabs } from "~/components/tabs";
+import { useUser } from "./layout";
 
 export default component$(() => {
+  const user = useUser();
   const rows = useComputed$(() => {
     const output = [];
     for (const row of data) {
@@ -104,7 +106,9 @@ export default component$(() => {
     <div class="flex-1 py-8">
       <div class="mb-4 border-l-4 border-stone-800 px-2">
         <span class="capitalize">{greeting},</span>
-        <h1 class=" border-l-stone-300 text-4xl font-semibold">Bonnie</h1>
+        <h1 class="border-l-stone-300 text-4xl font-semibold">
+          {user.value.nickname || user.value.given_name || user.value.name}
+        </h1>
       </div>
       <DieselTabs
         tabs={[
