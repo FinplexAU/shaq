@@ -67,22 +67,6 @@ export const forceLogin = async (ev: RequestEvent, auth0: Auth0) => {
 };
 
 export const onRequest: RequestHandler = async (ev) => {
-  if (ev.url.pathname === "/test/") {
-    const redis = new Redis({
-      url: getRequiredEnv(ev.env, "UPSTASH_REDIS_REST_URL"),
-      token: getRequiredEnv(ev.env, "UPSTASH_REDIS_REST_TOKEN"),
-    });
-    const lucia = initializeLucia(redis);
-    ev.cookie.set(lucia.sessionCookieName, "hi", {
-      path: "/",
-      secure: import.meta.env.PROD,
-      httpOnly: true,
-      maxAge: 60 * 10,
-      sameSite: "lax",
-    });
-    ev.json(200, { hi: "bye" });
-    return;
-  }
   if (!ev.url.pathname.startsWith("/app/")) {
     return;
   }
