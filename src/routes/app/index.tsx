@@ -10,7 +10,6 @@ import { isServer } from "@builder.io/qwik/build";
 
 const getServerHours = server$(function () {
   const timezone = this.request.headers.get("cf-timezone");
-  console.log("header", timezone);
   if (!timezone) return new Date().getHours();
   else return moment().tz(timezone).hours();
 });
@@ -106,7 +105,6 @@ export default component$(() => {
 
     if (isServer) curHr = await getServerHours();
     else curHr = new Date().getHours();
-    console.log("hour", curHr);
 
     if (curHr < 12) {
       return "Good Morning";

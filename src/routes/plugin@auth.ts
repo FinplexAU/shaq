@@ -72,7 +72,6 @@ export const forceLogin = async (ev: RequestEvent, auth0: Auth0) => {
 };
 
 export const onRequest: RequestHandler = async (ev) => {
-  console.log(Object.fromEntries(ev.request.headers.entries()));
   if (!ev.url.pathname.startsWith("/app/")) {
     return;
   }
