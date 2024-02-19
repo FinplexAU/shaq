@@ -1,9 +1,4 @@
-import {
-  component$,
-  useComputed$,
-  useSignal,
-  useVisibleTask$,
-} from "@builder.io/qwik";
+import { component$, useComputed$ } from "@builder.io/qwik";
 import { server$, type DocumentHead } from "@builder.io/qwik-city";
 import { Table } from "~/components/table";
 import { Timeline } from "~/components/timeline";
@@ -14,7 +9,7 @@ import moment from "moment-timezone";
 import { isServer } from "@builder.io/qwik/build";
 
 const getServerHours = server$(function () {
-  const timezone = this.headers.get("cf-timezone");
+  const timezone = this.request.headers.get("cf-timezone");
   console.log("header", timezone);
   if (!timezone) return new Date().getHours();
   else return moment().tz(timezone).hours();
