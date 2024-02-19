@@ -31,6 +31,8 @@ export const useUser = routeLoader$(({ sharedMap }) => {
 
 export const Header = component$(() => {
   const loc = useLocation();
+  const user = useUser();
+
   return (
     <nav class="border-b border-gray-200 bg-white dark:bg-gray-900">
       <div class="mx-auto flex max-w-screen-xl flex-wrap items-center justify-between p-4">
@@ -55,8 +57,10 @@ export const Header = component$(() => {
           >
             <span class="sr-only">Open user menu</span>
             <img
-              class="h-8 w-8 rounded-full"
-              src="/docs/images/people/profile-picture-3.jpg"
+              class="rounded-full"
+              src={user.value.picture}
+              width={32}
+              height={32}
               alt="user photo"
             />
           </button>
