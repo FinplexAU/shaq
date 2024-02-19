@@ -1,4 +1,10 @@
-import { component$, useComputed$ } from "@builder.io/qwik";
+import {
+  component$,
+  useComputed$,
+  useServerData,
+  useSignal,
+  useVisibleTask$,
+} from "@builder.io/qwik";
 import type { DocumentHead } from "@builder.io/qwik-city";
 import { Table } from "~/components/table";
 import { Timeline } from "~/components/timeline";
@@ -91,21 +97,24 @@ export default component$(() => {
     return output;
   });
 
-  const greeting = useComputed$(() => {
+  const greeting = useSignal<string>();
+
+  // eslint-disable-next-line qwik/no-use-visible-task
+  useVisibleTask$(() => {
     const curHr = new Date().getHours();
     if (curHr < 12) {
-      return "good morning";
+      greeting.value = "Good Morning";
     } else if (curHr < 18) {
-      return "good afternoon";
+      greeting.value = "Good Afternoon";
     } else {
-      return "good evening";
+      greeting.value = "Good Evening";
     }
   });
 
   return (
     <div class="flex-1 py-8">
       <div class="mb-4 border-l-4 border-stone-800 px-2">
-        <span class="capitalize">{greeting},</span>
+        <span>{greeting},</span>
         <h1 class="border-l-stone-300 text-4xl font-semibold">
           {user.value.nickname || user.value.given_name || user.value.name}
         </h1>
