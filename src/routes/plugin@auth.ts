@@ -2,15 +2,17 @@ import { type RequestEvent, type RequestHandler } from "@builder.io/qwik-city";
 import { type EnvGetter } from "@builder.io/qwik-city/middleware/request-handler";
 import { Redis } from "@upstash/redis/cloudflare";
 import { Auth0, generateState } from "arctic";
+import type { Session } from "lucia";
 import { Lucia } from "lucia";
 import { UpstashRedisAdapter } from "~/redis/adapter";
-import type { UserAttributes } from "./app/login/callback";
+import type { UserAttributes } from "./app/auth/callback";
 
 export type SharedMap = {
   lucia: Lucia;
   auth0: Auth0;
   redis: Redis;
   user: UserAttributes;
+  session: Session & { idToken: string };
 };
 
 export const getSharedMap = <T extends keyof SharedMap>(
@@ -30,6 +32,9 @@ export function initializeLucia(redis: Redis) {
     getUserAttributes: (attributes) => {
       return attributes;
     },
+    getSessionAttributes: (attributes) => {
+      return attributes;
+    },
   });
 }
 
@@ -41,7 +46,7 @@ declare module "lucia" {
 
 export const OAUTH_STATE_COOKIE = "auth0_oauth_state";
 
-const getRequiredEnv = (env: EnvGetter, key: string) => {
+export const getRequiredEnv = (env: EnvGetter, key: string) => {
   const x = env.get(key);
   if (x === undefined) {
     throw new Error(`ENV KEY ${key} not set`);
@@ -78,7 +83,7 @@ export const onRequest: RequestHandler = async (ev) => {
 
   const lucia = initializeLucia(redis);
 
-  const redirectUrl = new URL("/app/login/callback/", ev.url);
+  const redirectUrl = new URL("/app/auth/callback/", ev.url);
   redirectUrl.searchParams.set("redirectTo", ev.url.pathname + ev.url.search);
 
   const auth0 = new Auth0(
@@ -93,8 +98,8 @@ export const onRequest: RequestHandler = async (ev) => {
   ev.sharedMap.set("redis", redis);
 
   if (
-    ev.url.pathname === "/app/login/callback" ||
-    ev.url.pathname === "/app/login/callback/"
+    ev.url.pathname === "/app/auth/callback" ||
+    ev.url.pathname === "/app/auth/callback/"
   ) {
     await ev.next();
     return;
@@ -125,6 +130,7 @@ export const onRequest: RequestHandler = async (ev) => {
   }
 
   ev.sharedMap.set("user", result.user);
+  ev.sharedMap.set("session", result.session);
 
   await ev.next();
 };
