@@ -21,17 +21,11 @@ export const Tabs = component$((props: TabsProps) => {
   });
 
   return (
-    <div class="w-full  border-b border-gray-200 text-center text-sm font-medium ">
-      <ul class="-mb-px flex w-full flex-wrap justify-between">
+    <div class="w-full border-b border-t border-gray-200 py-2 text-center text-sm font-medium ">
+      <ul class="-mb-px flex w-full flex-wrap justify-between divide-x">
         {props.tabs.map((tab) => (
           <Link
-            class={[
-              "relative me-2 flex-1 before:absolute before:bottom-0 before:left-0 before:h-[var(--oil-height)] before:w-full before:bg-stone-200 before:content-['']",
-              {
-                "border-b-2 border-stone-600 bg-stone-700 before:bg-stone-600":
-                  loc.url.search === tab.href,
-              },
-            ]}
+            class={["relative flex-1 px-2"]}
             key={tab.href}
             href={tab.href}
             aria-current={loc.url.search === tab.href ? "page" : undefined}
@@ -48,9 +42,9 @@ export const Tabs = component$((props: TabsProps) => {
           >
             <li
               class={[
-                "relative z-20 me-2 inline-block w-full flex-1 rounded-t-lg p-4 text-black ",
+                "relative inline-block w-full flex-1 p-4 text-black before:absolute  before:bottom-0 before:left-0 before:-z-10 before:h-[var(--oil-height)] before:w-full before:bg-stone-200 before:content-['']",
                 {
-                  "active inline-block rounded-t-lg p-4 !text-white  ":
+                  "active inline-block bg-stone-700 p-4 !text-white before:bg-stone-600 ":
                     loc.url.search === tab.href,
                 },
               ]}

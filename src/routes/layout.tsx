@@ -1,5 +1,5 @@
 import { component$, Slot } from "@builder.io/qwik";
-import { type RequestHandler } from "@builder.io/qwik-city";
+import { useLocation, type RequestHandler } from "@builder.io/qwik-city";
 
 export const onGet: RequestHandler = async ({ cacheControl }) => {
   // Control caching for this request for best performance and to reduce hosting costs:
@@ -16,7 +16,7 @@ export default component$(() => {
   return (
     <>
       <Header></Header>
-      <main class="min-h-screen">
+      <main class="container min-h-screen">
         <Slot />
       </main>
     </>
@@ -24,6 +24,7 @@ export default component$(() => {
 });
 
 export const Header = component$(() => {
+  const loc = useLocation();
   return (
     <nav class="border-b border-gray-200 bg-white dark:bg-gray-900">
       <div class="mx-auto flex max-w-screen-xl flex-wrap items-center justify-between p-4">
@@ -118,25 +119,41 @@ export const Header = component$(() => {
             <li>
               <a
                 href="/"
-                class="block rounded bg-blue-700 px-3 py-2 text-white md:bg-transparent md:p-0 md:text-blue-700 md:dark:text-blue-500"
-                aria-current="page"
+                class={{
+                  "block rounded bg-blue-700 px-3 py-2 text-white md:bg-transparent md:p-0 md:text-blue-700 md:dark:text-blue-500":
+                    loc.url.pathname === "/",
+                  "block rounded px-3 py-2 text-gray-900 hover:bg-gray-100 dark:border-gray-700 dark:text-white dark:hover:bg-gray-700 dark:hover:text-white md:p-0 md:hover:bg-transparent md:hover:text-blue-700 md:dark:hover:bg-transparent md:dark:hover:text-blue-500":
+                    loc.url.pathname !== "/",
+                }}
+                aria-current={loc.url.pathname === "/" ? "page" : undefined}
               >
                 Home
               </a>
             </li>
-
             <li>
               <a
                 href="/map"
-                class="block rounded px-3 py-2 text-gray-900 hover:bg-gray-100 dark:border-gray-700 dark:text-white dark:hover:bg-gray-700 dark:hover:text-white md:p-0 md:hover:bg-transparent md:hover:text-blue-700 md:dark:hover:bg-transparent md:dark:hover:text-blue-500"
+                class={{
+                  "block rounded bg-blue-700 px-3 py-2 text-white md:bg-transparent md:p-0 md:text-blue-700 md:dark:text-blue-500":
+                    loc.url.pathname === "/map/",
+                  "block rounded px-3 py-2 text-gray-900 hover:bg-gray-100 dark:border-gray-700 dark:text-white dark:hover:bg-gray-700 dark:hover:text-white md:p-0 md:hover:bg-transparent md:hover:text-blue-700 md:dark:hover:bg-transparent md:dark:hover:text-blue-500":
+                    loc.url.pathname !== "/map/",
+                }}
+                aria-current={loc.url.pathname === "/map/" ? "page" : undefined}
               >
                 Map
               </a>
             </li>
             <li>
               <a
-                href="/cash"
-                class="block rounded px-3 py-2 text-gray-900 hover:bg-gray-100 dark:border-gray-700 dark:text-white dark:hover:bg-gray-700 dark:hover:text-white md:p-0 md:hover:bg-transparent md:hover:text-blue-700 md:dark:hover:bg-transparent md:dark:hover:text-blue-500"
+                href="/cash/"
+                class={{
+                  "block rounded bg-blue-700 px-3 py-2 text-white md:bg-transparent md:p-0 md:text-blue-700 md:dark:text-blue-500":
+                    loc.url.pathname === "/cash/",
+                  "block rounded px-3 py-2 text-gray-900 hover:bg-gray-100 dark:border-gray-700 dark:text-white dark:hover:bg-gray-700 dark:hover:text-white md:p-0 md:hover:bg-transparent md:hover:text-blue-700 md:dark:hover:bg-transparent md:dark:hover:text-blue-500":
+                    loc.url.pathname !== "/cash/",
+                }}
+                aria-current={loc.url.pathname === "/cash" ? "page" : undefined}
               >
                 Cash
               </a>
