@@ -5,7 +5,6 @@ import { UserAttributes } from "~/routes/app/login/callback";
 export const UpstashRedisAdapter = (redis: Redis): Adapter => {
   return {
     async setSession(session) {
-      console.log("Set Session");
       const expiresMs = session.expiresAt.getTime();
       await redis.set(`user:${session.userId}:session:${session.id}`, session, {
         pxat: expiresMs,
@@ -16,7 +15,6 @@ export const UpstashRedisAdapter = (redis: Redis): Adapter => {
     async deleteExpiredSessions() {},
 
     async deleteSession(sessionId) {
-      console.log("Delete Session");
       let cursor = 0;
       const keys = [];
       do {
@@ -31,7 +29,6 @@ export const UpstashRedisAdapter = (redis: Redis): Adapter => {
     },
 
     async deleteUserSessions(userId) {
-      console.log("Delete user session");
       let cursor = 0;
       const keys = [];
       do {
@@ -46,7 +43,6 @@ export const UpstashRedisAdapter = (redis: Redis): Adapter => {
     },
 
     async getSessionAndUser(sessionId) {
-      console.log("Get Session and user");
       const keys = [];
       let cursor = 0;
       do {
@@ -65,7 +61,6 @@ export const UpstashRedisAdapter = (redis: Redis): Adapter => {
       if (session) {
         session.expiresAt = new Date(session.expiresAt);
       }
-      console.log("redis session", session);
       let user;
 
       if (session)
@@ -74,12 +69,10 @@ export const UpstashRedisAdapter = (redis: Redis): Adapter => {
         };
       else user = null;
 
-      console.log("redis user", user);
       return [session as DatabaseSession, user as DatabaseUser];
     },
 
     async getUserSessions(userId) {
-      console.log("Get user sessions");
       const keys = [];
       let cursor = 0;
       do {
@@ -111,7 +104,6 @@ export const UpstashRedisAdapter = (redis: Redis): Adapter => {
     },
 
     async updateSessionExpiration(sessionId, expiresAt) {
-      console.log("Update session expiration");
       const keys = [];
       let cursor = 0;
       do {

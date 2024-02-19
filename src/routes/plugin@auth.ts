@@ -112,33 +112,24 @@ export const onRequest: RequestHandler = async (ev) => {
     ev.url.pathname === "/app/login/callback" ||
     ev.url.pathname === "/app/login/callback/"
   ) {
-    console.log("Returning bc callback");
     await ev.next();
     return;
   }
 
   const sessionId = ev.cookie.get(lucia.sessionCookieName)?.value ?? null;
-  console.log(lucia.sessionCookieName);
 
-  console.log("Currently Authorized:", Boolean(sessionId));
-
-  console.log(sessionId);
   if (!sessionId) {
-    console.log("No Session id");
     return forceLogin(ev, auth0);
   }
 
   const result = await lucia.validateSession(sessionId);
-  console.log(result);
 
   try {
     if (!result.session) {
-      console.log("No Second Thing");
       return forceLogin(ev, auth0);
     }
     if (result.session.fresh) {
       const sessionCookie = lucia.createSessionCookie(result.session.id);
-      console.log("B Session cookie", sessionCookie);
       ev.cookie.set(
         sessionCookie.name,
         sessionCookie.value,

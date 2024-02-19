@@ -22,7 +22,6 @@ export const onGet: RequestHandler = async (ev) => {
   ev.cookie.delete(OAUTH_STATE_COOKIE, {
     path: "/",
   });
-  console.log(!!code, !!state, !!storedState, state === storedState?.value);
 
   if (!code || !state || !storedState || state !== storedState.value) {
     ev.send(400, "");
@@ -51,7 +50,6 @@ export const onGet: RequestHandler = async (ev) => {
 
     const session = await lucia.createSession(payload.data.fin, {});
     const sessionCookie = lucia.createSessionCookie(session.id);
-    console.log("A Session cookie callback", sessionCookie);
     ev.cookie.set(
       sessionCookie.name,
       sessionCookie.value,
@@ -69,7 +67,6 @@ export const onGet: RequestHandler = async (ev) => {
   }
 
   const redirectTo = ev.url.searchParams.get("redirectTo");
-  console.log(redirectTo);
   const redirectLocation = new URL(redirectTo || "/", ev.url);
 
   if (redirectLocation.origin !== ev.url.origin) {
