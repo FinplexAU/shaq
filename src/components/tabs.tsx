@@ -20,10 +20,12 @@ export const Tabs = component$((props: TabsProps) => {
             <Link
               href={tab.href}
               class={{
-                "inline-block rounded-t-lg border-b-2 border-transparent p-4 hover:border-gray-300 hover:text-gray-600 dark:hover:text-gray-300":
+                "inline-block rounded-t-lg border-b-2 border-transparent p-4 hover:border-gray-300":
                   true,
                 "active inline-block rounded-t-lg border-b-2 border-blue-600 p-4 text-blue-600 dark:border-blue-500 dark:text-blue-500":
                   loc.url.search === tab.href,
+                "hover:text-gray-600 dark:hover:text-gray-300":
+                  loc.url.search !== tab.href,
               }}
               aria-current={loc.url.search === tab.href ? "page" : undefined}
             >
