@@ -1,6 +1,6 @@
 import type { DatabaseSession, Adapter, DatabaseUser } from "lucia";
 import type { Redis } from "@upstash/redis/cloudflare";
-import { UserAttributes } from "~/routes/app/login/callback";
+import type { UserAttributes } from "~/routes/app/login/callback";
 
 export const UpstashRedisAdapter = (redis: Redis): Adapter => {
   return {

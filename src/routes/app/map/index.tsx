@@ -14,6 +14,7 @@ export default component$(() => {
 });
 
 const GlobeVis = component$(() => {
+  // eslint-disable-next-line qwik/no-use-visible-task
   useVisibleTask$(({ cleanup }) => {
     const root = am5.Root.new("chart-div");
     const chart = root.container.children.push(

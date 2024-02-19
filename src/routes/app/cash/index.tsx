@@ -1,5 +1,4 @@
 import { component$ } from "@builder.io/qwik";
-import map from "../map/index";
 
 export default component$(() => {
   return (

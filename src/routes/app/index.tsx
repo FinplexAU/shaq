@@ -83,7 +83,7 @@ export default component$(() => {
       }
       if (row.statusUpdates.length === 1) {
         continue;
-        const date = new Date(row.statusUpdates[0].date);
+        // const date = new Date(row.statusUpdates[0].date);
       }
       output["in-transit"].metricTons += row.volume;
       output["in-transit"].cost += row.cost;
