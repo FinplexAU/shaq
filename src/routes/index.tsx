@@ -88,10 +88,22 @@ export default component$(() => {
     }
     return output;
   });
+
+  const greeting = useComputed$(() => {
+    const curHr = new Date().getHours();
+    if (curHr < 12) {
+      return "good morning";
+    } else if (curHr < 18) {
+      return "good afternoon";
+    } else {
+      return "good evening";
+    }
+  });
+
   return (
     <div class="flex-1 py-8">
       <div class="mb-4 border-l-4 border-stone-800 px-2">
-        <p>Good Afternoon,</p>
+        <span class="capitalize">{greeting},</span>
         <h1 class=" border-l-stone-300 text-4xl font-semibold">Bonnie</h1>
       </div>
       <DieselTabs
