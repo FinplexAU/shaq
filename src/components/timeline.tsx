@@ -3,7 +3,7 @@ import { Slot, component$, useComputed$ } from "@builder.io/qwik";
 type TimelineStep = {
   date: Date;
   title: string;
-  description: string;
+  description?: string;
 };
 
 interface TimelineProps {

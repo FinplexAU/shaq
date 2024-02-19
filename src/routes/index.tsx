@@ -35,6 +35,59 @@ export default component$(() => {
     }
     return output;
   });
+
+  const tabs = useComputed$(() => {
+    const output = {
+      "3-months": {
+        metricTons: 0,
+        cost: 0,
+      },
+      "next-month": {
+        metricTons: 0,
+        cost: 0,
+      },
+      "this-month": {
+        metricTons: 0,
+        cost: 0,
+      },
+      "in-transit": {
+        metricTons: 0,
+        cost: 0,
+      },
+      landed: {
+        metricTons: 0,
+        cost: 0,
+      },
+      settled: {
+        metricTons: 0,
+        cost: 0,
+      },
+      "year-to-date": {
+        metricTons: 0,
+        cost: 0,
+      },
+    };
+
+    for (const row of data) {
+      if (row.statusUpdates.some((update) => update.status === "Settled")) {
+        output["settled"].metricTons += row.volume;
+        output["settled"].cost += row.cost;
+        continue;
+      }
+      if (row.statusUpdates.some((update) => update.status === "Landed")) {
+        output["landed"].metricTons += row.volume;
+        output["landed"].cost += row.cost;
+        continue;
+      }
+      if (row.statusUpdates.length === 1) {
+        continue;
+        const date = new Date(row.statusUpdates[0].date);
+      }
+      output["in-transit"].metricTons += row.volume;
+      output["in-transit"].cost += row.cost;
+    }
+    return output;
+  });
   return (
     <>
       <Tabs
@@ -42,30 +95,44 @@ export default component$(() => {
           {
             label: "In 3 months",
             href: "?filter=3-months",
+            cost: tabs.value["3-months"].cost,
+            metricTons: tabs.value["3-months"].metricTons,
           },
           {
             label: "Next month",
             href: "?filter=next-month",
+            cost: tabs.value["next-month"].cost,
+            metricTons: tabs.value["next-month"].metricTons,
           },
           {
             label: "This month",
             href: "?filter=this-month",
+            cost: tabs.value["this-month"].cost,
+            metricTons: tabs.value["this-month"].metricTons,
           },
           {
             label: "In Transit",
             href: "?filter=in-transit",
+            cost: tabs.value["in-transit"].cost,
+            metricTons: tabs.value["in-transit"].metricTons,
           },
           {
             label: "Landed",
             href: "?filter=landed",
+            cost: tabs.value["landed"].cost,
+            metricTons: tabs.value["landed"].metricTons,
           },
           {
             label: "Settled",
             href: "?filter=settled",
+            cost: tabs.value["settled"].cost,
+            metricTons: tabs.value["settled"].metricTons,
           },
           {
             label: "Year To Date",
             href: "?filter=year-to-date",
+            cost: tabs.value["settled"].cost,
+            metricTons: tabs.value["settled"].metricTons,
           },
         ]}
       ></Tabs>
@@ -80,9 +147,18 @@ export default component$(() => {
             steps={row.statusUpdates.map((update) => ({
               date: new Date(update.date),
               title: update.status,
-              description: "View Documents",
             }))}
-          ></Timeline>
+          >
+            {row.statusUpdates.map((update, i) => (
+              <ul key={update.status} q:slot={`step-${i}`}>
+                {update.documents.map((doc) => (
+                  <li class="cursor-pointer hover:underline" key={doc}>
+                    {doc}
+                  </li>
+                ))}
+              </ul>
+            ))}
+          </Timeline>
         ))}
       </Table>
     </>
