@@ -38,6 +38,7 @@ export const onGet: RequestHandler = async (ev) => {
     const payload = await UserAttributes.safeParseAsync(idToken?.payload);
 
     if (!payload.success) {
+      console.log("Failed to parse payload", payload.error.format());
       ev.send(500, "");
       return;
     }
@@ -62,6 +63,7 @@ export const onGet: RequestHandler = async (ev) => {
       ev.send(400, "");
       return;
     }
+    console.error(e);
     ev.send(500, "");
     return;
   }
