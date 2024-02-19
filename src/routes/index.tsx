@@ -89,7 +89,7 @@ export default component$(() => {
     return output;
   });
   return (
-    <div class="py-8">
+    <div class="flex-1 py-8">
       <div class="mb-4 border-l-4 border-stone-800 px-2">
         <p>Good Afternoon,</p>
         <h1 class=" border-l-stone-300 text-4xl font-semibold">Bonnie</h1>

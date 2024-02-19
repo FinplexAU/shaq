@@ -16,7 +16,7 @@ export default component$(() => {
   return (
     <>
       <Header></Header>
-      <main class="container min-h-screen">
+      <main class="container flex min-h-[calc(100dvh-64px)] ">
         <Slot />
       </main>
     </>
