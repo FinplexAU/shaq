@@ -55,6 +55,7 @@
     "arctic": "^1.2.0",
     "flowbite": "^2.3.0",
     "lucia": "^3.0.1",
+    "moment-timezone": "^0.5.45",
     "oslo": "^1.1.2"
   }
 }

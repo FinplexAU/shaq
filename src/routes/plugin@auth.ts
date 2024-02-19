@@ -6,7 +6,6 @@ import type { Session } from "lucia";
 import { Lucia } from "lucia";
 import { UpstashRedisAdapter } from "~/redis/adapter";
 import type { UserAttributes } from "./app/auth/callback";
-import { PlatformCloudflarePages } from "@builder.io/qwik-city/middleware/cloudflare-pages";
 
 export type SharedMap = {
   lucia: Lucia;

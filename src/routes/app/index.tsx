@@ -4,12 +4,21 @@ import {
   useSignal,
   useVisibleTask$,
 } from "@builder.io/qwik";
-import type { DocumentHead } from "@builder.io/qwik-city";
+import { server$, type DocumentHead } from "@builder.io/qwik-city";
 import { Table } from "~/components/table";
 import { Timeline } from "~/components/timeline";
 import data from "../../../public/data.json";
 import { DieselTabs } from "~/components/tabs";
 import { useUser } from "./layout";
+import moment from "moment-timezone";
+import { isServer } from "@builder.io/qwik/build";
+
+const getServerHours = server$(function () {
+  const timezone = this.headers.get("cf-timezone");
+  console.log("header", timezone);
+  if (!timezone) return new Date().getHours();
+  else return moment().tz(timezone).hours();
+});
 
 export default component$(() => {
   const user = useUser();
@@ -96,17 +105,20 @@ export default component$(() => {
     return output;
   });
 
-  const greeting = useSignal<string>();
-
   // eslint-disable-next-line qwik/no-use-visible-task
-  useVisibleTask$(() => {
-    const curHr = new Date().getHours();
+  const greeting = useComputed$(async () => {
+    let curHr;
+
+    if (isServer) curHr = await getServerHours();
+    else curHr = new Date().getHours();
+    console.log("hour", curHr);
+
     if (curHr < 12) {
-      greeting.value = "Good Morning";
+      return "Good Morning";
     } else if (curHr < 18) {
-      greeting.value = "Good Afternoon";
+      return "Good Afternoon";
     } else {
-      greeting.value = "Good Evening";
+      return "Good Evening";
     }
   });
 
