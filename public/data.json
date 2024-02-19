@@ -1,0 +1,70 @@
+[
+  {
+    "volume": 103000,
+    "cost": 65000000,
+    "statusUpdates": [
+      {
+        "status": "Trans-In",
+        "date": "2023-02-12",
+        "documents": []
+      },
+      {
+        "status": "Loaded",
+        "date": "2023-03-13",
+        "documents": []
+      },
+      {
+        "status": "Shipped",
+        "date": "2023-03-17",
+        "documents": []
+      },
+      {
+        "status": "Landed",
+        "date": "2023-04-20",
+        "documents": []
+      },
+      {
+        "status": "Settled",
+        "date": "2023-04-25",
+        "documents": []
+      }
+    ]
+  },
+  {
+    "volume": 85000,
+    "cost": 52000000,
+    "statusUpdates": [
+      {
+        "status": "Trans-In",
+        "date": "2023-06-12",
+        "documents": []
+      },
+      {
+        "status": "Loaded",
+        "date": "2023-07-13",
+        "documents": []
+      },
+      {
+        "status": "Shipped",
+        "date": "2023-07-17",
+        "documents": []
+      }
+    ]
+  },
+  {
+    "volume": 55000,
+    "cost": 34000000,
+    "statusUpdates": [
+      {
+        "status": "Trans-In",
+        "date": "2023-10-12",
+        "documents": []
+      },
+      {
+        "status": "Loaded",
+        "date": "2023-11-13",
+        "documents": []
+      }
+    ]
+  }
+]
