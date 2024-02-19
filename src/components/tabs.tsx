@@ -11,7 +11,7 @@ interface TabsProps {
   tabs: TabConfig[];
 }
 
-export const Tabs = component$((props: TabsProps) => {
+export const DieselTabs = component$((props: TabsProps) => {
   const loc = useLocation();
 
   const maxTonnage = useComputed$(() => {

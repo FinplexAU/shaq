@@ -1,9 +1,9 @@
 import { component$, useComputed$ } from "@builder.io/qwik";
 import type { DocumentHead } from "@builder.io/qwik-city";
-import { Tabs } from "~/components/tabs";
 import { Table } from "~/components/table";
 import { Timeline } from "~/components/timeline";
 import data from "../../public/data.json";
+import { DieselTabs } from "~/components/tabs";
 
 export default component$(() => {
   const rows = useComputed$(() => {
@@ -94,7 +94,7 @@ export default component$(() => {
         <p>Good Afternoon,</p>
         <h1 class=" border-l-stone-300 text-4xl font-semibold">Bonnie</h1>
       </div>
-      <Tabs
+      <DieselTabs
         tabs={[
           {
             label: "In 3 months",
@@ -139,7 +139,7 @@ export default component$(() => {
             metricTons: tabs.value["settled"].metricTons,
           },
         ]}
-      ></Tabs>
+      ></DieselTabs>
       <Table
         headings={["Date", "Volume (MT)", "Price", "Cost", "Status"]}
         rows={rows.value}
