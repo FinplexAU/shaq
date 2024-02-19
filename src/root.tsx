@@ -1,5 +1,5 @@
 /* eslint-disable qwik/no-use-visible-task */
-import { component$, useTask$, useVisibleTask$ } from "@builder.io/qwik";
+import { component$, useVisibleTask$ } from "@builder.io/qwik";
 import {
   QwikCityProvider,
   RouterOutlet,
