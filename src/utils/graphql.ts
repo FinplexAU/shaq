@@ -5,7 +5,7 @@ import type {
 } from "@builder.io/qwik-city";
 import type { TypedDocumentNode } from "@graphql-typed-document-node/core";
 import { print } from "graphql";
-import { getSharedMap } from "~/routes/plugin@auth";
+import { getRequiredEnv, getSharedMap } from "~/routes/plugin@auth";
 
 export type GraphQlResponse<T> =
   | {
@@ -54,7 +54,9 @@ export const graphqlRequest = async <T, V extends Record<string, unknown>>(
       ? { "Nerve-Source-Ip": sourceIp }
       : {};
 
-    const response = await fetch(import.meta.env.VITE_MEMBRANE_ENDPOINT, {
+    const endpoint = getRequiredEnv(request.env, "MEMBRANE_ENDPOINT");
+
+    const response = await fetch(endpoint, {
       method: "POST",
       headers: {
         authorization: `Bearer ${access_token}`,

@@ -12,10 +12,6 @@ import { graphql } from "~/__generated__";
 import { component$ } from "@builder.io/qwik";
 import { Button } from "~/components/button";
 import type { DetailsQuery } from "~/__generated__/graphql";
-import {
-  HiArrowUpCircleOutline,
-  HiPencilOutline,
-} from "@qwikest/icons/heroicons";
 import { Spinner } from "~/components/spinner";
 import { useLogOut, useUser } from "../layout";
 
