@@ -27,6 +27,7 @@ export const onGet: RequestHandler = async (ev) => {
       response.headers.delete("Access-Control-Allow-Origin");
       ev.send(response);
     } catch (e) {
+      console.error(e);
       ev.send(500, "Internal Server Error");
       return;
     }
