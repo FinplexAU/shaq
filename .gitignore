@@ -42,5 +42,3 @@ lerna-debug.log*
 
 # Cloudflare
 functions/**/*.js
-
-src/routes.gen.d.ts
