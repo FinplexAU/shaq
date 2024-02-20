@@ -50,6 +50,7 @@
     "@amcharts/amcharts5": "^5.8.2",
     "@amcharts/amcharts5-fonts": "^5.0.1",
     "@amcharts/amcharts5-geodata": "^5.1.2",
+    "@builder.io/qwik-labs": "github:BuilderIo/qwik-labs-build#main",
     "@lucia-auth/adapter-sqlite": "^3.0.0",
     "@upstash/redis": "^1.28.4",
     "arctic": "^1.2.0",

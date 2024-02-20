@@ -3,8 +3,11 @@ import {
   useLocation,
   type RequestHandler,
   routeLoader$,
+  globalAction$,
+  Form,
+  useNavigate,
 } from "@builder.io/qwik-city";
-import { getSharedMap } from "../plugin@auth";
+import { getRequiredEnv, getSharedMap } from "../plugin@auth";
 
 export const onGet: RequestHandler = async ({ cacheControl }) => {
   // Control caching for this request for best performance and to reduce hosting costs:
@@ -29,9 +32,28 @@ export const useUser = routeLoader$(({ sharedMap }) => {
   return getSharedMap(sharedMap, "user");
 });
 
+export const useLogOut = globalAction$(async (_, ev) => {
+  const lucia = getSharedMap(ev.sharedMap, "lucia");
+  const session = getSharedMap(ev.sharedMap, "session");
+
+  // Invalidate session locally.
+  await lucia.invalidateSession(session.id);
+  const cookie = lucia.createBlankSessionCookie();
+  ev.cookie.set(cookie.name, cookie.value, cookie.attributes);
+
+  // Redirect to auth0 to log out there
+  const baseUrl = getRequiredEnv(ev.env, "AUTH0_APP_DOMAIN");
+  const redirectTo = new URL("/app/", ev.url);
+  const url = `${baseUrl}/oidc/logout?id_token_hint=${session.idToken}&post_logout_redirect_uri=${redirectTo.toString()}`;
+
+  return url;
+});
+
 export const Header = component$(() => {
   const loc = useLocation();
   const user = useUser();
+  const logOut = useLogOut();
+  const nav = useNavigate();
 
   return (
     <nav class="border-b border-gray-200 bg-white dark:bg-gray-900">
@@ -87,12 +109,19 @@ export const Header = component$(() => {
                 </a>
               </li>
               <li>
-                <a
-                  href="/app/auth/logout/"
-                  class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-600 dark:hover:text-white"
+                <Form
+                  action={logOut}
+                  onSubmitCompleted$={(x) => {
+                    const url = x.detail.value.toString();
+                    nav(url);
+                  }}
                 >
-                  Sign out
-                </a>
+                  <button class="w-full">
+                    <p class="px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-600 dark:hover:text-white">
+                      Sign out
+                    </p>
+                  </button>
+                </Form>
               </li>
             </ul>
           </div>

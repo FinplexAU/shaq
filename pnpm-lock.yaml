@@ -14,6 +14,9 @@ dependencies:
   '@amcharts/amcharts5-geodata':
     specifier: ^5.1.2
     version: 5.1.2
+  '@builder.io/qwik-labs':
+    specifier: github:BuilderIo/qwik-labs-build#main
+    version: github.com/BuilderIo/qwik-labs-build/d2f6da2ed357d88929725906fcc9846d67288083
   '@lucia-auth/adapter-sqlite':
     specifier: ^3.0.0
     version: 3.0.0(lucia@3.0.1)
@@ -6462,3 +6465,10 @@ packages:
   /zwitch@2.0.4:
     resolution: {integrity: sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A==}
     dev: true
+
+  github.com/BuilderIo/qwik-labs-build/d2f6da2ed357d88929725906fcc9846d67288083:
+    resolution: {tarball: https://codeload.github.com/BuilderIo/qwik-labs-build/tar.gz/d2f6da2ed357d88929725906fcc9846d67288083}
+    name: '@builder.io/qwik-labs'
+    version: 0.0.1
+    engines: {node: '>=16.8.0 <18.0.0 || >=18.11'}
+    dev: false

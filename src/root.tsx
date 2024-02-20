@@ -7,6 +7,7 @@ import {
 } from "@builder.io/qwik-city";
 import { RouterHead } from "./components/router-head/router-head";
 import { initFlowbite } from "flowbite";
+import { Insights } from "@builder.io/qwik-labs";
 
 import "./global.css";
 
@@ -28,6 +29,7 @@ export default component$(() => {
       <head>
         <meta charSet="utf-8" />
         <link rel="manifest" href="/manifest.json" />
+        <Insights publicApiKey="1v0qw1g5lfb" />
         <RouterHead />
       </head>
       <body lang="en">
