@@ -60,6 +60,7 @@ export const forceLogin = async (ev: RequestEvent, auth0: Auth0) => {
   const url = await auth0.createAuthorizationURL(state, {
     scopes: ["openid", "profile", "email"],
   });
+  url.searchParams.set("audience", "https://membrane.nerve.pizza");
 
   ev.cookie.set(OAUTH_STATE_COOKIE, state, {
     path: "/",
