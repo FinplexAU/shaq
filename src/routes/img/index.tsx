@@ -24,6 +24,7 @@ export const onGet: RequestHandler = async (ev) => {
     const parsedUrl = new URL(url);
     try {
       const response = await fetch(parsedUrl);
+      response.headers.delete("Access-Control-Allow-Origin");
       ev.send(response);
     } catch (e) {
       ev.send(500, "Internal Server Error");
