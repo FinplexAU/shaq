@@ -163,9 +163,6 @@ export default component$(() => {
           {details.value.entities.map((entity) => (
             <EntityCard key={entity.fen} entity={entity}></EntityCard>
           ))}
-          {details.value.entities.map((entity) => (
-            <EntityCard key={entity.fen} entity={entity}></EntityCard>
-          ))}
         </div>
       </section>
     </div>
