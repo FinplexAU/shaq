@@ -43,7 +43,7 @@ export const DieselTabs = component$((props: TabsProps) => {
   });
 
   return (
-    <div class="w-full border-b border-t border-gray-200 py-2 text-center text-sm font-medium ">
+    <div class="w-full border-b border-t  py-2 text-center text-sm font-medium ">
       <ul class="-mb-px flex w-full flex-wrap justify-between divide-x">
         {props.tabs.map((tab) => (
           <button

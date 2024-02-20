@@ -115,7 +115,7 @@ export default component$(() => {
   });
 
   return (
-    <div class="flex-1 py-8">
+    <div class="flex-1">
       <div class="mb-4 border-l-4 border-stone-800 px-2">
         <span>{greeting},</span>
         <h1 class="border-l-stone-300 text-4xl font-semibold">

@@ -101,8 +101,17 @@ export const graphqlLoader = <T, V extends Record<string, unknown>>(
       noCache,
     );
     if (gqlReq.success) {
-      return gqlReq.data;
+      return { ...gqlReq.data, success: true };
     }
     return request.fail(500, gqlReq);
+  };
+};
+
+export const graphqlAction = <T, V extends Record<string, unknown>>(
+  queryDocument: TypedDocumentNode<T, V>,
+  noCache: boolean = false,
+) => {
+  return async (data: V, request: RequestEventAction) => {
+    return graphqlLoader(queryDocument, data, noCache)(request);
   };
 };

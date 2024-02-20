@@ -23,7 +23,7 @@ export default component$(() => {
   return (
     <>
       <Header></Header>
-      <main class="container flex min-h-[calc(100dvh-64px)] flex-col ">
+      <main class="container flex min-h-[calc(100dvh-64px)] flex-col py-8  max-sm:px-2">
         <Slot />
       </main>
     </>

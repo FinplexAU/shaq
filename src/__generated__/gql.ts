@@ -14,6 +14,8 @@ import { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-node/
  */
 const documents = {
     "\n      query Details {\n        user {\n          name\n          nickname\n          email\n          emailVerified\n        }\n        entities {\n          fen\n          company\n          executiveName\n          legalType\n          name\n          displayName\n          activeState\n          statuses {\n            name\n            value\n          }\n          accounts {\n            fan\n            displayName\n          }\n          contacts {\n            __typename\n            shortName\n            beneficialOwner\n            status\n            ... on PersonContact {\n              personTitle\n              personFirstName\n              personInits\n              personFamilyName\n              personBirthdate\n            }\n            ... on OrganisationContact {\n              organisationName\n            }\n            contactMethods {\n              __typename\n              contactType\n              detail\n              sortSeq\n            }\n          }\n        }\n      }\n    ": types.DetailsDocument,
+    "\n      mutation RequestEmailVerification {\n        requestVerificationEmail\n      }\n    ": types.RequestEmailVerificationDocument,
+    "\n      mutation UpdateProfile($nickname: String!) {\n        updateProfile(nickname: $nickname) {\n          name\n          nickname\n        }\n      }\n    ": types.UpdateProfileDocument,
 };
 
 /**
@@ -34,6 +36,14 @@ export function graphql(source: string): unknown;
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(source: "\n      query Details {\n        user {\n          name\n          nickname\n          email\n          emailVerified\n        }\n        entities {\n          fen\n          company\n          executiveName\n          legalType\n          name\n          displayName\n          activeState\n          statuses {\n            name\n            value\n          }\n          accounts {\n            fan\n            displayName\n          }\n          contacts {\n            __typename\n            shortName\n            beneficialOwner\n            status\n            ... on PersonContact {\n              personTitle\n              personFirstName\n              personInits\n              personFamilyName\n              personBirthdate\n            }\n            ... on OrganisationContact {\n              organisationName\n            }\n            contactMethods {\n              __typename\n              contactType\n              detail\n              sortSeq\n            }\n          }\n        }\n      }\n    "): (typeof documents)["\n      query Details {\n        user {\n          name\n          nickname\n          email\n          emailVerified\n        }\n        entities {\n          fen\n          company\n          executiveName\n          legalType\n          name\n          displayName\n          activeState\n          statuses {\n            name\n            value\n          }\n          accounts {\n            fan\n            displayName\n          }\n          contacts {\n            __typename\n            shortName\n            beneficialOwner\n            status\n            ... on PersonContact {\n              personTitle\n              personFirstName\n              personInits\n              personFamilyName\n              personBirthdate\n            }\n            ... on OrganisationContact {\n              organisationName\n            }\n            contactMethods {\n              __typename\n              contactType\n              detail\n              sortSeq\n            }\n          }\n        }\n      }\n    "];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n      mutation RequestEmailVerification {\n        requestVerificationEmail\n      }\n    "): (typeof documents)["\n      mutation RequestEmailVerification {\n        requestVerificationEmail\n      }\n    "];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n      mutation UpdateProfile($nickname: String!) {\n        updateProfile(nickname: $nickname) {\n          name\n          nickname\n        }\n      }\n    "): (typeof documents)["\n      mutation UpdateProfile($nickname: String!) {\n        updateProfile(nickname: $nickname) {\n          name\n          nickname\n        }\n      }\n    "];
 
 export function graphql(source: string) {
   return (documents as any)[source] ?? {};
