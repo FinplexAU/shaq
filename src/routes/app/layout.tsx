@@ -9,6 +9,7 @@ import {
 } from "@builder.io/qwik-city";
 import { getRequiredEnv, getSharedMap } from "../plugin@auth";
 import { AppLink } from "~/routes.config";
+import ExternalImage from "~/components/external-image";
 
 export const onGet: RequestHandler = async ({ cacheControl }) => {
   // Control caching for this request for best performance and to reduce hosting costs:
@@ -82,7 +83,7 @@ export const Header = component$(() => {
             data-dropdown-placement="bottom"
           >
             <span class="sr-only">Open user menu</span>
-            <img
+            <ExternalImage
               class="rounded-full"
               src={user.value.picture}
               width={32}
