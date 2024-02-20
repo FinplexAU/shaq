@@ -6,8 +6,10 @@ import colors from "tailwindcss/colors";
 
 export default component$(() => {
   return (
-    <div class="relative flex flex-1 flex-wrap items-center gap-4 ">
-      <GlobeVis></GlobeVis>
+    <div class="grid flex-1 grid-cols-3 items-center gap-4">
+      <div class="col-span-2 h-full w-full">
+        <GlobeVis></GlobeVis>
+      </div>
       <p class="text-2xl font-semibold">3 Shipment In Progress</p>
     </div>
   );
@@ -89,5 +91,5 @@ const GlobeVis = component$(() => {
       root.dispose();
     });
   });
-  return <div class="h-full max-h-[750px] flex-1" id="chart-div"></div>;
+  return <div class="h-full w-full flex-1" id="chart-div"></div>;
 });
