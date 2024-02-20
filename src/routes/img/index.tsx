@@ -23,8 +23,14 @@ export const onGet: RequestHandler = async (ev) => {
   try {
     const parsedUrl = new URL(url);
     try {
-      const response = await fetch(parsedUrl);
-      response.headers.delete("Access-Control-Allow-Origin");
+      const r = await fetch(parsedUrl);
+      const headers = new Headers(r.headers);
+      headers.delete("Access-Control-Allow-Origin");
+      const response = new Response(r.body, {
+        headers,
+        status: r.status,
+        statusText: r.statusText,
+      });
       ev.send(response);
     } catch (e) {
       console.error(e);

@@ -7,18 +7,18 @@ export type AppRoutes =
   | "/app/"
   | "/app/auth/callback/"
   | "/app/cash/"
-  | "/app/img/"
   | "/app/map/"
-  | "/app/user/";
+  | "/app/user/"
+  | "/img/";
 
 export interface AppRouteMap {
   "/": {};
   "/app/": {};
   "/app/auth/callback/": {};
   "/app/cash/": {};
-  "/app/img/": {};
   "/app/map/": {};
   "/app/user/": {};
+  "/img/": {};
 }
 
 export interface AppRouteParamsFunction {
@@ -26,9 +26,9 @@ export interface AppRouteParamsFunction {
   (route: "/app/", params?: {}): string;
   (route: "/app/auth/callback/", params?: {}): string;
   (route: "/app/cash/", params?: {}): string;
-  (route: "/app/img/", params?: {}): string;
   (route: "/app/map/", params?: {}): string;
   (route: "/app/user/", params?: {}): string;
+  (route: "/img/", params?: {}): string;
 }
 
 export type AppLinkProps =
@@ -36,6 +36,6 @@ export type AppLinkProps =
   | { route: "/app/" }
   | { route: "/app/auth/callback/" }
   | { route: "/app/cash/" }
-  | { route: "/app/img/" }
   | { route: "/app/map/" }
-  | { route: "/app/user/" };
+  | { route: "/app/user/" }
+  | { route: "/img/" };
