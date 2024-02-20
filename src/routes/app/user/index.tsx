@@ -2,6 +2,7 @@ import {
   Form,
   routeAction$,
   routeLoader$,
+  useNavigate,
   z,
   zod$,
 } from "@builder.io/qwik-city";
@@ -16,6 +17,7 @@ import {
   HiPencilOutline,
 } from "@qwikest/icons/heroicons";
 import { Spinner } from "~/components/spinner";
+import { useLogOut, useUser } from "../layout";
 
 export const useGqlDetails = routeLoader$(
   graphqlLoader(
@@ -103,14 +105,28 @@ export default component$(() => {
   const details = useGqlDetails();
   const verifyEmail = useRequestEmailVerificationFormAction();
   const updateProfile = useUpdateProfileFormAction();
+  const user = useUser();
+  const logOut = useLogOut();
+  const nav = useNavigate();
   if (details.value.failed == true) {
     return <Error />;
   }
   return (
     <div class="flex flex-1 flex-col gap-8 pt-4">
-      <h1 class="text-4xl font-bold">Account Details</h1>
+      <div class="flex  justify-between">
+        <h1 class="text-4xl font-bold">Account Details</h1>
+        <Form
+          action={logOut}
+          onSubmitCompleted$={(x) => {
+            const url = x.detail.value.toString();
+            nav(url);
+          }}
+        >
+          <Button class="text-sm">Sign out</Button>
+        </Form>
+      </div>
       <section class="max-w-prose">
-        <h2 class="pb-12 text-2xl font-semibold">Profile</h2>
+        <h2 class="pb-8 text-2xl font-semibold">Profile</h2>
         <div class="flex flex-col gap-2 pb-4">
           <label>Full Name</label>
           <input
@@ -158,13 +174,14 @@ export default component$(() => {
         </div>
       </section>
       <section>
-        <h2 class="pb-12 text-2xl font-semibold">Investor Entities</h2>
+        <h2 class="pb-8 text-2xl font-semibold">Investor Entities</h2>
         <div class="grid gap-8">
           {details.value.entities.map((entity) => (
             <EntityCard key={entity.fen} entity={entity}></EntityCard>
           ))}
         </div>
       </section>
+      <pre class="text-right text-xs text-black/20">{user.value.fin}</pre>
     </div>
   );
 });
@@ -177,44 +194,41 @@ export const EntityCard = component$(
       return <Error />;
     }
     return (
-      <>
-        <div class="border-b ring-stone-100 hover:bg-stone-100 hover:ring">
-          <div class="relative border-b pb-2">
-            <p class="font-light uppercase">{props.entity.legalType}</p>
-            <p class="text-lg font-semibold">{props.entity.displayName}</p>
-            {props.entity.activeState !== "Active" && (
-              <p class="absolute right-0 top-0 font-light text-red-500">
-                {props.entity.activeState}
-              </p>
-            )}
+      <div class="border-b ring-stone-100 hover:bg-stone-100 hover:ring">
+        <div class="relative border-b pb-2">
+          <p class="font-light uppercase">{props.entity.legalType}</p>
+          <p class="text-lg font-semibold">{props.entity.displayName}</p>
+          {props.entity.activeState !== "Active" && (
+            <p class="absolute right-0 top-0 font-light text-red-500">
+              {props.entity.activeState}
+            </p>
+          )}
+        </div>
+        <div class="space-y-2 py-2">
+          <div>
+            <p class="text-sm font-light">Legal Name</p>
+            <p>{props.entity.name}</p>
           </div>
-          <div class="space-y-2 py-2">
-            <div>
-              <p class="text-sm font-light">Legal Name</p>
-              <p>{props.entity.name}</p>
-            </div>
-            <div>
-              <p class="text-sm font-light">Wholesale Certificate</p>
-              <p>
-                {
-                  props.entity.statuses.find(
-                    (v) => v?.name === "WholesaleCertificate",
-                  )?.value
-                }
-              </p>
-            </div>
-            <div>
-              <p class="text-sm font-light">Trading Accounts</p>
-              <p>
-                {props.entity.accounts
-                  .map((account) => account.displayName)
-                  .join(", ")}
-              </p>
-            </div>
+          <div>
+            <p class="text-sm font-light">Wholesale Certificate</p>
+            <p>
+              {
+                props.entity.statuses.find(
+                  (v) => v?.name === "WholesaleCertificate",
+                )?.value
+              }
+            </p>
+          </div>
+          <div>
+            <p class="text-sm font-light">Trading Accounts</p>
+            <p>
+              {props.entity.accounts
+                .map((account) => account.displayName)
+                .join(", ")}
+            </p>
           </div>
         </div>
-        {/* <pre>{JSON.stringify(props.entity, null, 2)}</pre>; */}
-      </>
+      </div>
     );
   },
 );
