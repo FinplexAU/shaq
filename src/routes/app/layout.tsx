@@ -8,6 +8,7 @@ import {
   useNavigate,
 } from "@builder.io/qwik-city";
 import { getRequiredEnv, getSharedMap } from "../plugin@auth";
+import { AppLink } from "~/routes.config";
 
 export const onGet: RequestHandler = async ({ cacheControl }) => {
   // Control caching for this request for best performance and to reduce hosting costs:
@@ -58,7 +59,10 @@ export const Header = component$(() => {
   return (
     <nav class="border-b border-gray-200 bg-white dark:bg-gray-900">
       <div class="mx-auto flex max-w-screen-xl flex-wrap items-center justify-between p-4">
-        <a href="/" class="flex items-center space-x-3 rtl:space-x-reverse">
+        <AppLink
+          route="/"
+          class="flex items-center space-x-3 rtl:space-x-reverse"
+        >
           {/* <img
             src="https://flowbite.com/docs/images/logo.svg"
             class="h-8"
@@ -67,7 +71,7 @@ export const Header = component$(() => {
           <span class="self-center whitespace-nowrap text-2xl font-semibold dark:text-white">
             DieselTrade
           </span>
-        </a>
+        </AppLink>
         <div class="flex items-center space-x-3 rtl:space-x-reverse md:order-2 md:space-x-0">
           <button
             type="button"
@@ -101,12 +105,12 @@ export const Header = component$(() => {
             </div>
             <ul class="py-2" aria-labelledby="user-menu-button">
               <li>
-                <a
-                  href="/app/user/"
+                <AppLink
+                  route="/app/user/"
                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-600 dark:hover:text-white"
                 >
                   Settings
-                </a>
+                </AppLink>
               </li>
               <li>
                 <Form
@@ -156,8 +160,8 @@ export const Header = component$(() => {
         >
           <ul class="mt-4 flex flex-col rounded-lg border border-gray-100 bg-gray-50 p-4 font-medium rtl:space-x-reverse dark:border-gray-700 dark:bg-gray-800 md:mt-0 md:flex-row md:space-x-8 md:border-0 md:bg-white md:p-0 md:dark:bg-gray-900">
             <li>
-              <a
-                href="/app/"
+              <AppLink
+                route="/app/"
                 class={{
                   "block rounded bg-blue-700 px-3 py-2 text-white md:bg-transparent md:p-0 md:text-blue-700 md:dark:text-blue-500":
                     loc.url.pathname === "/app/",
@@ -167,11 +171,11 @@ export const Header = component$(() => {
                 aria-current={loc.url.pathname === "/app/" ? "page" : undefined}
               >
                 Home
-              </a>
+              </AppLink>
             </li>
             <li>
-              <a
-                href="/app/map"
+              <AppLink
+                route="/app/map/"
                 class={{
                   "block rounded bg-blue-700 px-3 py-2 text-white md:bg-transparent md:p-0 md:text-blue-700 md:dark:text-blue-500":
                     loc.url.pathname === "/app/map/",
@@ -183,11 +187,11 @@ export const Header = component$(() => {
                 }
               >
                 Map
-              </a>
+              </AppLink>
             </li>
             <li>
-              <a
-                href="/app/cash/"
+              <AppLink
+                route="/app/cash/"
                 class={{
                   "block rounded bg-blue-700 px-3 py-2 text-white md:bg-transparent md:p-0 md:text-blue-700 md:dark:text-blue-500":
                     loc.url.pathname === "/app/cash/",
@@ -199,7 +203,7 @@ export const Header = component$(() => {
                 }
               >
                 Cash
-              </a>
+              </AppLink>
             </li>
           </ul>
         </div>

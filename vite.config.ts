@@ -2,7 +2,7 @@ import { defineConfig, type UserConfig } from "vite";
 import { qwikVite } from "@builder.io/qwik/optimizer";
 import { qwikCity } from "@builder.io/qwik-city/vite";
 import tsconfigPaths from "vite-tsconfig-paths";
-import { qwikInsights } from "@builder.io/qwik-labs/vite";
+import { qwikInsights, qwikTypes } from "@builder.io/qwik-labs/vite";
 
 export default defineConfig((): UserConfig => {
   return {
@@ -11,6 +11,7 @@ export default defineConfig((): UserConfig => {
       qwikCity(),
       qwikVite(),
       tsconfigPaths(),
+      qwikTypes(),
     ],
     server: {
       headers: {
