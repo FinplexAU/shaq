@@ -12,7 +12,7 @@ export type SharedMap = {
   auth0: Auth0;
   redis: Redis;
   user: UserAttributes;
-  session: Session & { idToken: string };
+  session: Session & { idToken: string; accessToken: string };
 };
 
 export const getSharedMap = <T extends keyof SharedMap>(
