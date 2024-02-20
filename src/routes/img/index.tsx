@@ -4,6 +4,8 @@ export const onGet: RequestHandler = async (ev) => {
   ev.cacheControl({
     staleWhileRevalidate: 60 * 60 * 24 * 7,
     maxAge: 60 * 60 * 24,
+    public: true,
+    sMaxAge: 60 * 60 * 24,
   });
 
   const url = ev.url.searchParams.get("url");
