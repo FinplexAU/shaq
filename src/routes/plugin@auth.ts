@@ -24,7 +24,7 @@ export const getSharedMap = <T extends keyof SharedMap>(
 
 export function initializeLucia(redis: Redis) {
   return new Lucia(UpstashRedisAdapter(redis), {
-    sessionExpiresIn: new TimeSpan(1, "d"),
+    sessionExpiresIn: new TimeSpan(4, "m"),
     sessionCookie: {
       attributes: {
         secure: import.meta.env.PROD,
@@ -113,21 +113,10 @@ export const onRequest: RequestHandler = async (ev) => {
   }
 
   const result = await lucia.validateSession(sessionId);
+  // Purposefully not handling fresh tokens, as we want to force a refresh to get a new auth0 token
 
-  try {
-    if (!result.session) {
-      return forceLogin(ev, auth0);
-    }
-    if (result.session.fresh) {
-      const sessionCookie = lucia.createSessionCookie(result.session.id);
-      ev.cookie.set(
-        sessionCookie.name,
-        sessionCookie.value,
-        sessionCookie.attributes,
-      );
-    }
-  } catch {
-    console.error("something happened with the auth");
+  if (!result.session) {
+    return forceLogin(ev, auth0);
   }
 
   ev.sharedMap.set("user", result.user);

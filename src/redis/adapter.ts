@@ -103,22 +103,7 @@ export const UpstashRedisAdapter = (redis: Redis): Adapter => {
       return successful;
     },
 
-    async updateSessionExpiration(sessionId, expiresAt) {
-      const keys = [];
-      let cursor = 0;
-      do {
-        const [c, k] = await redis.scan(cursor, {
-          match: `user:*:session:${sessionId}`,
-        });
-        cursor = c;
-        keys.push(...k);
-      } while (cursor !== 0);
-
-      for (const key of keys) {
-        const value = (await redis.get(key)) as DatabaseSession;
-        value.expiresAt = expiresAt;
-        await this.setSession(value);
-      }
-    },
+    // Don't allow updating expiration as we want to refresh often and never have a stale auth token
+    async updateSessionExpiration() {},
   };
 };

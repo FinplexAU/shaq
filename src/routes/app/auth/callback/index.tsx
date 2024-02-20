@@ -51,6 +51,7 @@ export const onGet: RequestHandler = async (ev) => {
 
     const session = await lucia.createSession(payload.data.fin, {
       idToken: tokens.idToken,
+      accessToken: tokens.accessToken,
     });
     const sessionCookie = lucia.createSessionCookie(session.id);
     ev.cookie.set(
