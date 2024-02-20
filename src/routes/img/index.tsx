@@ -8,6 +8,12 @@ export const onGet: RequestHandler = async (ev) => {
     sMaxAge: 60 * 60 * 24,
   });
 
+  // Will still allow a proxy to use this endpoint, but at that point they may as well do this themselves.
+  ev.headers.set(
+    "Access-Control-Allow-Origin",
+    ev.request.headers.get("Host")!,
+  );
+
   const url = ev.url.searchParams.get("url");
   if (!url) {
     ev.send(400, "Invalid URL");
@@ -18,7 +24,7 @@ export const onGet: RequestHandler = async (ev) => {
     const parsedUrl = new URL(url);
     try {
       const response = await fetch(parsedUrl);
-      ev.send(response.status, new Uint8Array(await response.arrayBuffer()));
+      ev.send(response);
     } catch (e) {
       ev.send(500, "Internal Server Error");
       return;
