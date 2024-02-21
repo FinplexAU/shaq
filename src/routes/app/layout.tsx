@@ -58,7 +58,7 @@ export const Header = component$(() => {
   const nav = useNavigate();
 
   return (
-    <nav class="border-b border-gray-200 bg-white dark:bg-gray-900">
+    <nav class="select-none border-b border-gray-200 bg-white dark:bg-gray-900">
       <div class="mx-auto flex max-w-screen-xl flex-wrap items-center justify-between p-4">
         <AppLink
           route="/"

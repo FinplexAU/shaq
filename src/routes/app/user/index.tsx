@@ -131,6 +131,7 @@ export default component$(() => {
             value={details.value.user?.name}
           ></input>
         </div>
+
         <Form action={updateProfile} class="relative flex flex-col gap-2 pb-4">
           <label>Nickname</label>
           <div class="flex gap-2">
@@ -140,11 +141,13 @@ export default component$(() => {
               value={details.value.user?.nickname}
             ></input>
             <Button type="submit" disabled={updateProfile.isRunning}>
-              {updateProfile.isRunning ? (
-                <Spinner size="md"></Spinner>
-              ) : (
-                <>Update</>
-              )}
+              {updateProfile.value?.success && <>Updated</>}
+              {updateProfile.value?.success === undefined &&
+                (updateProfile.isRunning ? (
+                  <Spinner size="md"></Spinner>
+                ) : (
+                  <>Update</>
+                ))}
             </Button>
           </div>
         </Form>
@@ -157,11 +160,15 @@ export default component$(() => {
               value={details.value.user?.email}
             ></input>
             {details.value.user &&
-              details.value.user.emailVerified === false &&
+              details.value.user.emailVerified === true &&
               !verifyEmail.value?.success && (
                 <Form action={verifyEmail}>
                   <Button type="submit" disabled={verifyEmail.isRunning}>
-                    Verify
+                    {verifyEmail.isRunning ? (
+                      <Spinner size="md"></Spinner>
+                    ) : (
+                      <>Verify</>
+                    )}
                   </Button>
                 </Form>
               )}
