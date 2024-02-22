@@ -144,6 +144,13 @@ export const onRequest: RequestHandler = async (ev) => {
       return req;
     },
   });
+  nerveCentre.use({
+    async onRequest(req) {
+      console.log(req.headers.get("Nerve-Source-Ip"));
+      console.log(req.headers.get("Authorization"));
+      return req;
+    },
+  });
 
   ev.sharedMap.set("user", result.user);
   ev.sharedMap.set("session", result.session);
