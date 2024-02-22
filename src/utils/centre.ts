@@ -35,7 +35,13 @@ const fetchNewToken = async (env: EnvGetter, redis: Redis) => {
       method: "POST",
       body,
     });
-    if (!response.ok) return;
+    if (!response.ok) {
+      console.error(
+        response.status,
+        "Failed to refresh token:",
+        await response.text(),
+      );
+    }
 
     const json = await response.json();
 
