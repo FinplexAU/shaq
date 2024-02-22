@@ -30,9 +30,10 @@ const fetchNewToken = async (env: EnvGetter, redis: Redis) => {
       client_id: getRequiredEnv(env, "CENTRE_CLIENT_ID"),
       client_secret: getRequiredEnv(env, "CENTRE_CLIENT_SECRET"),
     });
+    console.log(body.toString());
 
     const response = await fetch(getRequiredEnv(env, "CENTRE_AUTH_URL"), {
-      method: "POST",
+      method: "post",
       body,
     });
     if (!response.ok) {
