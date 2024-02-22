@@ -157,6 +157,11 @@ export const onRequest: RequestHandler = async (ev) => {
     },
   });
 
+  console.log(getRequiredEnv(ev.env, "CENTRE_CLIENT_ID"));
+  console.log(getRequiredEnv(ev.env, "CENTRE_CLIENT_SECRET"));
+  console.log(getRequiredEnv(ev.env, "CENTRE_AUTH_URL"));
+  console.log(getRequiredEnv(ev.env, "CENTRE_BASE_URL"));
+
   ev.sharedMap.set("user", result.user);
   ev.sharedMap.set("session", result.session);
   ev.sharedMap.set("nerveCentre", nerveCentre);

@@ -39,7 +39,7 @@ const fetchNewToken = async (env: EnvGetter, redis: Redis) => {
       console.error(
         response.status,
         "Failed to refresh token:",
-        await response.text(),
+        await response.clone().text(),
       );
     }
 
