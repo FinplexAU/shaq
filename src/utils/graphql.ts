@@ -5,7 +5,7 @@ import type {
 } from "@builder.io/qwik-city";
 import type { TypedDocumentNode } from "@graphql-typed-document-node/core";
 import { print } from "graphql";
-import { getRequiredEnv, getSharedMap } from "~/routes/plugin@auth";
+import { getRequiredEnv, getSharedMap } from "~/routes/plugin.js";
 import { initGraphQLTada } from "gql.tada";
 import type { introspection } from "../graphql-env.gen.d.ts";
 

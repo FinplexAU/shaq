@@ -20,7 +20,8 @@
     "dev.debug": "node --inspect-brk ./node_modules/vite/bin/vite.js --mode ssr --force",
     "fmt": "prettier --write .",
     "fmt.check": "prettier --check .",
-    "generate": "graphql-codegen --config codegen.ts",
+    "generate": "pnpm run generate:openapi",
+    "generate:openapi": "openapi-typescript $(bash ./scripts/get-doc-url.sh) -o ./src/__generated__/nerve-centre-schema.d.ts",
     "lint": "eslint \"src/**/*.ts*\"",
     "preview": "qwik build preview && vite preview --open",
     "serve": "wrangler pages dev ./dist",
@@ -40,6 +41,7 @@
     "eslint": "^8.56.0",
     "eslint-plugin-qwik": "^1.4.5",
     "graphql": "^16.8.1",
+    "openapi-typescript": "^6.7.4",
     "postcss": "^8.4.31",
     "prettier": "^3.2.4",
     "prettier-plugin-tailwindcss": "^0.5.4",
@@ -63,6 +65,7 @@
     "gql.tada": "^1.2.1",
     "lucia": "^3.0.1",
     "moment-timezone": "^0.5.45",
+    "openapi-fetch": "^0.9.2",
     "oslo": "^1.1.2"
   }
 }

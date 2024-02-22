@@ -6,13 +6,18 @@ import type { Session } from "lucia";
 import { Lucia, TimeSpan } from "lucia";
 import { UpstashRedisAdapter } from "~/redis/adapter";
 import type { UserAttributes } from "./app/auth/callback";
+import createClient from "openapi-fetch";
+import type { paths } from "~/__generated__/nerve-centre-schema";
+import { getNerveCentreToken } from "~/utils/centre";
 
 export type SharedMap = {
   lucia: Lucia;
   auth0: Auth0;
   redis: Redis;
   user: UserAttributes;
+  nerveCentre: ReturnType<typeof createClient<paths>>;
   session: Session & { idToken: string; accessToken: string };
+  centreToken: { expires: number; token: string } | null;
 };
 
 export const getSharedMap = <T extends keyof SharedMap>(
@@ -120,8 +125,29 @@ export const onRequest: RequestHandler = async (ev) => {
     return forceLogin(ev, auth0);
   }
 
+  const nerveCentre = createClient<paths>({
+    baseUrl: getRequiredEnv(ev.env, "CENTRE_BASE_URL"),
+  });
+  nerveCentre.use({
+    onRequest(req) {
+      const ip = ev.request.headers.get("X-Forwarded-For") ?? "127.0.0.1";
+
+      req.headers.set("Nerve-Source-Ip", ip);
+      return req;
+    },
+  });
+  nerveCentre.use({
+    async onRequest(req) {
+      const token = await getNerveCentreToken(ev.env, ev.sharedMap);
+      if (!token) return;
+      req.headers.set("Authorization", "Bearer " + token.token);
+      return req;
+    },
+  });
+
   ev.sharedMap.set("user", result.user);
   ev.sharedMap.set("session", result.session);
+  ev.sharedMap.set("nerveCentre", nerveCentre);
 
   await ev.next();
 };

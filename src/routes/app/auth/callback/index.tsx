@@ -1,6 +1,6 @@
 import { OAuth2RequestError } from "arctic";
 import { z, type RequestHandler } from "@builder.io/qwik-city";
-import { OAUTH_STATE_COOKIE, getSharedMap } from "~/routes/plugin@auth";
+import { OAUTH_STATE_COOKIE, getSharedMap } from "~/routes/plugin";
 import { parseJWT } from "oslo/jwt";
 
 const UserAttributes = z.object({

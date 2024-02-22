@@ -37,3 +37,5 @@ lerna-debug.log*
 
 # Cloudflare
 functions/**/*.js
+
+src/__generated__

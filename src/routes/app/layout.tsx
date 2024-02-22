@@ -7,7 +7,7 @@ import {
   Form,
   useNavigate,
 } from "@builder.io/qwik-city";
-import { getRequiredEnv, getSharedMap } from "../plugin@auth";
+import { getRequiredEnv, getSharedMap } from "../plugin";
 import { AppLink } from "~/routes.config";
 import ExternalImage from "~/components/external-image";
 

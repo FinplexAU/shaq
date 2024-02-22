@@ -16,7 +16,7 @@ import { DieselTabs } from "~/components/tabs";
 import { useUser } from "./layout";
 import moment from "moment-timezone";
 import { isServer } from "@builder.io/qwik/build";
-import { getSharedMap } from "../plugin@auth";
+import { getSharedMap } from "../plugin";
 import { graphql, graphqlRequest } from "~/utils/graphql";
 
 export const head: DocumentHead = {
@@ -29,7 +29,7 @@ export const head: DocumentHead = {
   ],
 };
 
-export type Data = {
+type DbData = {
   id: string;
   from: string;
   to: string;
@@ -38,6 +38,30 @@ export type Data = {
   volume: number;
   statuses: { status: string; date: string; documents: string[] }[];
 };
+
+export type Data = {
+  id: string;
+  from: string;
+  to: string;
+  currency: string;
+  cost: number;
+  volume: number;
+  statuses: {
+    status: string;
+    date: string;
+    documents: {
+      url: string;
+      title?: string | null;
+      uploader: string;
+      visibility: string;
+      id: string;
+    }[];
+  }[];
+};
+
+function filterFalsy<T>(x: (T | undefined | null)[]) {
+  return x.filter((y) => y) as T[];
+}
 
 export const useData = routeLoader$(async (ev) => {
   const redis = getSharedMap(ev.sharedMap, "redis");
@@ -62,12 +86,44 @@ export const useData = routeLoader$(async (ev) => {
   );
   const redisShipmentKeys: (string[] | null)[] =
     await redis.mget(accountShipmentsKeys);
-  const shipmentKeys: string[] = (
-    redisShipmentKeys.filter((x) => x) as string[][]
-  ).flatMap((x) => `shipment:${x}`);
+  const shipmentKeys = filterFalsy(redisShipmentKeys).flatMap(
+    (x) => `shipment:${x}`,
+  );
 
-  const data: (Data | null)[] = await redis.mget(shipmentKeys);
-  return data.filter((x) => x) as Data[];
+  const dbData = (await redis.mget(shipmentKeys)).filter((x) => x) as DbData[];
+  const nerveCentre = getSharedMap(ev.sharedMap, "nerveCentre");
+  const documents = filterFalsy(
+    await Promise.all(
+      dbData
+        .flatMap((x) => x.statuses.flatMap((y) => y.documents))
+        .map((documentId) =>
+          nerveCentre
+            .GET("/admin/document", { params: { query: { documentId } } })
+            .then((x) => x.data),
+        ),
+    ),
+  );
+  const formattedDocuments = (documents as typeof documents).map(
+    (document) => ({
+      ...document.document,
+      url: document.url,
+    }),
+  );
+
+  // Map the nested document within each data object.
+  const data: Data[] = dbData.map((dataEntry) => ({
+    ...dataEntry,
+    statuses: dataEntry.statuses.map((status) => ({
+      ...status,
+      documents: filterFalsy(
+        status.documents.map((document) =>
+          formattedDocuments.find((x) => x.id === document),
+        ),
+      ),
+    })),
+  }));
+
+  return data;
 });
 
 const getServerHours = server$(function () {
@@ -234,8 +290,10 @@ export default component$(() => {
               {row.statuses.map((update, i) => (
                 <ul key={update.status} q:slot={`step-${i}`}>
                   {update.documents.map((doc) => (
-                    <li class="cursor-pointer hover:underline" key={doc}>
-                      <DocumentTitle documentId={doc} />
+                    <li key={doc.id}>
+                      <a href={doc.url} class="hover:underline" target="_blank">
+                        {doc.title}
+                      </a>
                     </li>
                   ))}
                 </ul>
@@ -246,8 +304,4 @@ export default component$(() => {
       </Table>
     </div>
   );
-});
-
-export const DocumentTitle = component$<{ documentId: string }>((props) => {
-  return <>{props.documentId}</>;
 });
