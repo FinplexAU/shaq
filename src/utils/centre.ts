@@ -35,6 +35,9 @@ const fetchNewToken = async (env: EnvGetter, redis: Redis) => {
     const response = await fetch(getRequiredEnv(env, "CENTRE_AUTH_URL"), {
       method: "post",
       body,
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
     });
     if (!response.ok) {
       console.error(
