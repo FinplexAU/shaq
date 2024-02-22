@@ -29,10 +29,6 @@ export const Table = component$((props: TableProps) => {
 
   useContextProvider(TableContext, ctx);
 
-  useTask$(({ track }) => {
-    ctx.columnCount = track(() => props.headings.length);
-  });
-
   return (
     <div class="relative overflow-x-auto">
       <table class="w-full text-left text-sm text-gray-500 rtl:text-right dark:text-gray-400">
