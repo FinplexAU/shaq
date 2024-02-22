@@ -92,7 +92,7 @@ export const useData = routeLoader$(async (ev) => {
 
   const dbData = (await redis.mget(shipmentKeys)).filter((x) => x) as DbData[];
   const nerveCentre = getSharedMap(ev.sharedMap, "nerveCentre");
-  console.log(dbData.flatMap((x) => x.statuses.flatMap((y) => y.documents)));
+
   const documents = filterFalsy(
     await Promise.all(
       dbData

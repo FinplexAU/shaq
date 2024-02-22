@@ -61,7 +61,6 @@ export const TableRow = component$<{ row: string[] }>((props) => {
     <>
       <tr
         onClick$={() => {
-          console.log(ctx.openRow, id.value);
           if (id.value == ctx.openRow) {
             ctx.openRow = null;
           } else {
