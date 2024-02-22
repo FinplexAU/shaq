@@ -150,6 +150,11 @@ export const onRequest: RequestHandler = async (ev) => {
       console.log(req.headers.get("Authorization"));
       return req;
     },
+    async onResponse(res) {
+      const body = await res.clone().json();
+      console.log(res.status, body);
+      return res;
+    },
   });
 
   ev.sharedMap.set("user", result.user);
