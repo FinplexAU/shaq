@@ -151,7 +151,7 @@ export const onRequest: RequestHandler = async (ev) => {
       return req;
     },
     async onResponse(res) {
-      const body = await res.clone().json();
+      const body = await res.clone().text();
       console.log(res.status, body);
       return res;
     },
