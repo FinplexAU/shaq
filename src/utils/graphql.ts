@@ -6,6 +6,15 @@ import type {
 import type { TypedDocumentNode } from "@graphql-typed-document-node/core";
 import { print } from "graphql";
 import { getRequiredEnv, getSharedMap } from "~/routes/plugin@auth";
+import { initGraphQLTada } from "gql.tada";
+import type { introspection } from "../graphql-env.gen.d.ts";
+
+export const graphql = initGraphQLTada<{
+  introspection: introspection;
+}>();
+
+export type { FragmentOf, ResultOf, VariablesOf } from "gql.tada";
+export { readFragment } from "gql.tada";
 
 export type GraphQlResponse<T> =
   | {

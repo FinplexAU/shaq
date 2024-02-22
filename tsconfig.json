@@ -20,6 +20,13 @@
     "paths": {
       "~/*": ["./src/*"],
     },
+    "plugins": [
+      {
+        "name": "@0no-co/graphqlsp",
+        "schema": "http://localhost:2013/graphql",
+        "tadaOutputLocation": "./src/graphql-env.gen.d.ts",
+      },
+    ],
   },
   "files": ["./.eslintrc.cjs"],
   "include": ["src", "./*.d.ts", "./*.config.ts", "scripts"],

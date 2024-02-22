@@ -1,12 +1,74 @@
-import { component$, useComputed$ } from "@builder.io/qwik";
-import { server$, type DocumentHead } from "@builder.io/qwik-city";
-import { Table } from "~/components/table";
+import {
+  component$,
+  useComputed$,
+  useSignal,
+  useTask$,
+} from "@builder.io/qwik";
+import {
+  server$,
+  type DocumentHead,
+  useLocation,
+  routeLoader$,
+} from "@builder.io/qwik-city";
+import { Table, TableRow } from "~/components/table";
 import { Timeline } from "~/components/timeline";
-import data from "../../../public/data.json";
 import { DieselTabs } from "~/components/tabs";
 import { useUser } from "./layout";
 import moment from "moment-timezone";
 import { isServer } from "@builder.io/qwik/build";
+import { getSharedMap } from "../plugin@auth";
+import { graphql, graphqlRequest } from "~/utils/graphql";
+
+export const head: DocumentHead = {
+  title: "Welcome to Shaq",
+  meta: [
+    {
+      name: "description",
+      content: "Shaq site description",
+    },
+  ],
+};
+
+export type Data = {
+  id: string;
+  from: string;
+  to: string;
+  currency: string;
+  cost: number;
+  volume: number;
+  statuses: { status: string; date: string; documents: string[] }[];
+};
+
+export const useData = routeLoader$(async (ev) => {
+  const redis = getSharedMap(ev.sharedMap, "redis");
+  const fansRequest = await graphqlRequest(
+    ev,
+    graphql(`
+      query Index {
+        accounts {
+          fan
+        }
+      }
+    `),
+    {},
+  );
+
+  if (!fansRequest.success) {
+    throw ev.error(500, "Failed to get accounts");
+  }
+
+  const accountShipmentsKeys = fansRequest.data.accounts.map(
+    (x) => `shipments:${x.fan}`,
+  );
+  const redisShipmentKeys: (string[] | null)[] =
+    await redis.mget(accountShipmentsKeys);
+  const shipmentKeys: string[] = (
+    redisShipmentKeys.filter((x) => x) as string[][]
+  ).flatMap((x) => `shipment:${x}`);
+
+  const data: (Data | null)[] = await redis.mget(shipmentKeys);
+  return data.filter((x) => x) as Data[];
+});
 
 const getServerHours = server$(function () {
   const timezone = this.request.headers.get("cf-timezone");
@@ -14,89 +76,81 @@ const getServerHours = server$(function () {
   else return moment().tz(timezone).hours();
 });
 
-export default component$(() => {
-  const user = useUser();
-  const rows = useComputed$(() => {
-    const output = [];
-    for (const row of data) {
-      const outputRow = [];
-      const latest = row.statusUpdates.sort(
-        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
-      );
+const toRow = (row: Data) => {
+  const outputRow = [];
+  const latest = row.statuses.sort(
+    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+  );
 
-      outputRow.push(latest[0].date);
-      outputRow.push(row.volume.toString());
-      outputRow.push(
-        (row.cost / row.volume).toLocaleString([], {
-          style: "currency",
-          currency: "USD",
-          currencyDisplay: "narrowSymbol",
-        }),
-      );
-      outputRow.push(
-        row.cost.toLocaleString([], {
-          style: "currency",
-          currency: "USD",
-          currencyDisplay: "narrowSymbol",
-        }),
-      );
-      outputRow.push(latest[0].status);
-      output.push(outputRow);
+  outputRow.push(latest[0].date);
+  outputRow.push(row.volume.toString());
+  outputRow.push(
+    (row.cost / row.volume).toLocaleString([], {
+      style: "currency",
+      currency: "USD",
+      currencyDisplay: "narrowSymbol",
+    }),
+  );
+  outputRow.push(
+    row.cost.toLocaleString([], {
+      style: "currency",
+      currency: "USD",
+      currencyDisplay: "narrowSymbol",
+    }),
+  );
+  outputRow.push(latest[0].status);
+  return outputRow;
+};
+
+export default component$(() => {
+  const loc = useLocation();
+
+  const user = useUser();
+  const data = useData();
+
+  const tabs = useComputed$(() => {
+    const output = {
+      "3-months": [] as Data[],
+      "next-month": [] as Data[],
+      "this-month": [] as Data[],
+      "in-transit": [] as Data[],
+      landed: [] as Data[],
+      settled: [] as Data[],
+      "year-to-date": [] as Data[],
+    };
+
+    for (const row of data.value) {
+      if (row.statuses.some((update) => update.status === "Settled")) {
+        output.settled.push(row);
+        continue;
+      }
+      if (row.statuses.some((update) => update.status === "Landed")) {
+        output.landed.push(row);
+        continue;
+      }
+      if (row.statuses.length === 1) {
+        continue;
+      }
+      output["in-transit"].push(row);
     }
     return output;
   });
 
-  const tabs = useComputed$(() => {
-    const output = {
-      "3-months": {
-        metricTons: 0,
-        cost: 0,
-      },
-      "next-month": {
-        metricTons: 0,
-        cost: 0,
-      },
-      "this-month": {
-        metricTons: 0,
-        cost: 0,
-      },
-      "in-transit": {
-        metricTons: 0,
-        cost: 0,
-      },
-      landed: {
-        metricTons: 0,
-        cost: 0,
-      },
-      settled: {
-        metricTons: 0,
-        cost: 0,
-      },
-      "year-to-date": {
-        metricTons: 0,
-        cost: 0,
-      },
-    };
+  const initialTab = loc.url.searchParams.get("filter");
 
-    for (const row of data) {
-      if (row.statusUpdates.some((update) => update.status === "Settled")) {
-        output["settled"].metricTons += row.volume;
-        output["settled"].cost += row.cost;
-        continue;
-      }
-      if (row.statusUpdates.some((update) => update.status === "Landed")) {
-        output["landed"].metricTons += row.volume;
-        output["landed"].cost += row.cost;
-        continue;
-      }
-      if (row.statusUpdates.length === 1) {
-        continue;
-        // const date = new Date(row.statusUpdates[0].date);
-      }
-      output["in-transit"].metricTons += row.volume;
-      output["in-transit"].cost += row.cost;
-    }
-    return output;
+  const selectedTab = useSignal(initialTab);
+
+  useTask$(({ track }) => {
+    const tab = track(selectedTab);
+
+    if (isServer) return;
+
+    const url = new URL(window.location.href);
+
+    if (tab) url.searchParams.set("filter", tab);
+    else url.searchParams.delete("filter");
+
+    window.history.replaceState({ path: url.toString() }, "", url.toString());
   });
 
   const greeting = useComputed$(async () => {
@@ -114,6 +168,11 @@ export default component$(() => {
     }
   });
 
+  const visibleRows = useComputed$(() => {
+    if (selectedTab.value === null) return data.value;
+    else return tabs.value[selectedTab.value as keyof typeof tabs.value];
+  });
+
   return (
     <div class="flex-1">
       <div class="mb-4 border-l-4 border-stone-800 px-2">
@@ -123,86 +182,72 @@ export default component$(() => {
         </h1>
       </div>
       <DieselTabs
+        selectedTab={selectedTab}
         tabs={[
           {
             label: "In 3 months",
             filter: "3-months",
-            cost: tabs.value["3-months"].cost,
-            metricTons: tabs.value["3-months"].metricTons,
+            rows: tabs.value["3-months"],
           },
           {
             label: "Next month",
             filter: "next-month",
-            cost: tabs.value["next-month"].cost,
-            metricTons: tabs.value["next-month"].metricTons,
+            rows: tabs.value["next-month"],
           },
           {
             label: "This month",
             filter: "this-month",
-            cost: tabs.value["this-month"].cost,
-            metricTons: tabs.value["this-month"].metricTons,
+            rows: tabs.value["this-month"],
           },
           {
             label: "In Transit",
             filter: "in-transit",
-            cost: tabs.value["in-transit"].cost,
-            metricTons: tabs.value["in-transit"].metricTons,
+            rows: tabs.value["in-transit"],
           },
           {
             label: "Landed",
             filter: "landed",
-            cost: tabs.value["landed"].cost,
-            metricTons: tabs.value["landed"].metricTons,
+            rows: tabs.value["landed"],
           },
           {
             label: "Settled",
             filter: "settled",
-            cost: tabs.value["settled"].cost,
-            metricTons: tabs.value["settled"].metricTons,
+            rows: tabs.value["settled"],
           },
           {
             label: "Year To Date",
             filter: "year-to-date",
-            cost: tabs.value["settled"].cost,
-            metricTons: tabs.value["settled"].metricTons,
+            rows: tabs.value["year-to-date"],
           },
         ]}
       ></DieselTabs>
-      <Table
-        headings={["Date", "Volume (MT)", "Price", "Cost", "Status"]}
-        rows={rows.value}
-      >
-        {data.map((row, i) => (
-          <Timeline
-            key={i}
-            q:slot={`row-${i}`}
-            steps={row.statusUpdates.map((update) => ({
-              date: new Date(update.date),
-              title: update.status,
-            }))}
-          >
-            {row.statusUpdates.map((update, i) => (
-              <ul key={update.status} q:slot={`step-${i}`}>
-                {update.documents.map((doc) => (
-                  <li class="cursor-pointer hover:underline" key={doc}>
-                    {doc}
-                  </li>
-                ))}
-              </ul>
-            ))}
-          </Timeline>
+      <Table headings={["Date", "Volume (MT)", "Price", "Cost", "Status"]}>
+        {visibleRows.value.map((row, i) => (
+          <TableRow row={toRow(row)} key={i}>
+            <Timeline
+              key={i}
+              steps={row.statuses.map((update) => ({
+                date: new Date(update.date),
+                title: update.status,
+              }))}
+            >
+              {row.statuses.map((update, i) => (
+                <ul key={update.status} q:slot={`step-${i}`}>
+                  {update.documents.map((doc) => (
+                    <li class="cursor-pointer hover:underline" key={doc}>
+                      <DocumentTitle documentId={doc} />
+                    </li>
+                  ))}
+                </ul>
+              ))}
+            </Timeline>
+          </TableRow>
         ))}
       </Table>
     </div>
   );
 });
 
-export const head: DocumentHead = {
-  title: "Welcome to Shaq",
-  meta: [
-    {
-      name: "description",
-      content: "Shaq site description",
-    },
-  ],
-};
+export const DocumentTitle = component$<{ documentId: string }>((props) => {
+  return <>{props.documentId}</>;
+});

@@ -7,68 +7,64 @@ import {
   zod$,
 } from "@builder.io/qwik-city";
 import { Error } from "~/components/error";
-import { graphqlAction, graphqlLoader } from "~/utils/graphql";
-import { graphql } from "~/__generated__";
+import { graphql, graphqlAction, graphqlLoader } from "~/utils/graphql";
 import { component$ } from "@builder.io/qwik";
 import { Button } from "~/components/button";
-import type { DetailsQuery } from "~/__generated__/graphql";
 import { Spinner } from "~/components/spinner";
 import { useLogOut, useUser } from "../layout";
+import type { ResultOf } from "gql.tada";
 
-export const useGqlDetails = routeLoader$(
-  graphqlLoader(
-    graphql(`
-      query Details {
-        user {
-          name
-          nickname
-          email
-          emailVerified
+const gqlQuery = graphql(`
+  query Details {
+    user {
+      name
+      nickname
+      email
+      emailVerified
+    }
+    entities {
+      fen
+      company
+      executiveName
+      legalType
+      name
+      displayName
+      activeState
+      statuses {
+        name
+        value
+      }
+      accounts {
+        fan
+        displayName
+      }
+      contacts {
+        __typename
+        shortName
+        beneficialOwner
+        status
+        ... on PersonContact {
+          personTitle
+          personFirstName
+          personInits
+          personFamilyName
+          personBirthdate
         }
-        entities {
-          fen
-          company
-          executiveName
-          legalType
-          name
-          displayName
-          activeState
-          statuses {
-            name
-            value
-          }
-          accounts {
-            fan
-            displayName
-          }
-          contacts {
-            __typename
-            shortName
-            beneficialOwner
-            status
-            ... on PersonContact {
-              personTitle
-              personFirstName
-              personInits
-              personFamilyName
-              personBirthdate
-            }
-            ... on OrganisationContact {
-              organisationName
-            }
-            contactMethods {
-              __typename
-              contactType
-              detail
-              sortSeq
-            }
-          }
+        ... on OrganisationContact {
+          organisationName
+        }
+        contactMethods {
+          __typename
+          contactType
+          detail
+          sortSeq
         }
       }
-    `),
-    {},
-  ),
-);
+    }
+  }
+`);
+
+export const useGqlDetails = routeLoader$(graphqlLoader(gqlQuery, {}));
 
 export const useRequestEmailVerificationFormAction = routeAction$(
   graphqlAction(
@@ -190,7 +186,7 @@ export default component$(() => {
 });
 
 export const EntityCard = component$(
-  (props: { entity: DetailsQuery["entities"][number] }) => {
+  (props: { entity: ResultOf<typeof gqlQuery>["entities"][number] }) => {
     const details = useGqlDetails();
 
     if (details.value.failed == true) {
