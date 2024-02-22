@@ -2,9 +2,9 @@ import type { RequestHandler } from "@builder.io/qwik-city";
 
 export const onGet: RequestHandler = async (ev) => {
   ev.cacheControl({
+    public: true,
     staleWhileRevalidate: 60 * 60 * 24 * 7,
     maxAge: 60 * 60 * 24,
-    public: true,
     sMaxAge: 60 * 60 * 24,
   });
 
@@ -23,15 +23,13 @@ export const onGet: RequestHandler = async (ev) => {
   try {
     const parsedUrl = new URL(url);
     try {
-      const r = await fetch(parsedUrl);
-      const headers = new Headers(r.headers);
-      headers.delete("Access-Control-Allow-Origin");
-      const response = new Response(r.body, {
-        headers,
-        status: r.status,
-        statusText: r.statusText,
-      });
-      ev.send(response);
+      const response = await fetch(parsedUrl);
+      const body = new Uint8Array(await response.arrayBuffer());
+      const contentType = response.headers.get("Content-Type");
+
+      if (contentType) ev.headers.set("Content-Type", contentType);
+
+      ev.send(response.status, body);
     } catch (e) {
       console.error(e);
       ev.send(500, "Internal Server Error");
