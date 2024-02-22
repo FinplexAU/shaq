@@ -1,7 +1,9 @@
 import {
   component$,
   useComputed$,
+  useContextProvider,
   useSignal,
+  useStore,
   useTask$,
 } from "@builder.io/qwik";
 import {
@@ -10,14 +12,15 @@ import {
   useLocation,
   routeLoader$,
 } from "@builder.io/qwik-city";
-import { Table, TableRow } from "~/components/table";
-import { Timeline } from "~/components/timeline";
+import { Table, TableContext, TableRow } from "~/components/table";
+import { Timeline, TimelineItem } from "~/components/timeline";
 import { DieselTabs } from "~/components/tabs";
 import { useUser } from "./layout";
 import moment from "moment-timezone";
 import { isServer } from "@builder.io/qwik/build";
 import { getSharedMap } from "../plugin";
 import { graphql, graphqlRequest } from "~/utils/graphql";
+import { UpstashRedisAdapter } from "~/redis/adapter";
 
 export const head: DocumentHead = {
   title: "Welcome to Shaq",
@@ -230,6 +233,8 @@ export default component$(() => {
     else return tabs.value[selectedTab.value as keyof typeof tabs.value];
   });
 
+  const headings = ["Date", "Volume (MT)", "Price", "Cost", "Status"];
+
   return (
     <div class="flex-1">
       <div class="mb-4 border-l-4 border-stone-800 px-2">
@@ -278,27 +283,34 @@ export default component$(() => {
           },
         ]}
       ></DieselTabs>
-      <Table headings={["Date", "Volume (MT)", "Price", "Cost", "Status"]}>
-        {visibleRows.value.map((row, i) => (
-          <TableRow row={toRow(row)} key={i}>
-            <Timeline
-              key={i}
-              steps={row.statuses.map((update) => ({
-                date: new Date(update.date),
-                title: update.status,
-              }))}
-            >
-              {row.statuses.map((update, i) => (
-                <ul key={update.status} q:slot={`step-${i}`}>
-                  {update.documents.map((doc) => (
-                    <li key={doc.id}>
-                      <a href={doc.url} class="hover:underline" target="_blank">
-                        {doc.title}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              ))}
+      <Table headings={headings}>
+        {visibleRows.value.map((row) => (
+          <TableRow row={toRow(row)} key={row.id}>
+            <Timeline>
+              {row.statuses
+                .map((step) => ({
+                  ...step,
+                  title: step.status,
+                  date: new Date(step.date),
+                }))
+                .sort((a, b) => a.date.getTime() - b.date.getTime())
+                .map((step) => (
+                  <TimelineItem key={step.status} step={step}>
+                    <ul key={step.status}>
+                      {step.documents.map((doc) => (
+                        <li key={doc.id}>
+                          <a
+                            href={doc.url}
+                            class="hover:underline"
+                            target="_blank"
+                          >
+                            {doc.title}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </TimelineItem>
+                ))}
             </Timeline>
           </TableRow>
         ))}

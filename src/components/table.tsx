@@ -13,14 +13,15 @@ interface TableProps {
   headings: string[];
 }
 
-type TableContext = {
+export type TableContext = {
   openRow: number | null;
   count: number;
   columnCount: number;
 };
-const TableContext = createContextId<TableContext>("components/table");
+export const TableContext = createContextId<TableContext>("components/table");
 
 export const Table = component$((props: TableProps) => {
+  // Qwik has some issue where it just fails if the context is in the table component, despite that seeming like it should work.
   const ctx = useStore<TableContext>({
     openRow: null,
     count: 0,
@@ -28,7 +29,7 @@ export const Table = component$((props: TableProps) => {
   });
 
   useContextProvider(TableContext, ctx);
-
+  useContext(TableContext);
   return (
     <div class="relative overflow-x-auto">
       <table class="w-full text-left text-sm text-gray-500 rtl:text-right dark:text-gray-400">
