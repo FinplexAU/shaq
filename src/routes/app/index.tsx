@@ -1,9 +1,7 @@
 import {
   component$,
   useComputed$,
-  useContextProvider,
   useSignal,
-  useStore,
   useTask$,
 } from "@builder.io/qwik";
 import {
@@ -12,7 +10,7 @@ import {
   useLocation,
   routeLoader$,
 } from "@builder.io/qwik-city";
-import { Table, TableContext, TableRow } from "~/components/table";
+import { Table, TableRow } from "~/components/table";
 import { Timeline, TimelineItem } from "~/components/timeline";
 import { DieselTabs } from "~/components/tabs";
 import { useUser } from "./layout";
@@ -20,7 +18,6 @@ import moment from "moment-timezone";
 import { isServer } from "@builder.io/qwik/build";
 import { getSharedMap } from "../plugin";
 import { graphql, graphqlRequest } from "~/utils/graphql";
-import { UpstashRedisAdapter } from "~/redis/adapter";
 
 export const head: DocumentHead = {
   title: "Welcome to Shaq",

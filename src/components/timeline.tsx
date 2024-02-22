@@ -1,4 +1,4 @@
-import { Slot, component$, useComputed$ } from "@builder.io/qwik";
+import { Slot, component$ } from "@builder.io/qwik";
 
 type TimelineStep = {
   date: Date;
