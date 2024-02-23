@@ -31,16 +31,15 @@ const data = {
 };
 
 writeFileSync("./dist/_routes.json", JSON.stringify(data));
-const y = readFileSync("./dist/_headers");
-const x = y.toString().split("\n");
-console.log(x);
+
+const headers = readFileSync("./dist/_headers").toString().split("\n");
 
 for (const exclude of generatedExcludes) {
-  x.push(exclude);
-  x.push(
+  headers.push(exclude);
+  headers.push(
     "  Cache-Control: public, max-age=3600, s-maxage=3600, stale-while-revalidate=604800",
   );
 
-  x.push("");
+  headers.push("");
 }
-writeFileSync("./dist/_headers", x.join("\n"));
+writeFileSync("./dist/_headers", headers.join("\n"));
