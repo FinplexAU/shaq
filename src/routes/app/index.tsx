@@ -17,7 +17,7 @@ import { useUser } from "./layout";
 import moment from "moment-timezone";
 import { isServer } from "@builder.io/qwik/build";
 import { getSharedMap } from "../plugin";
-import { graphql, graphqlRequest } from "~/utils/graphql";
+import { graphql, graphqlLoader } from "~/utils/graphql";
 
 export const head: DocumentHead = {
   title: "Welcome to Shaq",
@@ -62,32 +62,34 @@ export type Data = {
 function filterFalsy<T>(x: (T | undefined | null)[]) {
   return x.filter((y) => y) as T[];
 }
+const gqlQuery = graphql(`
+  query Index {
+    entities {
+      accounts {
+        fan
+      }
+    }
+  }
+`);
+
+export const useGqlIndex = routeLoader$(graphqlLoader(gqlQuery, {}));
 
 export const useData = routeLoader$(async (ev) => {
   const redis = getSharedMap(ev.sharedMap, "redis");
-  const fansRequest = await graphqlRequest(
-    ev,
-    graphql(`
-      query Index {
-        accounts {
-          fan
-        }
-      }
-    `),
-    {},
-  );
 
-  if (!fansRequest.success) {
+  const fans = await ev.resolveValue(useGqlIndex);
+
+  if (!fans.success) {
     throw ev.error(500, "Failed to get accounts");
   }
 
-  if (fansRequest.data.accounts.length === 0) {
+  const accounts = fans.entities.flatMap((x) => x.accounts);
+
+  if (accounts.length === 0) {
     return [];
   }
 
-  const accountShipmentsKeys = fansRequest.data.accounts.map(
-    (x) => `shipments:${x.fan}`,
-  );
+  const accountShipmentsKeys = accounts.map((x) => `shipments:${x.fan}`);
   const redisShipmentKeys: (string[] | null)[] =
     await redis.mget(accountShipmentsKeys);
   const shipmentKeys = filterFalsy(redisShipmentKeys).flatMap(
@@ -164,9 +166,49 @@ const toRow = (row: Data) => {
 };
 
 export default component$(() => {
+  const user = useUser();
+  const gql = useGqlIndex();
+
+  const entities = useComputed$(() => gql.value.entities ?? []);
+  const accounts = useComputed$(() =>
+    entities.value.flatMap((x) => x.accounts),
+  );
+
+  const greeting = useComputed$(async () => {
+    let curHr;
+
+    if (isServer) curHr = await getServerHours();
+    else curHr = new Date().getHours();
+
+    if (curHr < 12) {
+      return "Good Morning";
+    } else if (curHr < 18) {
+      return "Good Afternoon";
+    } else {
+      return "Good Evening";
+    }
+  });
+
+  return (
+    <div class="flex-1">
+      <div class="mb-4 border-l-4 border-stone-800 px-2">
+        <span>{greeting},</span>
+        <h1 class="border-l-stone-300 text-4xl font-semibold">
+          {user.value.nickname || user.value.given_name || user.value.name}
+        </h1>
+      </div>
+      {entities.value.length !== 0 && accounts.value.length !== 0 ? (
+        <HomeDisplay />
+      ) : (
+        <RequireOnboarding hasEntities={!!entities.value.length} />
+      )}
+    </div>
+  );
+});
+
+export const HomeDisplay = component$(() => {
   const loc = useLocation();
 
-  const user = useUser();
   const data = useData();
 
   const tabs = useComputed$(() => {
@@ -213,22 +255,6 @@ export default component$(() => {
 
     window.history.replaceState({ path: url.toString() }, "", url.toString());
   });
-
-  const greeting = useComputed$(async () => {
-    let curHr;
-
-    if (isServer) curHr = await getServerHours();
-    else curHr = new Date().getHours();
-
-    if (curHr < 12) {
-      return "Good Morning";
-    } else if (curHr < 18) {
-      return "Good Afternoon";
-    } else {
-      return "Good Evening";
-    }
-  });
-
   const visibleRows = useComputed$(() => {
     if (selectedTab.value === null) return data.value;
     else return tabs.value[selectedTab.value as keyof typeof tabs.value];
@@ -237,13 +263,7 @@ export default component$(() => {
   const headings = ["Date", "Volume (MT)", "Price", "Cost", "Status"];
 
   return (
-    <div class="flex-1">
-      <div class="mb-4 border-l-4 border-stone-800 px-2">
-        <span>{greeting},</span>
-        <h1 class="border-l-stone-300 text-4xl font-semibold">
-          {user.value.nickname || user.value.given_name || user.value.name}
-        </h1>
-      </div>
+    <>
       <DieselTabs
         selectedTab={selectedTab}
         tabs={[
@@ -316,6 +336,23 @@ export default component$(() => {
           </TableRow>
         ))}
       </Table>
+    </>
+  );
+});
+
+export const RequireOnboarding = component$<{
+  hasEntities: boolean;
+}>((props) => {
+  return (
+    <div class="text-lg">
+      {props.hasEntities && <p>You do not have any accounts set up.</p>}
+      <p>
+        Please contact us at{" "}
+        <a href="mailto:nerve@finplex.com.au" class="font-semibold underline">
+          nerve@finplex.com.au
+        </a>{" "}
+        to begin the onboarding process.
+      </p>
     </div>
   );
 });

@@ -156,7 +156,7 @@ export default component$(() => {
               value={details.value.user?.email}
             ></input>
             {details.value.user &&
-              details.value.user.emailVerified === true &&
+              !details.value.user.emailVerified &&
               !verifyEmail.value?.success && (
                 <Form action={verifyEmail}>
                   <Button type="submit" disabled={verifyEmail.isRunning}>

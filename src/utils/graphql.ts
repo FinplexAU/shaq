@@ -11,6 +11,10 @@ import type { introspection } from "../graphql-env.gen.d.ts";
 
 export const graphql = initGraphQLTada<{
   introspection: introspection;
+  scalars: {
+    ID: string;
+    Date: string;
+  };
 }>();
 
 export type { FragmentOf, ResultOf, VariablesOf } from "gql.tada";
