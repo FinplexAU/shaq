@@ -271,7 +271,10 @@ export const HomeDisplay = component$(() => {
     for (const row of data.value) {
       if (row.settlementDate) {
         const date = row.settlementDate;
-        if (date.getTime() < threeMonths.getTime()) {
+        if (
+          date.getTime() < threeMonths.getTime() &&
+          date.getTime() > currentDate.getTime()
+        ) {
           output["3-months"].push(row);
         }
         if (
