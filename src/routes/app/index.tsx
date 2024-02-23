@@ -19,7 +19,7 @@ import { isServer } from "@builder.io/qwik/build";
 import { getSharedMap } from "../plugin";
 import { graphql, graphqlLoader } from "~/utils/graphql";
 import { dateString } from "~/utils/dates";
-import { HiArrowDownTraySolid } from "@qwikest/icons/heroicons";
+import { HiArrowDownTraySolid, HiEyeSolid } from "@qwikest/icons/heroicons";
 
 export const head: DocumentHead = {
   title: "Welcome to Shaq",
@@ -346,11 +346,14 @@ export const HomeDisplay = component$(() => {
                           </a>
                           <a
                             href={getFileDownloadUrl(loc.url, doc.url)}
-                            class="ml-1"
+                            class="ml-2"
                             download={doc.title?.replaceAll(" ", "-")}
                             target="_blank"
                           >
                             <HiArrowDownTraySolid class="align-icon inline" />
+                          </a>
+                          <a class="ml-1" href={doc.url} target="_blank">
+                            <HiEyeSolid class="align-icon inline" />
                           </a>
                         </li>
                       ))}
