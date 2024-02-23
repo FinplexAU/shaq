@@ -81,10 +81,13 @@ export const useData = routeLoader$(async (ev) => {
     throw ev.error(500, "Failed to get accounts");
   }
 
+  if (fansRequest.data.accounts.length === 0) {
+    return [];
+  }
+
   const accountShipmentsKeys = fansRequest.data.accounts.map(
     (x) => `shipments:${x.fan}`,
   );
-  console.log(accountShipmentsKeys);
   const redisShipmentKeys: (string[] | null)[] =
     await redis.mget(accountShipmentsKeys);
   const shipmentKeys = filterFalsy(redisShipmentKeys).flatMap(
