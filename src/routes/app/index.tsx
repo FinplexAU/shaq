@@ -84,6 +84,7 @@ export const useData = routeLoader$(async (ev) => {
   const accountShipmentsKeys = fansRequest.data.accounts.map(
     (x) => `shipments:${x.fan}`,
   );
+  console.log(accountShipmentsKeys);
   const redisShipmentKeys: (string[] | null)[] =
     await redis.mget(accountShipmentsKeys);
   const shipmentKeys = filterFalsy(redisShipmentKeys).flatMap(
