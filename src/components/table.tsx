@@ -21,13 +21,16 @@ export type TableContext = {
 export const TableContext = createContextId<TableContext>("components/table");
 
 export const Table = component$((props: TableProps) => {
-  // Qwik has some issue where it just fails if the context is in the table component, despite that seeming like it should work.
   const ctx = useStore<TableContext>({
     openRow: null,
     count: 0,
     columnCount: props.headings.length,
   });
 
+  // Qwik has some issue where it just fails if the context is in the table component, despite that seeming like it should work.
+  // This is because qwik for some reason thinks it can remove the context provider as it doesn't detect it being used.
+  // The workaround for this is to consume the context immediately to avoid its removal.
+  // https://github.com/BuilderIO/qwik/issues/5411
   useContextProvider(TableContext, ctx);
   useContext(TableContext);
   return (
