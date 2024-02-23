@@ -6,6 +6,7 @@ const generateExclude = (path) => {
   for (const item of folder) {
     if (item === "build") continue;
     if (item === "assets") continue;
+    if (item === "404.html") continue;
     if (item.startsWith("_")) continue;
 
     const itemPath = path + item;
