@@ -58,7 +58,7 @@ export const DieselTabs = component$((props: TabsProps) => {
           >
             <li
               class={[
-                "relative inline-block w-full flex-1 p-4 text-black before:absolute  before:bottom-0 before:left-0 before:-z-10 before:h-[var(--oil-height)] before:w-full before:bg-stone-200 before:content-['']",
+                "relative inline-block h-full w-full flex-1 p-4 text-black before:absolute  before:bottom-0 before:left-0 before:-z-10 before:h-[var(--oil-height)] before:w-full before:bg-stone-200 before:content-['']",
                 {
                   "active inline-block bg-stone-700 p-4 !text-white before:bg-stone-600 ":
                     props.selectedTab.value === tab.filter,
