@@ -1,4 +1,5 @@
 import { Slot, component$ } from "@builder.io/qwik";
+import { dateString } from "~/utils/dates";
 
 type TimelineStep = {
   date: Date;
@@ -19,9 +20,7 @@ export const TimelineItem = component$<{ step: TimelineStep }>((props) => {
     <li class="mb-10 ms-4">
       <div class="absolute -start-1.5 mt-1.5 h-3 w-3 rounded-full border border-white bg-gray-200 dark:border-gray-900 dark:bg-gray-700"></div>
       <time class="mb-1 text-sm font-normal leading-none text-gray-400 dark:text-gray-500">
-        {props.step.date.toLocaleDateString([], {
-          dateStyle: "short",
-        })}
+        {dateString(props.step.date)}
       </time>
       <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
         {props.step.title}

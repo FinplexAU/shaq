@@ -18,6 +18,7 @@ import moment from "moment-timezone";
 import { isServer } from "@builder.io/qwik/build";
 import { getSharedMap } from "../plugin";
 import { graphql, graphqlLoader } from "~/utils/graphql";
+import { dateString } from "~/utils/dates";
 
 export const head: DocumentHead = {
   title: "Welcome to Shaq",
@@ -145,7 +146,7 @@ const toRow = (row: Data) => {
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
   );
 
-  outputRow.push(latest[0].date);
+  outputRow.push(dateString(new Date(latest[0].date)));
   outputRow.push(row.volume.toString());
   outputRow.push(
     (row.cost / row.volume).toLocaleString([], {
