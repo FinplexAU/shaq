@@ -32,6 +32,7 @@ const data = {
 };
 
 writeFileSync("./dist/_routes.json", JSON.stringify(data));
+console.log("Generated _routes.json");
 
 const headers = readFileSync("./dist/_headers").toString().split("\n");
 
@@ -44,3 +45,5 @@ for (const exclude of generatedExcludes) {
   headers.push("");
 }
 writeFileSync("./dist/_headers", headers.join("\n"));
+
+console.log("Generated _headers");
