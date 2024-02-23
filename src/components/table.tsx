@@ -6,7 +6,6 @@ import {
   useContextProvider,
   useSignal,
   useStore,
-  useTask$,
 } from "@builder.io/qwik";
 
 interface TableProps {
@@ -15,7 +14,6 @@ interface TableProps {
 
 export type TableContext = {
   openRow: number | null;
-  count: number;
   columnCount: number;
 };
 export const TableContext = createContextId<TableContext>("components/table");
@@ -23,7 +21,6 @@ export const TableContext = createContextId<TableContext>("components/table");
 export const Table = component$((props: TableProps) => {
   const ctx = useStore<TableContext>({
     openRow: null,
-    count: 0,
     columnCount: props.headings.length,
   });
 
@@ -56,10 +53,7 @@ export const Table = component$((props: TableProps) => {
 export const TableRow = component$<{ row: string[] }>((props) => {
   const ctx = useContext(TableContext);
 
-  useTask$(() => {
-    ctx.count++;
-  });
-  const id = useSignal(ctx.count);
+  const id = useSignal(Math.random());
 
   return (
     <>
