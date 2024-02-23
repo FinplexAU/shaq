@@ -47,10 +47,17 @@ export const graphqlRequest = async <T, V extends Record<string, unknown>>(
 ): Promise<GraphQlResponse<T>> => {
   try {
     const query = print(queryDocument);
-    const access_token = getSharedMap(request.sharedMap, "session").accessToken;
-    if (!access_token) {
-      console.error("access_token not found");
-      return { success: false, errors: [] };
+
+    let access_token;
+    if (import.meta.env.DEV) {
+      const user = getSharedMap(request.sharedMap, "user");
+      access_token = user.fin;
+    } else {
+      access_token = getSharedMap(request.sharedMap, "session").accessToken;
+      if (!access_token) {
+        console.error("access_token not found");
+        return { success: false, errors: [] };
+      }
     }
 
     noCache ||= request.url.searchParams.get("noCache") === "true";
