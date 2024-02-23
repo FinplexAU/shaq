@@ -42,24 +42,26 @@ export const formatStatus: Record<DieselStatus, string> = {
 
 type DbData = {
   id: string;
-  from: string;
-  to: string;
+  from: string | null;
+  to: string | null;
   currency: string;
   cost: number;
   volume: number;
+  settlementDate?: string;
   statuses: { status: DieselStatus; date: string; documents: string[] }[];
 };
 
 export type Data = {
   id: string;
-  from: string;
-  to: string;
+  from: string | null;
+  to: string | null;
   currency: string;
   cost: number;
   volume: number;
+  settlementDate?: Date;
   statuses: {
     status: DieselStatus;
-    date: string;
+    date: Date;
     documents: {
       url: string;
       title?: string | null;
@@ -103,9 +105,9 @@ export const useData = routeLoader$(async (ev) => {
   const accountShipmentsKeys = accounts.map((x) => `shipments:${x.fan}`);
   const redisShipmentKeys: (string[] | null)[] =
     await redis.mget(accountShipmentsKeys);
-  const shipmentKeys = filterFalsy(redisShipmentKeys).flatMap(
-    (x) => `shipment:${x}`,
-  );
+  const shipmentKeys = filterFalsy(redisShipmentKeys)
+    .flat()
+    .flatMap((x) => `shipment:${x}`);
 
   const dbData = (await redis.mget(shipmentKeys)).filter((x) => x) as DbData[];
   const nerveCentre = getSharedMap(ev.sharedMap, "nerveCentre");
@@ -129,17 +131,38 @@ export const useData = routeLoader$(async (ev) => {
   );
 
   // Map the nested document within each data object.
-  const data: Data[] = dbData.map((dataEntry) => ({
-    ...dataEntry,
-    statuses: dataEntry.statuses.map((status) => ({
-      ...status,
-      documents: filterFalsy(
-        status.documents.map((document) =>
-          formattedDocuments.find((x) => x.id === document),
-        ),
-      ),
-    })),
-  }));
+  const data: Data[] = dbData
+    .map((dataEntry) => ({
+      ...dataEntry,
+      settlementDate: dataEntry.settlementDate
+        ? new Date(dataEntry.settlementDate)
+        : undefined,
+      statuses: dataEntry.statuses
+        .map((status) => ({
+          ...status,
+          date: new Date(status.date),
+          documents: filterFalsy(
+            status.documents.map((document) =>
+              formattedDocuments.find((x) => x.id === document),
+            ),
+          ),
+        }))
+        .sort((a, b) => b.date.getTime() - a.date.getTime()),
+    }))
+    .sort((a, b) => {
+      const aDate = a.settlementDate ?? a.statuses.at(0)?.date;
+      const bDate = b.settlementDate ?? b.statuses.at(0)?.date;
+      if (aDate && bDate) {
+        return bDate.getTime() - aDate.getTime();
+      }
+      if (bDate) {
+        return 1;
+      }
+      if (aDate) {
+        return -1;
+      }
+      return 0;
+    });
 
   return data;
 });
@@ -152,11 +175,11 @@ const getServerHours = server$(function () {
 
 const toRow = (row: Data) => {
   const outputRow = [];
-  const latest = row.statuses.sort(
-    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
-  );
+  const latest = row.statuses.at(0);
 
-  outputRow.push(dateString(new Date(latest[0].date)));
+  const settlementDate = row.settlementDate;
+  outputRow.push(dateString(settlementDate ?? latest?.date) || "No Data");
+
   outputRow.push(row.volume.toString());
   outputRow.push(
     (row.cost / row.volume).toLocaleString([], {
@@ -172,7 +195,7 @@ const toRow = (row: Data) => {
       currencyDisplay: "narrowSymbol",
     }),
   );
-  outputRow.push(formatStatus[latest[0].status]);
+  outputRow.push(latest ? formatStatus[latest.status] : "No Data");
   return outputRow;
 };
 
@@ -239,7 +262,37 @@ export const HomeDisplay = component$(() => {
       "year-to-date": [] as Data[],
     };
 
+    const threeMonths = new Date();
+    threeMonths.setUTCMonth(threeMonths.getUTCMonth() + 3);
+    const nextMonth = new Date();
+    nextMonth.setUTCMonth(nextMonth.getUTCMonth() + 1);
+    const currentDate = new Date();
+
     for (const row of data.value) {
+      if (row.settlementDate) {
+        const date = row.settlementDate;
+        if (date.getTime() < threeMonths.getTime()) {
+          output["3-months"].push(row);
+        }
+        if (
+          date.getUTCFullYear() === currentDate.getUTCFullYear() &&
+          date.getUTCMonth() === currentDate.getUTCMonth()
+        ) {
+          output["this-month"].push(row);
+        }
+        if (
+          date.getUTCFullYear() === nextMonth.getUTCFullYear() &&
+          date.getUTCMonth() === nextMonth.getUTCMonth()
+        ) {
+          output["next-month"].push(row);
+        }
+        if (
+          date.getUTCFullYear() === currentDate.getUTCFullYear() &&
+          date.getTime() < currentDate.getTime()
+        ) {
+          output["year-to-date"].push(row);
+        }
+      }
       if (row.statuses.some((update) => update.status === "settled")) {
         output.settled.push(row);
         continue;
@@ -248,7 +301,7 @@ export const HomeDisplay = component$(() => {
         output.landed.push(row);
         continue;
       }
-      if (row.statuses.length === 1) {
+      if (row.statuses.length <= 1) {
         continue;
       }
       output["in-transit"].push(row);
@@ -285,11 +338,6 @@ export const HomeDisplay = component$(() => {
         selectedTab={selectedTab}
         tabs={[
           {
-            label: "In 3 months",
-            filter: "3-months",
-            rows: tabs.value["3-months"],
-          },
-          {
             label: "Next month",
             filter: "next-month",
             rows: tabs.value["next-month"],
@@ -298,6 +346,11 @@ export const HomeDisplay = component$(() => {
             label: "This month",
             filter: "this-month",
             rows: tabs.value["this-month"],
+          },
+          {
+            label: "In the next 3 months",
+            filter: "3-months",
+            rows: tabs.value["3-months"],
           },
           {
             label: "In Transit",
@@ -325,13 +378,16 @@ export const HomeDisplay = component$(() => {
         {visibleRows.value.map((row) => (
           <TableRow row={toRow(row)} key={row.id}>
             <Timeline>
+              {row.statuses.length === 0 && (
+                <TimelineItem
+                  step={{ date: new Date(), title: "No Data" }}
+                ></TimelineItem>
+              )}
               {row.statuses
                 .map((step) => ({
                   ...step,
                   title: formatStatus[step.status],
-                  date: new Date(step.date),
                 }))
-                .sort((a, b) => a.date.getTime() - b.date.getTime())
                 .map((step) => (
                   <TimelineItem key={step.status} step={step}>
                     <ul key={step.status}>
