@@ -19,6 +19,7 @@ import { isServer } from "@builder.io/qwik/build";
 import { getSharedMap } from "../plugin";
 import { graphql, graphqlLoader } from "~/utils/graphql";
 import { dateString } from "~/utils/dates";
+import { HiArrowDownTraySolid } from "@qwikest/icons/heroicons";
 
 export const head: DocumentHead = {
   title: "Welcome to Shaq",
@@ -30,6 +31,15 @@ export const head: DocumentHead = {
   ],
 };
 
+type DieselStatus = "trans-in" | "settled" | "loaded" | "landed" | "shipped";
+export const formatStatus: Record<DieselStatus, string> = {
+  "trans-in": "Transfer In",
+  landed: "Landed",
+  loaded: "Loaded",
+  shipped: "Shipped",
+  settled: "Settled",
+};
+
 type DbData = {
   id: string;
   from: string;
@@ -37,7 +47,7 @@ type DbData = {
   currency: string;
   cost: number;
   volume: number;
-  statuses: { status: string; date: string; documents: string[] }[];
+  statuses: { status: DieselStatus; date: string; documents: string[] }[];
 };
 
 export type Data = {
@@ -48,7 +58,7 @@ export type Data = {
   cost: number;
   volume: number;
   statuses: {
-    status: string;
+    status: DieselStatus;
     date: string;
     documents: {
       url: string;
@@ -162,7 +172,7 @@ const toRow = (row: Data) => {
       currencyDisplay: "narrowSymbol",
     }),
   );
-  outputRow.push(latest[0].status);
+  outputRow.push(formatStatus[latest[0].status]);
   return outputRow;
 };
 
@@ -207,6 +217,12 @@ export default component$(() => {
   );
 });
 
+const getFileDownloadUrl = (loc: URL, fileUrl: string) => {
+  const url = new URL("/prx", loc);
+  url.searchParams.set("url", fileUrl);
+  return url.toString();
+};
+
 export const HomeDisplay = component$(() => {
   const loc = useLocation();
 
@@ -224,11 +240,11 @@ export const HomeDisplay = component$(() => {
     };
 
     for (const row of data.value) {
-      if (row.statuses.some((update) => update.status === "Settled")) {
+      if (row.statuses.some((update) => update.status === "settled")) {
         output.settled.push(row);
         continue;
       }
-      if (row.statuses.some((update) => update.status === "Landed")) {
+      if (row.statuses.some((update) => update.status === "landed")) {
         output.landed.push(row);
         continue;
       }
@@ -312,7 +328,7 @@ export const HomeDisplay = component$(() => {
               {row.statuses
                 .map((step) => ({
                   ...step,
-                  title: step.status,
+                  title: formatStatus[step.status],
                   date: new Date(step.date),
                 }))
                 .sort((a, b) => a.date.getTime() - b.date.getTime())
@@ -327,6 +343,14 @@ export const HomeDisplay = component$(() => {
                             target="_blank"
                           >
                             {doc.title}
+                          </a>
+                          <a
+                            href={getFileDownloadUrl(loc.url, doc.url)}
+                            class="ml-1"
+                            download={doc.title?.replaceAll(" ", "-")}
+                            target="_blank"
+                          >
+                            <HiArrowDownTraySolid class="align-icon inline" />
                           </a>
                         </li>
                       ))}

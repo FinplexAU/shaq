@@ -9,7 +9,7 @@ export type AppRoutes =
   | "/app/cash/"
   | "/app/map/"
   | "/app/user/"
-  | "/img/";
+  | "/prx/";
 
 export interface AppRouteMap {
   "/": {};
@@ -18,7 +18,7 @@ export interface AppRouteMap {
   "/app/cash/": {};
   "/app/map/": {};
   "/app/user/": {};
-  "/img/": {};
+  "/prx/": {};
 }
 
 export interface AppRouteParamsFunction {
@@ -28,7 +28,7 @@ export interface AppRouteParamsFunction {
   (route: "/app/cash/", params?: {}): string;
   (route: "/app/map/", params?: {}): string;
   (route: "/app/user/", params?: {}): string;
-  (route: "/img/", params?: {}): string;
+  (route: "/prx/", params?: {}): string;
 }
 
 export type AppLinkProps =
@@ -38,4 +38,4 @@ export type AppLinkProps =
   | { route: "/app/cash/" }
   | { route: "/app/map/" }
   | { route: "/app/user/" }
-  | { route: "/img/" };
+  | { route: "/prx/" };

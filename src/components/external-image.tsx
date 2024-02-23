@@ -9,7 +9,7 @@ export default component$<ImageAttributes>((props) => {
   const src = useComputed$(() => {
     if (!props.src) return undefined;
 
-    const url = new URL("/img", loc.url);
+    const url = new URL("/prx", loc.url);
     url.searchParams.set("url", props.src);
     return url.toString();
   });

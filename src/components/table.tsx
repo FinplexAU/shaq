@@ -71,7 +71,7 @@ export const TableRow = component$<{ row: string[] }>((props) => {
         class="cursor-pointer border-b bg-white hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-600"
       >
         {props.row.map((cell, j) => (
-          <td key={j} class="px-6 py-4">
+          <td key={j} class="px-6 py-4 capitalize">
             {cell}
           </td>
         ))}

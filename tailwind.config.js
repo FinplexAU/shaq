@@ -12,6 +12,13 @@ export default {
     },
   },
   plugins: [
-    require("flowbite/plugin"), // add this line
+    require("flowbite/plugin"),
+    ({ addUtilities }) => {
+      addUtilities({
+        ".align-icon": {
+          "vertical-align": "-0.125em",
+        },
+      });
+    },
   ],
 };
