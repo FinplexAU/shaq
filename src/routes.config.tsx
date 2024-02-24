@@ -6,6 +6,7 @@
 import { untypedAppUrl, omitProps } from "@builder.io/qwik-labs";
 import { type AppLinkProps, type AppRouteParamsFunction } from "./routes.gen";
 import { type QwikIntrinsicElements } from "@builder.io/qwik";
+import { Link } from "@builder.io/qwik-city";
 
 /**
  * Configure `appUrl` with the typed information of routes.
@@ -19,7 +20,7 @@ export const appUrl = untypedAppUrl as AppRouteParamsFunction;
  */
 export function AppLink(props: AppLinkProps & QwikIntrinsicElements["a"]) {
   return (
-    <a
+    <Link
       href={(appUrl as (route: string, props: any, prefix: string) => string)(
         props.route,
         props,
@@ -28,6 +29,6 @@ export function AppLink(props: AppLinkProps & QwikIntrinsicElements["a"]) {
       {...omitProps(props, ["href"])}
     >
       {props.children}
-    </a>
+    </Link>
   );
 }

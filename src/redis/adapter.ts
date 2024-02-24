@@ -1,6 +1,6 @@
 import type { DatabaseSession, Adapter, DatabaseUser } from "lucia";
 import type { Redis } from "@upstash/redis/cloudflare";
-import type { UserAttributes } from "~/routes/app/auth/callback";
+import type { UserAttributes } from "~/routes/plugin";
 
 export const UpstashRedisAdapter = (redis: Redis): Adapter => {
   return {
@@ -15,6 +15,7 @@ export const UpstashRedisAdapter = (redis: Redis): Adapter => {
     async deleteExpiredSessions() {},
 
     async deleteSession(sessionId) {
+      console.log("Delete Session", sessionId);
       let cursor = 0;
       const keys = [];
       do {
@@ -29,6 +30,7 @@ export const UpstashRedisAdapter = (redis: Redis): Adapter => {
     },
 
     async deleteUserSessions(userId) {
+      console.log("Delete User Sessions", userId);
       let cursor = 0;
       const keys = [];
       do {
@@ -43,6 +45,7 @@ export const UpstashRedisAdapter = (redis: Redis): Adapter => {
     },
 
     async getSessionAndUser(sessionId) {
+      console.log("Get Session and User", sessionId);
       const keys = [];
       let cursor = 0;
       do {
@@ -73,6 +76,7 @@ export const UpstashRedisAdapter = (redis: Redis): Adapter => {
     },
 
     async getUserSessions(userId) {
+      console.log("Get User Sessions", userId);
       const keys = [];
       let cursor = 0;
       do {
@@ -87,11 +91,7 @@ export const UpstashRedisAdapter = (redis: Redis): Adapter => {
         return [];
       }
 
-      const getKey = async (key: string) => {
-        return await redis.get(key);
-      };
-
-      const p = await Promise.allSettled(keys.map(getKey));
+      const p = await Promise.allSettled(keys.map(redis.get));
       const successful = p
         .filter((x) => x.status === "fulfilled" && x.value)
         .map((x) => {
@@ -104,6 +104,25 @@ export const UpstashRedisAdapter = (redis: Redis): Adapter => {
     },
 
     // Don't allow updating expiration as we want to refresh often and never have a stale auth token
-    async updateSessionExpiration() {},
+    async updateSessionExpiration(sessionId, expiresAt) {
+      console.log("Update Session Expiration", sessionId, expiresAt);
+      const keys = [];
+      let cursor = 0;
+      do {
+        const [c, k] = await redis.scan(cursor, {
+          match: `user:*:session:${sessionId}`,
+        });
+        cursor = c;
+        keys.push(...k);
+      } while (cursor !== 0);
+      if (keys.length === 0) {
+        return;
+      }
+      const key = keys[0];
+      const session = (await redis.get(key)) as DatabaseSession | null;
+      if (!session) return;
+      session.expiresAt = expiresAt;
+      await this.setSession(session);
+    },
   };
 };

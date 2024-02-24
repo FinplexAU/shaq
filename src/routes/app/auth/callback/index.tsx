@@ -1,19 +1,10 @@
 import { OAuth2RequestError } from "arctic";
-import { z, type RequestHandler } from "@builder.io/qwik-city";
-import { OAUTH_STATE_COOKIE, getSharedMap } from "~/routes/plugin";
-import { parseJWT } from "oslo/jwt";
-
-const UserAttributes = z.object({
-  fin: z.string(),
-  given_name: z.string().optional(),
-  family_name: z.string().optional(),
-  nickname: z.string().optional(),
-  name: z.string(),
-  picture: z.string(),
-  email: z.string(),
-  email_verified: z.boolean(),
-});
-export type UserAttributes = z.infer<typeof UserAttributes>;
+import { type RequestHandler } from "@builder.io/qwik-city";
+import {
+  OAUTH_STATE_COOKIE,
+  createSession,
+  getSharedMap,
+} from "~/routes/plugin";
 
 export const onGet: RequestHandler = async (ev) => {
   const code = ev.url.searchParams.get("code");
@@ -33,27 +24,11 @@ export const onGet: RequestHandler = async (ev) => {
 
   try {
     const tokens = await auth0.validateAuthorizationCode(code);
-    const idToken = parseJWT(tokens.idToken);
-
-    const payload = await UserAttributes.safeParseAsync(idToken?.payload);
-
-    if (!payload.success) {
-      console.log("Failed to parse payload", payload.error.format());
-      ev.send(500, "");
-      return;
-    }
 
     const redis = getSharedMap(ev.sharedMap, "redis");
-    await redis.set(`user:${payload.data.fin}`, {
-      id: payload.data.fin,
-      attributes: payload.data,
-    });
-
-    const session = await lucia.createSession(payload.data.fin, {
-      idToken: tokens.idToken,
-      accessToken: tokens.accessToken,
-    });
+    const session = await createSession(redis, lucia, tokens);
     const sessionCookie = lucia.createSessionCookie(session.id);
+
     ev.cookie.set(
       sessionCookie.name,
       sessionCookie.value,
