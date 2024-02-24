@@ -1,6 +1,7 @@
 import type { EnvGetter } from "@builder.io/qwik-city/middleware/request-handler";
 import type { Redis } from "@upstash/redis";
-import { Token, getRequiredEnv, getSharedMap } from "~/routes/plugin";
+import type { Token } from "~/routes/plugin";
+import { getRequiredEnv, getSharedMap } from "~/routes/plugin";
 
 function parseJwt(t: string) {
   try {
