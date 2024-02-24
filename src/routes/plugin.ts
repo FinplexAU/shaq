@@ -38,7 +38,7 @@ export const getSharedMap = <T extends keyof SharedMap>(
 
 export function initializeLucia(redis: Redis) {
   return new Lucia(UpstashRedisAdapter(redis), {
-    sessionExpiresIn: new TimeSpan(1, "h"),
+    sessionExpiresIn: new TimeSpan(1, "w"),
     sessionCookie: {
       attributes: {
         secure: import.meta.env.PROD,
@@ -219,11 +219,6 @@ export const onRequest: RequestHandler = async (ev) => {
     return forceLogin(ev, auth0);
   }
 
-  console.log({
-    fresh: session.fresh,
-    expiresIn: (session.expiresAt.getTime() - new Date().getTime()) / 1000,
-  });
-
   // Regenerate Session Token
   if (session.fresh) {
     const sessionCookie = lucia.createSessionCookie(session.id);
@@ -232,11 +227,9 @@ export const onRequest: RequestHandler = async (ev) => {
       sessionCookie.value,
       sessionCookie.attributes,
     );
-    console.log(sessionCookie);
   }
 
   const accessTokenRemaining = tokenRemainingDuration(session.accessToken);
-  console.log(accessTokenRemaining);
   if (accessTokenRemaining < 30000) {
     // Fetch a new token
     // Probably store refresh token separately from everything else because it shouldn't be exposed by accident
