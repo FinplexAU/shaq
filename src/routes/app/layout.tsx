@@ -1,4 +1,12 @@
-import { component$, Slot } from "@builder.io/qwik";
+import {
+  $,
+  component$,
+  noSerialize,
+  NoSerialize,
+  Slot,
+  useSignal,
+  useVisibleTask$,
+} from "@builder.io/qwik";
 import {
   useLocation,
   type RequestHandler,
@@ -10,6 +18,8 @@ import {
 import { getRequiredEnv, getSharedMap } from "../plugin";
 import { AppLink } from "~/routes.config";
 import ExternalImage from "~/components/external-image";
+import { Button } from "~/components/button";
+import { Dropdown } from "flowbite";
 
 export const onGet: RequestHandler = async ({ cacheControl }) => {
   // Control caching for this request for best performance and to reduce hosting costs:
@@ -57,6 +67,31 @@ export const Header = component$(() => {
   const logOut = useLogOut();
   const nav = useNavigate();
 
+  const dropdown = useSignal<NoSerialize<Dropdown>>();
+  const dropdownElement = useSignal<HTMLDivElement>();
+  const dropdownButtonElement = useSignal<HTMLButtonElement>();
+
+  const instanceOptions = {
+    id: "dropdownMenu",
+    override: true,
+  };
+
+  // eslint-disable-next-line qwik/no-use-visible-task
+  useVisibleTask$(() => {
+    dropdown.value = noSerialize(
+      new Dropdown(
+        dropdownElement.value,
+        dropdownButtonElement.value,
+        { placement: "bottom" },
+        instanceOptions,
+      ),
+    );
+  });
+
+  const closeDropdown = $(() => {
+    dropdown.value?.hide();
+  });
+
   return (
     <nav class="select-none border-b border-gray-200 bg-white dark:bg-gray-900">
       <div class="mx-auto flex max-w-screen-xl flex-wrap items-center justify-between p-4">
@@ -75,12 +110,9 @@ export const Header = component$(() => {
         </AppLink>
         <div class="flex items-center space-x-3 rtl:space-x-reverse md:order-2 md:space-x-0">
           <button
+            ref={dropdownButtonElement}
             type="button"
             class="flex rounded-full bg-gray-800 text-sm focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600 md:me-0"
-            id="user-menu-button"
-            aria-expanded="false"
-            data-dropdown-toggle="user-dropdown"
-            data-dropdown-placement="bottom"
           >
             <span class="sr-only">Open user menu</span>
             <ExternalImage
@@ -93,6 +125,7 @@ export const Header = component$(() => {
           </button>
           {/* <!-- Dropdown menu --> */}
           <div
+            ref={dropdownElement}
             class="z-50 my-4 hidden list-none divide-y divide-gray-100 rounded-lg bg-white text-base shadow dark:divide-gray-600 dark:bg-gray-700"
             id="user-dropdown"
           >
@@ -104,9 +137,10 @@ export const Header = component$(() => {
                 {user.value.email}
               </span>
             </div>
-            <ul class="py-2" aria-labelledby="user-menu-button">
+            <ul class="py-2">
               <li>
                 <AppLink
+                  onClick$={closeDropdown}
                   route="/app/user/"
                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-600 dark:hover:text-white"
                 >
