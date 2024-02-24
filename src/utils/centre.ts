@@ -1,6 +1,6 @@
 import type { EnvGetter } from "@builder.io/qwik-city/middleware/request-handler";
 import type { Redis } from "@upstash/redis";
-import { getRequiredEnv, getSharedMap } from "~/routes/plugin";
+import { Token, getRequiredEnv, getSharedMap } from "~/routes/plugin";
 
 function parseJwt(t: string) {
   try {
@@ -50,9 +50,9 @@ const fetchNewToken = async (env: EnvGetter, redis: Redis) => {
 
     const jwt = parseJwt(json.access_token);
     if (jwt && jwt.exp && typeof jwt.exp === "number") {
-      const token: { token: string; expires: number } = {
+      const token: Token = {
         token: json.access_token,
-        expires: jwt.exp,
+        expires: new Date(jwt.exp * 1000),
       };
       await redis.set("token:centre", token);
       return token;
@@ -66,13 +66,13 @@ export const getNerveCentreToken = async (
   env: EnvGetter,
   sharedMap: Map<string, any>,
 ) => {
-  const currentTime = Date.now() / 1000;
+  const currentTime = Date.now();
   const redis = getSharedMap(sharedMap, "redis");
-  const token: { expires: number; token: string } | null =
+  const token: Token | null =
     getSharedMap(sharedMap, "centreToken") ?? (await redis.get("token:centre"));
 
   if (token) {
-    if (token.expires - currentTime > 300) {
+    if (new Date(token.expires).getTime() - currentTime > 300000) {
       return token;
     }
   }
