@@ -53,7 +53,8 @@ export const graphqlRequest = async <T, V extends Record<string, unknown>>(
       const user = getSharedMap(request.sharedMap, "user");
       access_token = user.fin;
     } else {
-      access_token = getSharedMap(request.sharedMap, "session").accessToken;
+      access_token = getSharedMap(request.sharedMap, "session").accessToken
+        .token;
       if (!access_token) {
         console.error("access_token not found");
         return { success: false, errors: [] };
