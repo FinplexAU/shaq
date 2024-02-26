@@ -1,5 +1,5 @@
 import { component$, useComputed$ } from "@builder.io/qwik";
-import { Link } from "@builder.io/qwik-city";
+import { Link, useLocation } from "@builder.io/qwik-city";
 
 type TabConfig = {
   label: string;
@@ -14,7 +14,25 @@ interface TabsProps {
 
 const dieselHeightScalar = 0.4;
 
+const getNavUrl = (url: URL, currentFilter: string | null, filter: string) => {
+  const searchParams = new URLSearchParams(url.searchParams);
+  if (filter === currentFilter) {
+    searchParams.delete("filter");
+  } else {
+    searchParams.set("filter", filter);
+  }
+
+  const query = searchParams.toString();
+  if (query) {
+    return "?" + query;
+  } else {
+    return "./";
+  }
+};
+
 export const DieselTabs = component$((props: TabsProps) => {
+  const loc = useLocation();
+
   const maxVolume = useComputed$(() => {
     return props.tabs.reduce((acc, tab) => {
       return Math.max(acc, tab.totalVolume);
@@ -26,9 +44,7 @@ export const DieselTabs = component$((props: TabsProps) => {
       <ul class="-mb-px flex w-full flex-wrap justify-between divide-x">
         {props.tabs.map((tab) => (
           <Link
-            href={
-              props.selectedTab === tab.filter ? "./" : `?filter=${tab.filter}`
-            }
+            href={getNavUrl(loc.url, props.selectedTab, tab.filter)}
             key={tab.filter}
             aria-current={props.selectedTab === tab.filter ? "page" : undefined}
             style={{
