@@ -36,9 +36,13 @@ export const getSharedMap = <T extends keyof SharedMap>(
   return sharedMap.get(key);
 };
 
+// Refresh tokens last 1 week
+// Refresh tokens last 1 day inactive
+// If anything expires, show popup for inactivity - Set nearest date to show up
+
 export function initializeLucia(redis: Redis) {
   return new Lucia(UpstashRedisAdapter(redis), {
-    sessionExpiresIn: new TimeSpan(1, "w"),
+    sessionExpiresIn: new TimeSpan(1, "d"),
     sessionCookie: {
       attributes: {
         secure: import.meta.env.PROD,
@@ -80,7 +84,7 @@ export const forceLogin = async (ev: RequestEvent, auth0: Auth0) => {
     path: "/",
     secure: import.meta.env.PROD,
     httpOnly: true,
-    maxAge: 60 * 10,
+    maxAge: [1, "days"],
     sameSite: "lax",
   });
 
@@ -99,13 +103,24 @@ const UserAttributes = z.object({
 });
 export type UserAttributes = z.infer<typeof UserAttributes>;
 
+const refreshTokenExpiry = {
+  absolute: 2592000000,
+  inactivity: 86400000,
+} as const;
+
+type RefreshToken = {
+  inactivityExpiry: Date | string | number;
+  absoluteExpiry: Date | string | number;
+  token: string;
+};
+
 export const createSession = async (
   redis: Redis,
   lucia: Lucia,
   tokens: {
     accessToken: string;
     idToken: string;
-    refreshToken?: string;
+    refreshToken?: string | { token: string; existingToken: RefreshToken };
   },
   existingSessionId?: string,
 ) => {
@@ -140,8 +155,40 @@ export const createSession = async (
     id: payload.data.fin,
     attributes: payload.data,
   });
-  if (tokens.refreshToken)
-    await redis.set(`refresh-token:${payload.data.fin}`, tokens.refreshToken);
+
+  if (tokens.refreshToken) {
+    const key = `refresh-token:${payload.data.fin}`;
+
+    let absoluteExpiry: Date;
+    let refreshToken: string;
+
+    if (typeof tokens.refreshToken === "string") {
+      absoluteExpiry = new Date(Date.now() + refreshTokenExpiry.absolute);
+      refreshToken = tokens.refreshToken;
+    } else {
+      const existingRefreshToken = tokens.refreshToken.existingToken;
+      absoluteExpiry = new Date(existingRefreshToken.absoluteExpiry);
+      refreshToken = tokens.refreshToken.token;
+    }
+
+    const inactivityExpiry = new Date(
+      Date.now() + refreshTokenExpiry.inactivity,
+    );
+    const redisExpiresAtMs = Math.min(
+      absoluteExpiry.getTime(),
+      inactivityExpiry.getTime(),
+    );
+
+    const refreshTokenRow: RefreshToken = {
+      inactivityExpiry,
+      absoluteExpiry,
+      token: refreshToken,
+    };
+
+    await redis.set(key, refreshTokenRow, {
+      pxat: redisExpiresAtMs,
+    });
+  }
 
   const session = await lucia.createSession(
     payload.data.fin,
@@ -165,10 +212,6 @@ const tokenRemainingDuration = (token: Token) => {
 };
 
 export const onRequest: RequestHandler = async (ev) => {
-  if (!ev.url.pathname.startsWith("/app/")) {
-    return;
-  }
-
   const redis = new Redis({
     url: getRequiredEnv(ev.env, "UPSTASH_REDIS_REST_URL"),
     token: getRequiredEnv(ev.env, "UPSTASH_REDIS_REST_TOKEN"),
@@ -176,9 +219,8 @@ export const onRequest: RequestHandler = async (ev) => {
 
   const lucia = initializeLucia(redis);
 
-  const redirectUrl = new URL("/app/auth/callback/", ev.url);
+  const redirectUrl = new URL("/auth/callback/", ev.url);
   redirectUrl.searchParams.set("redirectTo", ev.url.pathname + ev.url.search);
-
   const auth0 = new Auth0(
     getRequiredEnv(ev.env, "AUTH0_APP_DOMAIN"),
     getRequiredEnv(ev.env, "AUTH0_CLIENT_ID"),
@@ -190,13 +232,13 @@ export const onRequest: RequestHandler = async (ev) => {
   ev.sharedMap.set("auth0", auth0);
   ev.sharedMap.set("redis", redis);
 
-  if (
-    ev.url.pathname === "/app/auth/callback" ||
-    ev.url.pathname === "/app/auth/callback/"
-  ) {
+  if (!ev.url.pathname.startsWith("/app/")) {
     await ev.next();
     return;
   }
+
+  const secFetchDest = ev.request.headers.get("sec-fetch-dest");
+  const isFullLoad = secFetchDest === "document";
 
   const sessionId = ev.cookie.get(lucia.sessionCookieName)?.value ?? null;
 
@@ -230,16 +272,50 @@ export const onRequest: RequestHandler = async (ev) => {
   }
 
   const accessTokenRemaining = tokenRemainingDuration(session.accessToken);
-  if (accessTokenRemaining < 30000) {
-    // Fetch a new token
-    // Probably store refresh token separately from everything else because it shouldn't be exposed by accident
-    const refreshToken = (await redis.get(
-      `refresh-token:${user.id}`,
-    )) as string;
-    const tokens = await auth0.refreshAccessToken(refreshToken);
-    console.log("Refreshed Using Refresh Token");
-    const newSession = await createSession(redis, lucia, tokens, session.id);
-    session = newSession;
+  const refreshToken: RefreshToken | null = await redis.get(
+    `refresh-token:${user.id}`,
+  );
+
+  // Attempt to refresh fully when refresh token is close to the absolute expiry.
+  // Only attempt on a full page load.
+  if (isFullLoad && refreshToken) {
+    const absoluteExpiry = new Date(refreshToken.absoluteExpiry).getTime();
+    const expiresIn = absoluteExpiry - Date.now();
+    if (expiresIn < refreshTokenExpiry.inactivity) {
+      console.log("Forcing auth to regenerate refresh token");
+      return forceLogin(ev, auth0);
+    }
+  }
+
+  if (accessTokenRemaining < 30 * 1000) {
+    if (refreshToken) {
+      try {
+        const tokens = await auth0.refreshAccessToken(refreshToken.token);
+        console.log("Refreshed Using Refresh Token");
+        const newSession = await createSession(
+          redis,
+          lucia,
+          {
+            accessToken: tokens.accessToken,
+            idToken: tokens.idToken,
+            refreshToken: {
+              token: tokens.refreshToken,
+              existingToken: refreshToken,
+            },
+          },
+          session.id,
+        );
+        session = newSession;
+      } catch (e) {
+        console.error(e);
+
+        return forceLogin(ev, auth0);
+      }
+    }
+    // Let the user continue their session until it is fully expired, if there is no hope of refreshing it
+    else if (accessTokenRemaining <= 0) {
+      return forceLogin(ev, auth0);
+    }
   }
 
   const nerveCentre = createClient<paths>({

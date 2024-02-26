@@ -1,8 +1,8 @@
+import type { NoSerialize } from "@builder.io/qwik";
 import {
   $,
   component$,
   noSerialize,
-  NoSerialize,
   Slot,
   useSignal,
   useVisibleTask$,
@@ -18,7 +18,6 @@ import {
 import { getRequiredEnv, getSharedMap } from "../plugin";
 import { AppLink } from "~/routes.config";
 import ExternalImage from "~/components/external-image";
-import { Button } from "~/components/button";
 import { Dropdown } from "flowbite";
 
 export const onGet: RequestHandler = async ({ cacheControl }) => {
