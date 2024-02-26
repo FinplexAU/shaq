@@ -35,17 +35,12 @@ export const DieselTabs = component$((props: TabsProps) => {
     <div class="w-full border-b border-t  py-2 text-center text-sm font-medium ">
       <ul class="-mb-px flex w-full flex-wrap justify-between divide-x">
         {mappedRows.value.map((tab) => (
-          <button
+          <li
             class={["relative flex-1 px-2"]}
             key={tab.filter}
             aria-current={
               props.selectedTab.value === tab.filter ? "page" : undefined
             }
-            onClick$={() => {
-              if (props.selectedTab.value === tab.filter)
-                props.selectedTab.value = null;
-              else props.selectedTab.value = tab.filter;
-            }}
             style={{
               "--oil-height": `${Math.max(
                 0,
@@ -56,7 +51,7 @@ export const DieselTabs = component$((props: TabsProps) => {
               )}%`,
             }}
           >
-            <li
+            <button
               class={[
                 "relative inline-block h-full w-full flex-1 p-4 text-black before:absolute  before:bottom-0 before:left-0 before:-z-10 before:h-[var(--oil-height)] before:w-full before:bg-stone-200 before:content-['']",
                 {
@@ -64,6 +59,11 @@ export const DieselTabs = component$((props: TabsProps) => {
                     props.selectedTab.value === tab.filter,
                 },
               ]}
+              onClick$={() => {
+                if (props.selectedTab.value === tab.filter)
+                  props.selectedTab.value = null;
+                else props.selectedTab.value = tab.filter;
+              }}
               key={tab.label}
             >
               <p class="pb-2 font-bold">{tab.label}</p>
@@ -75,8 +75,8 @@ export const DieselTabs = component$((props: TabsProps) => {
                   currencyDisplay: "narrowSymbol",
                 })}
               </p>
-            </li>
-          </button>
+            </button>
+          </li>
         ))}
       </ul>
     </div>
