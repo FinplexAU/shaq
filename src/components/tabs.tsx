@@ -1,7 +1,5 @@
 import { component$, useComputed$ } from "@builder.io/qwik";
-import { Link, useLocation, useNavigate } from "@builder.io/qwik-city";
-import { Q } from "@upstash/redis/zmscore-5d82e632";
-import { AppLink } from "~/routes.config";
+import { Link } from "@builder.io/qwik-city";
 
 type TabConfig = {
   label: string;
@@ -17,9 +15,6 @@ interface TabsProps {
 const dieselHeightScalar = 0.4;
 
 export const DieselTabs = component$((props: TabsProps) => {
-  const loc = useLocation();
-  const nav = useNavigate();
-
   const maxVolume = useComputed$(() => {
     return props.tabs.reduce((acc, tab) => {
       return Math.max(acc, tab.totalVolume);

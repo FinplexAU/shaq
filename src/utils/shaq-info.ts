@@ -1,4 +1,4 @@
-import { RequestEventLoader } from "@builder.io/qwik-city";
+import type { RequestEventLoader } from "@builder.io/qwik-city";
 import { filterFalsy } from "./filter-falsy";
 
 export type DieselStatus =
