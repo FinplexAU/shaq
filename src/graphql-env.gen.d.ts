@@ -1901,12 +1901,9 @@ export type introspection = {
           {
             "name": "performance",
             "type": {
-              "kind": "NON_NULL",
-              "ofType": {
-                "kind": "OBJECT",
-                "name": "HoldingPerformance",
-                "ofType": null
-              }
+              "kind": "OBJECT",
+              "name": "HoldingPerformance",
+              "ofType": null
             },
             "args": [
               {
