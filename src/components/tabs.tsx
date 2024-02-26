@@ -1,32 +1,27 @@
-import type { Signal } from "@builder.io/qwik";
 import { component$, useComputed$ } from "@builder.io/qwik";
-import type { Data } from "~/routes/app";
+import { Link, useLocation, useNavigate } from "@builder.io/qwik-city";
+import { Q } from "@upstash/redis/zmscore-5d82e632";
+import { AppLink } from "~/routes.config";
 
 type TabConfig = {
   label: string;
   filter: string;
-  rows: Data[];
+  totalCost: number;
+  totalVolume: number;
 };
 interface TabsProps {
   tabs: TabConfig[];
-  selectedTab: Signal<string | null>;
+  selectedTab: string | null;
 }
 
 const dieselHeightScalar = 0.4;
 
 export const DieselTabs = component$((props: TabsProps) => {
-  const mappedRows = useComputed$(() => {
-    return props.tabs.map((x) => ({
-      filter: x.filter,
-      label: x.label,
-      rows: x.rows,
-      totalCost: x.rows.reduce((a, b) => a + b.cost, 0),
-      totalVolume: x.rows.reduce((a, b) => a + b.volume, 0),
-    }));
-  });
+  const loc = useLocation();
+  const nav = useNavigate();
 
   const maxVolume = useComputed$(() => {
-    return mappedRows.value.reduce((acc, tab) => {
+    return props.tabs.reduce((acc, tab) => {
       return Math.max(acc, tab.totalVolume);
     }, 0);
   });
@@ -34,18 +29,13 @@ export const DieselTabs = component$((props: TabsProps) => {
   return (
     <div class="w-full border-b border-t  py-2 text-center text-sm font-medium ">
       <ul class="-mb-px flex w-full flex-wrap justify-between divide-x">
-        {mappedRows.value.map((tab) => (
-          <button
-            class={["relative flex-1 px-2"]}
-            key={tab.filter}
-            aria-current={
-              props.selectedTab.value === tab.filter ? "page" : undefined
+        {props.tabs.map((tab) => (
+          <Link
+            href={
+              props.selectedTab === tab.filter ? "./" : `?filter=${tab.filter}`
             }
-            onClick$={() => {
-              if (props.selectedTab.value === tab.filter)
-                props.selectedTab.value = null;
-              else props.selectedTab.value = tab.filter;
-            }}
+            key={tab.filter}
+            aria-current={props.selectedTab === tab.filter ? "page" : undefined}
             style={{
               "--oil-height": `${Math.max(
                 0,
@@ -55,13 +45,14 @@ export const DieselTabs = component$((props: TabsProps) => {
                   dieselHeightScalar,
               )}%`,
             }}
+            class={["relative flex-1 px-2"]}
           >
             <li
               class={[
                 "relative inline-block h-full w-full flex-1 p-4 text-black before:absolute  before:bottom-0 before:left-0 before:-z-10 before:h-[var(--oil-height)] before:w-full before:bg-stone-200 before:content-['']",
                 {
                   "active inline-block bg-stone-700 p-4 !text-white before:bg-stone-600 ":
-                    props.selectedTab.value === tab.filter,
+                    props.selectedTab === tab.filter,
                 },
               ]}
               key={tab.label}
@@ -76,7 +67,7 @@ export const DieselTabs = component$((props: TabsProps) => {
                 })}
               </p>
             </li>
-          </button>
+          </Link>
         ))}
       </ul>
     </div>
