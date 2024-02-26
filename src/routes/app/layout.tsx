@@ -7,9 +7,9 @@ import {
   useSignal,
   useVisibleTask$,
 } from "@builder.io/qwik";
+import type { DocumentHead, RequestHandler } from "@builder.io/qwik-city";
 import {
   useLocation,
-  type RequestHandler,
   routeLoader$,
   globalAction$,
   Form,
@@ -26,6 +26,16 @@ export const onGet: RequestHandler = async ({ cacheControl }) => {
   cacheControl({
     noCache: true,
   });
+};
+
+export const head: DocumentHead = {
+  title: "Welcome to Shaq",
+  meta: [
+    {
+      name: "description",
+      content: "Shaq site description",
+    },
+  ],
 };
 
 export default component$(() => {

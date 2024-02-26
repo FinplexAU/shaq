@@ -20,16 +20,6 @@ import { graphql, graphqlLoader } from "~/utils/graphql";
 import { dateString } from "~/utils/dates";
 import { HiArrowDownTraySolid, HiEyeSolid } from "@qwikest/icons/heroicons";
 
-export const head: DocumentHead = {
-  title: "Welcome to Shaq",
-  meta: [
-    {
-      name: "description",
-      content: "Shaq site description",
-    },
-  ],
-};
-
 type DieselStatus = "trans-in" | "settled" | "loaded" | "landed" | "shipped";
 export const formatStatus: Record<DieselStatus, string> = {
   "trans-in": "Transfer In",
