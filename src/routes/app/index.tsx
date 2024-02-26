@@ -77,6 +77,11 @@ function filterFalsy<T>(x: (T | undefined | null)[]) {
 }
 const gqlQuery = graphql(`
   query Index {
+    user {
+      nickname
+      givenName
+      name
+    }
     entities {
       accounts {
         fan
@@ -228,7 +233,9 @@ export default component$(() => {
       <div class="mb-4 border-l-4 border-stone-800 px-2">
         <span>{greeting},</span>
         <h1 class="border-l-stone-300 text-4xl font-semibold">
-          {user.value.nickname || user.value.given_name || user.value.name}
+          {gql.value.user?.nickname ||
+            gql.value.user?.givenName ||
+            gql.value.user?.name}
         </h1>
       </div>
       {entities.value.length !== 0 && accounts.value.length !== 0 ? (
