@@ -13,7 +13,6 @@ import {
 import { Table, TableRow } from "~/components/table";
 import { Timeline, TimelineItem } from "~/components/timeline";
 import { DieselTabs } from "~/components/tabs";
-import { useUser } from "./layout";
 import moment from "moment-timezone";
 import { isServer } from "@builder.io/qwik/build";
 import { getSharedMap } from "../plugin";
@@ -205,7 +204,6 @@ const toRow = (row: Data) => {
 };
 
 export default component$(() => {
-  const user = useUser();
   const gql = useGqlIndex();
 
   const entities = useComputed$(() => gql.value.entities ?? []);
