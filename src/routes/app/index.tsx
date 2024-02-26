@@ -409,10 +409,10 @@ export const HomeDisplay = component$(() => {
                             download={doc.title?.replaceAll(" ", "-")}
                             target="_blank"
                           >
-                            <HiArrowDownTraySolid class="align-icon inline" />
+                            <HiArrowDownTraySolid class="inline align-icon" />
                           </a>
                           <a class="ml-1" href={doc.url} target="_blank">
-                            <HiEyeSolid class="align-icon inline" />
+                            <HiEyeSolid class="inline align-icon" />
                           </a>
                         </li>
                       ))}

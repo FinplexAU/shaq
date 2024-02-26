@@ -85,6 +85,17 @@ export const Header = component$(() => {
         instanceOptions,
       ),
     );
+
+    // Refresh on coming back to tab
+    const refresh = () => {
+      if (document.visibilityState === "visible") {
+        nav();
+      }
+    };
+    document.addEventListener("visibilitychange", refresh);
+    return () => {
+      document.removeEventListener("visibilitychange", refresh);
+    };
   });
 
   const closeDropdown = $(() => {
