@@ -4,17 +4,26 @@ import {
   useSignal,
   useTask$,
 } from "@builder.io/qwik";
-import { server$, useLocation, routeLoader$ } from "@builder.io/qwik-city";
+import {
+  server$,
+  useLocation,
+  routeLoader$,
+  routeAction$,
+  zod$,
+  z,
+} from "@builder.io/qwik-city";
 import { Table, TableRow } from "~/components/table";
 import { Timeline, TimelineItem } from "~/components/timeline";
 import { DieselTabs } from "~/components/tabs";
 import moment from "moment-timezone";
 import { isServer } from "@builder.io/qwik/build";
 import { getSharedMap } from "../plugin";
-import { graphql, graphqlLoader } from "~/utils/graphql";
+import { graphql, graphqlLoader, graphqlRequest } from "~/utils/graphql";
 import { dateString } from "~/utils/dates";
-import { HiArrowDownTraySolid, HiEyeSolid } from "@qwikest/icons/heroicons";
 import { Error } from "~/components/error";
+import Status from "~/components/status";
+import type { DocumentModalInfo } from "./document-modal";
+import DocumentModal from "./document-modal";
 
 type DieselStatus = "trans-in" | "settled" | "loaded" | "landed" | "shipped";
 export const formatStatus: Record<DieselStatus, string> = {
@@ -27,19 +36,37 @@ export const formatStatus: Record<DieselStatus, string> = {
 
 type DbData = {
   id: string;
-  from: string | null;
-  to: string | null;
+  trader: string;
+  financier: string;
   currency: string;
   cost: number;
   volume: number;
   settlementDate?: string;
-  statuses: { status: DieselStatus; date: string; documents: string[] }[];
+  statuses: {
+    status: DieselStatus;
+    date: string;
+    documents: {
+      id: string;
+      approvedByTrader: string | number | Date | null;
+      approvedByFinancier: string | number | Date | null;
+    }[];
+  }[];
+};
+
+export type DataDocument = {
+  url: string;
+  title?: string | null;
+  uploader: string;
+  visibility: string;
+  id: string;
+  approvedByTrader: Date | null;
+  approvedByFinancier: Date | null;
 };
 
 export type Data = {
   id: string;
-  from: string | null;
-  to: string | null;
+  trader: string;
+  financier: string;
   currency: string;
   cost: number;
   volume: number;
@@ -47,13 +74,7 @@ export type Data = {
   statuses: {
     status: DieselStatus;
     date: Date;
-    documents: {
-      url: string;
-      title?: string | null;
-      uploader: string;
-      visibility: string;
-      id: string;
-    }[];
+    documents: DataDocument[];
   }[];
 };
 
@@ -106,9 +127,11 @@ export const useData = routeLoader$(async (ev) => {
     await Promise.all(
       dbData
         .flatMap((x) => x.statuses.flatMap((y) => y.documents))
-        .map((documentId) =>
+        .map((document) =>
           nerveCentre
-            .GET("/admin/document", { params: { query: { documentId } } })
+            .GET("/admin/document", {
+              params: { query: { documentId: document.id } },
+            })
             .then((x) => x.data),
         ),
     ),
@@ -132,9 +155,15 @@ export const useData = routeLoader$(async (ev) => {
           ...status,
           date: new Date(status.date),
           documents: filterFalsy(
-            status.documents.map((document) =>
-              formattedDocuments.find((x) => x.id === document),
-            ),
+            status.documents.map((document) => ({
+              ...formattedDocuments.find((x) => x.id === document.id)!,
+              approvedByTrader: document.approvedByTrader
+                ? new Date(document.approvedByTrader)
+                : null,
+              approvedByFinancier: document.approvedByFinancier
+                ? new Date(document.approvedByFinancier)
+                : null,
+            })),
           ),
         }))
         .sort((a, b) => b.date.getTime() - a.date.getTime()),
@@ -156,6 +185,67 @@ export const useData = routeLoader$(async (ev) => {
 
   return { success: true, data } as const;
 });
+
+export const useSetApproved = routeAction$(
+  async (form, ev) => {
+    const redis = getSharedMap(ev.sharedMap, "redis");
+    const dataKey = `shipment:${form.shipmentId}`;
+    const data = (await redis.get(dataKey)) as DbData | null;
+
+    if (!data) {
+      return ev.fail(404, { message: "Not found" });
+    }
+
+    const fansReq = await graphqlRequest(
+      ev,
+      graphql(`
+        query IndexSetApproved {
+          accounts {
+            fan
+          }
+        }
+      `),
+      {},
+    );
+
+    if (!fansReq.success) {
+      return ev.fail(500, { message: "Internal Server Error" });
+    }
+    const fans = fansReq.data.accounts.map((x) => x.fan);
+
+    const isTrader = fans.includes(data.trader);
+    const isFinancier = fans.includes(data.financier);
+
+    if (!isTrader && !isFinancier) {
+      return ev.fail(404, { message: "Not found" });
+    }
+
+    for (const status of data.statuses) {
+      if (status.status !== form.status) {
+        continue;
+      }
+
+      for (const document of status.documents) {
+        if (document.id !== form.documentId) {
+          continue;
+        }
+
+        const approvedDate = new Date();
+
+        document.approvedByTrader ||= isTrader ? approvedDate : null;
+        document.approvedByFinancier ||= isFinancier ? approvedDate : null;
+      }
+
+      console.log(dataKey, data);
+      await redis.set(dataKey, data);
+    }
+  },
+  zod$({
+    shipmentId: z.string().uuid(),
+    status: z.string(),
+    documentId: z.string().uuid(),
+  }),
+);
 
 const getServerHours = server$(function () {
   const timezone = this.request.headers.get("cf-timezone");
@@ -228,7 +318,10 @@ export default component$(() => {
         </h1>
       </div>
       {entities.value.length !== 0 && accounts.value.length !== 0 ? (
-        <HomeDisplay data={data.value.data} />
+        <HomeDisplay
+          data={data.value.data}
+          fans={accounts.value.map((x) => x.fan)}
+        />
       ) : (
         <RequireOnboarding hasEntities={!!entities.value.length} />
       )}
@@ -236,190 +329,197 @@ export default component$(() => {
   );
 });
 
-const getFileDownloadUrl = (loc: URL, fileUrl: string) => {
-  const url = new URL("/prx", loc);
-  url.searchParams.set("url", fileUrl);
-  return url.toString();
+const docStatusColor = (doc: DataDocument): "red" | "green" | "amber" => {
+  if (doc.approvedByFinancier && doc.approvedByTrader) {
+    return "green";
+  }
+  if (doc.approvedByFinancier || doc.approvedByTrader) {
+    return "amber";
+  }
+  return "red";
 };
 
-export const HomeDisplay = component$<{ data: Data[] }>((props) => {
-  const loc = useLocation();
+export const HomeDisplay = component$<{ data: Data[]; fans: string[] }>(
+  (props) => {
+    const loc = useLocation();
 
-  const tabs = useComputed$(() => {
-    const output = {
-      "3-months": [] as Data[],
-      "next-month": [] as Data[],
-      "this-month": [] as Data[],
-      "in-transit": [] as Data[],
-      landed: [] as Data[],
-      settled: [] as Data[],
-      "year-to-date": [] as Data[],
-    };
+    const selectedDocument = useSignal<DocumentModalInfo>();
 
-    const threeMonths = new Date();
-    threeMonths.setUTCMonth(threeMonths.getUTCMonth() + 3);
-    const nextMonth = new Date();
-    nextMonth.setUTCMonth(nextMonth.getUTCMonth() + 1);
-    const currentDate = new Date();
+    const tabs = useComputed$(() => {
+      const output = {
+        "3-months": [] as Data[],
+        "next-month": [] as Data[],
+        "this-month": [] as Data[],
+        "in-transit": [] as Data[],
+        landed: [] as Data[],
+        settled: [] as Data[],
+        "year-to-date": [] as Data[],
+      };
 
-    for (const row of props.data) {
-      if (row.settlementDate) {
-        const date = row.settlementDate;
-        if (
-          date.getTime() < threeMonths.getTime() &&
-          date.getTime() > currentDate.getTime()
-        ) {
-          output["3-months"].push(row);
+      const threeMonths = new Date();
+      threeMonths.setUTCMonth(threeMonths.getUTCMonth() + 3);
+      const nextMonth = new Date();
+      nextMonth.setUTCMonth(nextMonth.getUTCMonth() + 1);
+      const currentDate = new Date();
+
+      for (const row of props.data) {
+        if (row.settlementDate) {
+          const date = row.settlementDate;
+          if (
+            date.getTime() < threeMonths.getTime() &&
+            date.getTime() > currentDate.getTime()
+          ) {
+            output["3-months"].push(row);
+          }
+          if (
+            date.getUTCFullYear() === currentDate.getUTCFullYear() &&
+            date.getUTCMonth() === currentDate.getUTCMonth()
+          ) {
+            output["this-month"].push(row);
+          }
+          if (
+            date.getUTCFullYear() === nextMonth.getUTCFullYear() &&
+            date.getUTCMonth() === nextMonth.getUTCMonth()
+          ) {
+            output["next-month"].push(row);
+          }
+          if (
+            date.getUTCFullYear() === currentDate.getUTCFullYear() &&
+            date.getTime() < currentDate.getTime()
+          ) {
+            output["year-to-date"].push(row);
+          }
         }
-        if (
-          date.getUTCFullYear() === currentDate.getUTCFullYear() &&
-          date.getUTCMonth() === currentDate.getUTCMonth()
-        ) {
-          output["this-month"].push(row);
+        if (row.statuses.some((update) => update.status === "settled")) {
+          output.settled.push(row);
+          continue;
         }
-        if (
-          date.getUTCFullYear() === nextMonth.getUTCFullYear() &&
-          date.getUTCMonth() === nextMonth.getUTCMonth()
-        ) {
-          output["next-month"].push(row);
+        if (row.statuses.some((update) => update.status === "landed")) {
+          output.landed.push(row);
+          continue;
         }
-        if (
-          date.getUTCFullYear() === currentDate.getUTCFullYear() &&
-          date.getTime() < currentDate.getTime()
-        ) {
-          output["year-to-date"].push(row);
+        if (row.statuses.length <= 1) {
+          continue;
         }
+        output["in-transit"].push(row);
       }
-      if (row.statuses.some((update) => update.status === "settled")) {
-        output.settled.push(row);
-        continue;
-      }
-      if (row.statuses.some((update) => update.status === "landed")) {
-        output.landed.push(row);
-        continue;
-      }
-      if (row.statuses.length <= 1) {
-        continue;
-      }
-      output["in-transit"].push(row);
-    }
-    return output;
-  });
+      return output;
+    });
 
-  const initialTab = loc.url.searchParams.get("filter");
+    const initialTab = loc.url.searchParams.get("filter");
 
-  const selectedTab = useSignal(initialTab);
+    const selectedTab = useSignal(initialTab);
 
-  useTask$(({ track }) => {
-    const tab = track(selectedTab);
+    useTask$(({ track }) => {
+      const tab = track(selectedTab);
 
-    if (isServer) return;
+      if (isServer) return;
 
-    const url = new URL(window.location.href);
+      const url = new URL(window.location.href);
 
-    if (tab) url.searchParams.set("filter", tab);
-    else url.searchParams.delete("filter");
+      if (tab) url.searchParams.set("filter", tab);
+      else url.searchParams.delete("filter");
 
-    window.history.replaceState({ path: url.toString() }, "", url.toString());
-  });
-  const visibleRows = useComputed$(() => {
-    if (selectedTab.value === null) return props.data;
-    else return tabs.value[selectedTab.value as keyof typeof tabs.value];
-  });
+      window.history.replaceState({ path: url.toString() }, "", url.toString());
+    });
+    const visibleRows = useComputed$(() => {
+      if (selectedTab.value === null) return props.data;
+      else return tabs.value[selectedTab.value as keyof typeof tabs.value];
+    });
 
-  const headings = ["Date", "Volume (MT)", "Price", "Cost", "Status"];
+    const headings = ["Date", "Volume (MT)", "Price", "Cost", "Status"];
 
-  return (
-    <>
-      <DieselTabs
-        selectedTab={selectedTab}
-        tabs={[
-          {
-            label: "Next month",
-            filter: "next-month",
-            rows: tabs.value["next-month"],
-          },
-          {
-            label: "This month",
-            filter: "this-month",
-            rows: tabs.value["this-month"],
-          },
-          {
-            label: "In the next 3 months",
-            filter: "3-months",
-            rows: tabs.value["3-months"],
-          },
-          {
-            label: "In Transit",
-            filter: "in-transit",
-            rows: tabs.value["in-transit"],
-          },
-          {
-            label: "Landed",
-            filter: "landed",
-            rows: tabs.value["landed"],
-          },
-          {
-            label: "Settled",
-            filter: "settled",
-            rows: tabs.value["settled"],
-          },
-          {
-            label: "Year To Date",
-            filter: "year-to-date",
-            rows: tabs.value["year-to-date"],
-          },
-        ]}
-      ></DieselTabs>
-      <Table headings={headings}>
-        {visibleRows.value.map((row) => (
-          <TableRow row={toRow(row)} key={row.id}>
-            <Timeline>
-              {row.statuses.length === 0 && (
-                <TimelineItem
-                  step={{ date: new Date(), title: "No Data" }}
-                ></TimelineItem>
-              )}
-              {row.statuses
-                .map((step) => ({
-                  ...step,
-                  title: formatStatus[step.status],
-                }))
-                .map((step) => (
-                  <TimelineItem key={step.status} step={step}>
-                    <ul key={step.status}>
-                      {step.documents.map((doc) => (
-                        <li key={doc.id}>
-                          <a
-                            href={doc.url}
-                            class="hover:underline"
-                            target="_blank"
-                          >
-                            {doc.title}
-                          </a>
-                          <a
-                            href={getFileDownloadUrl(loc.url, doc.url)}
-                            class="ml-2"
-                            download={doc.title?.replaceAll(" ", "-")}
-                            target="_blank"
-                          >
-                            <HiArrowDownTraySolid class="inline align-icon" />
-                          </a>
-                          <a class="ml-1" href={doc.url} target="_blank">
-                            <HiEyeSolid class="inline align-icon" />
-                          </a>
-                        </li>
-                      ))}
-                    </ul>
-                  </TimelineItem>
-                ))}
-            </Timeline>
-          </TableRow>
-        ))}
-      </Table>
-    </>
-  );
-});
+    return (
+      <>
+        <DocumentModal document={selectedDocument} fans={props.fans} />
+        <DieselTabs
+          selectedTab={selectedTab}
+          tabs={[
+            {
+              label: "Next month",
+              filter: "next-month",
+              rows: tabs.value["next-month"],
+            },
+            {
+              label: "This month",
+              filter: "this-month",
+              rows: tabs.value["this-month"],
+            },
+            {
+              label: "In the next 3 months",
+              filter: "3-months",
+              rows: tabs.value["3-months"],
+            },
+            {
+              label: "In Transit",
+              filter: "in-transit",
+              rows: tabs.value["in-transit"],
+            },
+            {
+              label: "Landed",
+              filter: "landed",
+              rows: tabs.value["landed"],
+            },
+            {
+              label: "Settled",
+              filter: "settled",
+              rows: tabs.value["settled"],
+            },
+            {
+              label: "Year To Date",
+              filter: "year-to-date",
+              rows: tabs.value["year-to-date"],
+            },
+          ]}
+        ></DieselTabs>
+        <Table headings={headings}>
+          {visibleRows.value.map((row) => (
+            <TableRow row={toRow(row)} key={row.id}>
+              <Timeline>
+                {row.statuses.length === 0 && (
+                  <TimelineItem
+                    step={{ date: new Date(), title: "No Data" }}
+                  ></TimelineItem>
+                )}
+                {row.statuses
+                  .map((step) => ({
+                    ...step,
+                    title: formatStatus[step.status],
+                  }))
+                  .map((step) => (
+                    <TimelineItem key={step.status} step={step}>
+                      <ul key={step.status}>
+                        {step.documents.map((doc) => (
+                          <li key={doc.id}>
+                            <Status color={docStatusColor(doc)} class="mr-1" />
+                            <button
+                              onClick$={async () => {
+                                console.log(doc);
+                                selectedDocument.value = {
+                                  trader: row.trader,
+                                  financier: row.financier,
+                                  shipmentId: row.id,
+                                  status: step.status,
+                                  document: doc,
+                                };
+                              }}
+                              class="hover:underline"
+                            >
+                              {doc.title}
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    </TimelineItem>
+                  ))}
+              </Timeline>
+            </TableRow>
+          ))}
+        </Table>
+      </>
+    );
+  },
+);
 
 export const RequireOnboarding = component$<{
   hasEntities: boolean;
