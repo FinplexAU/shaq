@@ -352,8 +352,8 @@ export const HomeDisplay = component$<{ data: Data[]; fans: string[] }>(
         "this-month": [] as Data[],
         "in-transit": [] as Data[],
         landed: [] as Data[],
-        settled: [] as Data[],
-        "year-to-date": [] as Data[],
+        "settled-this-month": [] as Data[],
+        "settled-year-to-date": [] as Data[],
       };
 
       const threeMonths = new Date();
@@ -383,16 +383,21 @@ export const HomeDisplay = component$<{ data: Data[]; fans: string[] }>(
           ) {
             output["next-month"].push(row);
           }
-          if (
-            date.getUTCFullYear() === currentDate.getUTCFullYear() &&
-            date.getTime() < currentDate.getTime()
-          ) {
-            output["year-to-date"].push(row);
+          if (row.statuses.some((update) => update.status === "settled")) {
+            if (
+              date.getUTCFullYear() === currentDate.getUTCFullYear() &&
+              date.getTime() < currentDate.getTime()
+            ) {
+              output["settled-year-to-date"].push(row);
+            }
+            if (
+              date.getUTCFullYear() === currentDate.getUTCFullYear() &&
+              date.getUTCMonth() === currentDate.getUTCMonth()
+            ) {
+              output["settled-this-month"].push(row);
+            }
+            continue;
           }
-        }
-        if (row.statuses.some((update) => update.status === "settled")) {
-          output.settled.push(row);
-          continue;
         }
         if (row.statuses.some((update) => update.status === "landed")) {
           output.landed.push(row);
@@ -424,7 +429,12 @@ export const HomeDisplay = component$<{ data: Data[]; fans: string[] }>(
     });
     const visibleRows = useComputed$(() => {
       if (selectedTab.value === null) return props.data;
-      else return tabs.value[selectedTab.value as keyof typeof tabs.value];
+      else {
+        return (
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+          tabs.value[selectedTab.value as keyof typeof tabs.value] ?? props.data
+        );
+      }
     });
 
     const headings = ["Date", "Volume (MT)", "Price", "Cost", "Status"];
@@ -461,14 +471,14 @@ export const HomeDisplay = component$<{ data: Data[]; fans: string[] }>(
               rows: tabs.value["landed"],
             },
             {
-              label: "Settled",
-              filter: "settled",
-              rows: tabs.value["settled"],
+              label: "Settled This Month",
+              filter: "settled-this-month",
+              rows: tabs.value["settled-this-month"],
             },
             {
-              label: "Year To Date",
-              filter: "year-to-date",
-              rows: tabs.value["year-to-date"],
+              label: "Settled this Year",
+              filter: "settled-year-to-date",
+              rows: tabs.value["settled-year-to-date"],
             },
           ]}
         ></DieselTabs>
