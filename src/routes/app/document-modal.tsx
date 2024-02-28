@@ -1,4 +1,4 @@
-import type { Signal } from "@builder.io/qwik";
+import type { QRL, Signal } from "@builder.io/qwik";
 import { $, component$, useComputed$ } from "@builder.io/qwik";
 import { useSetApproved, type DataDocument } from ".";
 import {
@@ -120,7 +120,10 @@ export default component$<{
                     )}
                     {!approvedByTrader.value &&
                       (props.fans.includes(props.document.value.trader) ? (
-                        <ApproveButton document={props.document.value} />
+                        <ApproveButton
+                          document={props.document.value}
+                          closeFn={close}
+                        />
                       ) : (
                         <span>Not yet approved</span>
                       ))}
@@ -140,7 +143,10 @@ export default component$<{
                     )}
                     {!approvedByFinancier.value &&
                       (props.fans.includes(props.document.value.financier) ? (
-                        <ApproveButton document={props.document.value} />
+                        <ApproveButton
+                          document={props.document.value}
+                          closeFn={close}
+                        />
                       ) : (
                         <span>Not yet approved</span>
                       ))}
@@ -155,17 +161,22 @@ export default component$<{
   );
 });
 
-export const ApproveButton = component$<{ document: DocumentModalInfo }>(
-  (props) => {
-    const approveAction = useSetApproved();
+export const ApproveButton = component$<{
+  document: DocumentModalInfo;
+  closeFn: QRL<() => void>;
+}>((props) => {
+  const approveAction = useSetApproved();
 
-    return (
-      <Form action={approveAction} class="inline">
-        <input name="shipmentId" value={props.document.shipmentId} hidden />
-        <input name="status" value={props.document.status} hidden />
-        <input name="documentId" value={props.document.document.id} hidden />
-        <Button class="p-2 text-sm">Approve</Button>
-      </Form>
-    );
-  },
-);
+  return (
+    <Form
+      action={approveAction}
+      class="inline"
+      onSubmitCompleted$={props.closeFn}
+    >
+      <input name="shipmentId" value={props.document.shipmentId} hidden />
+      <input name="status" value={props.document.status} hidden />
+      <input name="documentId" value={props.document.document.id} hidden />
+      <Button class="p-2 text-sm">Approve</Button>
+    </Form>
+  );
+});
