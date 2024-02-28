@@ -114,6 +114,7 @@ export const useData = routeLoader$(async (ev) => {
   }
 
   const accountShipmentsKeys = accounts.map((x) => `shipments:${x.fan}`);
+  console.log(accountShipmentsKeys);
   const redisShipmentKeys: (string[] | null)[] =
     await redis.mget(accountShipmentsKeys);
   const shipmentKeys = filterFalsy(redisShipmentKeys)
@@ -123,6 +124,7 @@ export const useData = routeLoader$(async (ev) => {
   const dbData = (await redis.mget(shipmentKeys)).filter((x) => x) as DbData[];
   const nerveCentre = getSharedMap(ev.sharedMap, "nerveCentre");
 
+  console.log(JSON.stringify(dbData, null, 2));
   const documents = filterFalsy(
     await Promise.all(
       dbData
