@@ -114,13 +114,15 @@ export const useData = routeLoader$(async (ev) => {
   }
 
   const accountShipmentsKeys = accounts.map((x) => `shipments:${x.fan}`);
-  console.log(accountShipmentsKeys);
   const redisShipmentKeys: (string[] | null)[] =
     await redis.mget(accountShipmentsKeys);
   const shipmentKeys = filterFalsy(redisShipmentKeys)
     .flat()
     .flatMap((x) => `shipment:${x}`);
 
+  if (shipmentKeys.length === 0) {
+    return { success: true as const, data: [] };
+  }
   const dbData = (await redis.mget(shipmentKeys)).filter((x) => x) as DbData[];
   const nerveCentre = getSharedMap(ev.sharedMap, "nerveCentre");
 
