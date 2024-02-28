@@ -14,6 +14,7 @@ import { getSharedMap } from "../plugin";
 import { graphql, graphqlLoader } from "~/utils/graphql";
 import { dateString } from "~/utils/dates";
 import { HiArrowDownTraySolid, HiEyeSolid } from "@qwikest/icons/heroicons";
+import { Error } from "~/components/error";
 
 type DieselStatus = "trans-in" | "settled" | "loaded" | "landed" | "shipped";
 export const formatStatus: Record<DieselStatus, string> = {
@@ -82,13 +83,13 @@ export const useData = routeLoader$(async (ev) => {
   const fans = await ev.resolveValue(useGqlIndex);
 
   if (!fans.success) {
-    throw ev.error(500, "Failed to get accounts");
+    return { success: false as const, message: "Failed to get accounts" };
   }
 
   const accounts = fans.entities.flatMap((x) => x.accounts);
 
   if (accounts.length === 0) {
-    return [];
+    return { success: true as const, data: [] };
   }
 
   const accountShipmentsKeys = accounts.map((x) => `shipments:${x.fan}`);
@@ -153,7 +154,7 @@ export const useData = routeLoader$(async (ev) => {
       return 0;
     });
 
-  return data;
+  return { success: true, data } as const;
 });
 
 const getServerHours = server$(function () {
@@ -190,6 +191,7 @@ const toRow = (row: Data) => {
 
 export default component$(() => {
   const gql = useGqlIndex();
+  const data = useData();
 
   const entities = useComputed$(() => gql.value.entities ?? []);
   const accounts = useComputed$(() =>
@@ -211,6 +213,10 @@ export default component$(() => {
     }
   });
 
+  if (!data.value.success || !gql.value.success) {
+    return <Error />;
+  }
+
   return (
     <div class="flex-1">
       <div class="mb-4 border-l-4 border-stone-800 px-2">
@@ -222,7 +228,7 @@ export default component$(() => {
         </h1>
       </div>
       {entities.value.length !== 0 && accounts.value.length !== 0 ? (
-        <HomeDisplay />
+        <HomeDisplay data={data.value.data} />
       ) : (
         <RequireOnboarding hasEntities={!!entities.value.length} />
       )}
@@ -236,10 +242,8 @@ const getFileDownloadUrl = (loc: URL, fileUrl: string) => {
   return url.toString();
 };
 
-export const HomeDisplay = component$(() => {
+export const HomeDisplay = component$<{ data: Data[] }>((props) => {
   const loc = useLocation();
-
-  const data = useData();
 
   const tabs = useComputed$(() => {
     const output = {
@@ -258,7 +262,7 @@ export const HomeDisplay = component$(() => {
     nextMonth.setUTCMonth(nextMonth.getUTCMonth() + 1);
     const currentDate = new Date();
 
-    for (const row of data.value) {
+    for (const row of props.data) {
       if (row.settlementDate) {
         const date = row.settlementDate;
         if (
@@ -319,7 +323,7 @@ export const HomeDisplay = component$(() => {
     window.history.replaceState({ path: url.toString() }, "", url.toString());
   });
   const visibleRows = useComputed$(() => {
-    if (selectedTab.value === null) return data.value;
+    if (selectedTab.value === null) return props.data;
     else return tabs.value[selectedTab.value as keyof typeof tabs.value];
   });
 
