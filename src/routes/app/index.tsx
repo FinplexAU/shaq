@@ -147,6 +147,22 @@ export const useData = routeLoader$(async (ev) => {
     }),
   );
 
+  const sortDates = (
+    a: Date | undefined | null,
+    b: Date | undefined | null,
+  ) => {
+    if (a && b) {
+      return b.getTime() - a.getTime();
+    }
+    if (b) {
+      return 1;
+    }
+    if (a) {
+      return -1;
+    }
+    return 0;
+  };
+
   // Map the nested document within each data object.
   const data: Data[] = dbData
     .map((dataEntry) => ({
@@ -173,18 +189,11 @@ export const useData = routeLoader$(async (ev) => {
         .sort((a, b) => b.date.getTime() - a.date.getTime()),
     }))
     .sort((a, b) => {
-      const aDate = a.settlementDate ?? a.statuses.at(0)?.date;
-      const bDate = b.settlementDate ?? b.statuses.at(0)?.date;
-      if (aDate && bDate) {
-        return bDate.getTime() - aDate.getTime();
+      const x = sortDates(a.settlementDate, b.settlementDate);
+      if (x !== 0) {
+        return x;
       }
-      if (bDate) {
-        return 1;
-      }
-      if (aDate) {
-        return -1;
-      }
-      return 0;
+      return sortDates(a.statuses.at(0)?.date, b.statuses.at(0)?.date);
     });
 
   return { success: true, data } as const;
@@ -259,10 +268,9 @@ const getServerHours = server$(function () {
 
 const toRow = (row: Data) => {
   const outputRow = [];
-  const latest = row.statuses.at(0);
 
   const settlementDate = row.settlementDate;
-  outputRow.push(dateString(settlementDate ?? latest?.date) || "No Data");
+  outputRow.push(dateString(settlementDate) || "Unknown");
 
   outputRow.push(row.volume.toString());
   outputRow.push(
@@ -279,8 +287,10 @@ const toRow = (row: Data) => {
       currencyDisplay: "narrowSymbol",
     }),
   );
-  outputRow.push(latest ? formatStatus[latest.status] : "No Data");
-  outputRow.push(dateString(latest?.date) || "No Data");
+
+  const latest = row.statuses.at(0);
+  outputRow.push(latest ? formatStatus[latest.status] : "No Status");
+  outputRow.push(dateString(latest?.date) || "No Status");
   return outputRow;
 };
 
