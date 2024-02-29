@@ -280,6 +280,7 @@ const toRow = (row: Data) => {
     }),
   );
   outputRow.push(latest ? formatStatus[latest.status] : "No Data");
+  outputRow.push(latest?.date ?? "No Data");
   return outputRow;
 };
 
@@ -441,7 +442,14 @@ export const HomeDisplay = component$<{ data: Data[]; fans: string[] }>(
       }
     });
 
-    const headings = ["Date", "Volume (MT)", "Price", "Cost", "Status"];
+    const headings = [
+      "Settlement Date",
+      "Volume (MT)",
+      "Price",
+      "Cost",
+      "Status",
+      "Last Updated",
+    ];
 
     return (
       <>
