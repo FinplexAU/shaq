@@ -280,7 +280,7 @@ const toRow = (row: Data) => {
     }),
   );
   outputRow.push(latest ? formatStatus[latest.status] : "No Data");
-  outputRow.push(latest?.date ?? "No Data");
+  outputRow.push(dateString(latest?.date) || "No Data");
   return outputRow;
 };
 
