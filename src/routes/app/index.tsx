@@ -450,14 +450,14 @@ export const HomeDisplay = component$<{ data: Data[]; fans: string[] }>(
           selectedTab={selectedTab}
           tabs={[
             {
-              label: "Next month",
-              filter: "next-month",
-              rows: tabs.value["next-month"],
-            },
-            {
               label: "This month",
               filter: "this-month",
               rows: tabs.value["this-month"],
+            },
+            {
+              label: "Next month",
+              filter: "next-month",
+              rows: tabs.value["next-month"],
             },
             {
               label: "In the next 3 months",
