@@ -4,7 +4,7 @@ import { Form, routeAction$, zod$, z } from "@builder.io/qwik-city";
 import { Button } from "~/components/button";
 import { drizzleDb } from "~/db/db";
 
-const useCreateContract = routeAction$(
+export const useCreateContract = routeAction$(
 	async (data, { cookie, fail, redirect }) => {
 		const user = cookie.get("user");
 
