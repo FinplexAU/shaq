@@ -8,6 +8,7 @@
     "jsxImportSource": "@builder.io/qwik",
     "strict": true,
     "forceConsistentCasingInFileNames": true,
+    "noUncheckedIndexedAccess": true,
     "resolveJsonModule": true,
     "moduleResolution": "node",
     "esModuleInterop": true,
@@ -19,6 +20,7 @@
     "types": ["node", "vite/client"],
     "paths": {
       "~/*": ["./src/*"],
+      "@/*": ["./*"],
     },
     "plugins": [
       {
@@ -29,5 +31,5 @@
     ],
   },
   "files": ["./.eslintrc.cjs"],
-  "include": ["src", "./*.d.ts", "./*.config.ts", "scripts"],
+  "include": ["src", "./*.d.ts", "./*.config.ts", "scripts", "drizzle"],
 }
