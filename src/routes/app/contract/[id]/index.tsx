@@ -7,7 +7,8 @@ import Table from "~/components/flowbite/components/Table/table";
 import TableBody from "~/components/flowbite/components/Table/table-body";
 import TableCell from "~/components/flowbite/components/Table/table-cell";
 import TableRow from "~/components/flowbite/components/Table/table-row";
-import { drizzleDb, safeDb } from "~/db/db";
+import { drizzleDb } from "~/db/db";
+import { safeProm } from "~/utils/safeProm";
 
 const getContractWithEntities = async (id: string) => {
 	const traders = alias(entities, "traders");
@@ -33,7 +34,7 @@ export const useContractLoader = routeLoader$(async (req) => {
 	}
 	const id = parsedId.data;
 
-	const x = await safeDb(getContractWithEntities(id));
+	const x = await safeProm(getContractWithEntities(id));
 	if (!x.success) {
 		return { found: false } as const;
 	}

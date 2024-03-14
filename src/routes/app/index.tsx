@@ -532,4 +532,3 @@ export const HomeDisplay = component$<{ data: Data[]; fans: string[] }>(
 		);
 	}
 );
-i;
