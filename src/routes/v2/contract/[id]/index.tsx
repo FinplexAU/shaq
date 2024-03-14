@@ -3,14 +3,13 @@ import { routeLoader$ } from "@builder.io/qwik-city";
 import { drizzleDb } from "~/db/db";
 import {
 	contracts,
-	documentTypes,
 	userEntityLinks,
+	workflowStepTypes,
 	workflowSteps,
 	workflowTypes,
 	workflows,
 } from "@/drizzle/schema";
 import { eq, and } from "drizzle-orm";
-import { contains } from "@amcharts/amcharts5/.internal/core/util/Utils";
 
 export const useLoadContract = routeLoader$(
 	async ({ cookie, redirect, params }) => {
@@ -53,9 +52,20 @@ export const useLoadContract = routeLoader$(
 );
 
 export const useContractStep = routeLoader$(async ({ resolveValue }) => {
-	const contract = await resolveValue(useLoadContract);
-
-	return await createWorkflow("Joint Venture Set-up");
+	let contract;
+	contract = await resolveValue(useLoadContract);
+	const db = await drizzleDb;
+	if (!contract.jointVenture) {
+		const jointVentureWorkflow = await createWorkflow("Joint Venture Set-up");
+		contract = (
+			await db
+				.update(contracts)
+				.set({ jointVenture: jointVentureWorkflow?.id })
+				.where(eq(contracts.id, contract.id))
+				.returning()
+		)[0];
+	}
+	return contract;
 });
 
 export default component$(() => {
@@ -70,12 +80,26 @@ export default component$(() => {
 const createWorkflow = async (workflowName: string) => {
 	const db = await drizzleDb;
 
-	const foo = await db
+	const template = await db
 		.select()
 		.from(workflowTypes)
-		.fullJoin(workflowSteps, eq(workflowTypes.id, workflowSteps.workflowId))
-		.fullJoin(documentTypes, eq(documentTypes.requiredBy, workflowSteps.id))
+		.fullJoin(
+			workflowStepTypes,
+			eq(workflowTypes.id, workflowStepTypes.workflow)
+		)
 		.where(eq(workflowTypes.name, workflowName));
 
-	return foo;
+	const [workflow] = await db
+		.insert(workflows)
+		.values({ complete: false })
+		.returning({ id: workflows.id });
+
+	const templatedSteps = template.map(({ workflow_step_types }) => ({
+		complete: false,
+		workflowId: workflow!.id,
+		stepType: workflow_step_types?.id,
+	}));
+	await db.insert(workflowSteps).values(templatedSteps);
+
+	return workflow;
 };
