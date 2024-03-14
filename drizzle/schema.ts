@@ -72,7 +72,9 @@ export const workflowSteps = pgTable("workflow_steps", {
 	workflowId: uuid("workflow_id")
 		.references(() => workflows.id)
 		.notNull(),
-	stepType: uuid("step_type").references(() => workflowStepTypes.id),
+	stepType: uuid("step_type")
+		.references(() => workflowStepTypes.id)
+		.notNull(),
 });
 
 export const workflows = pgTable("workflows", {
@@ -87,8 +89,12 @@ export const users = pgTable("users", {
 
 export const userEntityLinks = pgTable("user_entity_links", {
 	id: uuid("id").primaryKey().defaultRandom(),
-	user_id: uuid("user_id").references(() => users.id),
-	entity_id: uuid("entity_id").references(() => entities.id),
+	user_id: uuid("user_id")
+		.references(() => users.id)
+		.notNull(),
+	entity_id: uuid("entity_id")
+		.references(() => entities.id)
+		.notNull(),
 });
 
 export const userPermissions = pgTable("user_permissions", {
@@ -98,7 +104,7 @@ export const userPermissions = pgTable("user_permissions", {
 
 export const permissions = pgTable("permissions", {
 	id: uuid("id").primaryKey().defaultRandom(),
-	permission: text("permission"),
+	permission: text("permission").notNull(),
 });
 
 export const workflowTypes = pgTable("workflow_types", {
@@ -109,8 +115,10 @@ export const workflowTypes = pgTable("workflow_types", {
 export const workflowStepTypes = pgTable("workflow_step_types", {
 	id: uuid("id").primaryKey().defaultRandom(),
 	name: text("name").notNull(),
-	stepNumber: integer("step_number"),
-	workflow: uuid("workflow_id").references(() => workflowTypes.id),
+	stepNumber: integer("step_number").notNull(),
+	workflowTypeId: uuid("workflow_id")
+		.references(() => workflowTypes.id)
+		.notNull(),
 });
 
 export const documentTypes = pgTable("document_types", {
@@ -118,5 +126,7 @@ export const documentTypes = pgTable("document_types", {
 	documentName: text("document_name").notNull(),
 	investorApprovalRequired: boolean("investor_approval_required").notNull(),
 	traderApprovalRequired: boolean("trader_approval_required").notNull(),
-	requiredBy: uuid("required_by").references(() => workflowStepTypes.id),
+	requiredBy: uuid("required_by")
+		.references(() => workflowStepTypes.id)
+		.notNull(),
 });

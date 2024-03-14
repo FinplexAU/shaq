@@ -4,6 +4,7 @@ import { drizzleDb } from "~/db/db";
 import {
 	contracts,
 	documentTypes,
+	documentVersions,
 	documents,
 	userEntityLinks,
 	workflowStepDocuments,
@@ -12,7 +13,7 @@ import {
 	workflowTypes,
 	workflows,
 } from "@/drizzle/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, asc } from "drizzle-orm";
 
 export const useLoadContract = routeLoader$(
 	async ({ cookie, redirect, params }) => {
@@ -73,22 +74,86 @@ export const useContractStep = routeLoader$(async ({ resolveValue }) => {
 	const jointVentureWorkflow = await db
 		.select()
 		.from(workflowSteps)
-		.fullJoin(
-			workflowStepDocuments,
-			eq(workflowStepDocuments.workflowStepId, workflowSteps.id)
-		)
-		.fullJoin(documents, eq(workflowStepDocuments.documentId, documents.id))
-		.fullJoin(
-			documentTypes,
-			eq(documentTypes.requiredBy, workflowSteps.stepType)
-		)
-		.fullJoin(
+		.innerJoin(
 			workflowStepTypes,
 			eq(workflowSteps.stepType, workflowStepTypes.id)
 		)
-		.where(eq(workflowSteps.workflowId, contract.jointVenture));
+		.leftJoin(
+			documentTypes,
+			eq(documentTypes.requiredBy, workflowSteps.stepType)
+		)
+		.leftJoin(
+			workflowStepDocuments,
+			eq(workflowStepDocuments.workflowStepId, workflowSteps.id)
+		)
+		.leftJoin(
+			documents,
+			and(
+				eq(workflowStepDocuments.documentId, documents.id),
+				eq(documents.documentType, documentTypes.id)
+			)
+		)
+		.leftJoin(documentVersions, eq(documentVersions.documentId, documents.id))
+		.where(eq(workflowSteps.workflowId, contract.jointVenture))
+		.orderBy(asc(workflowStepTypes.stepNumber), asc(documentVersions.version));
 
-	return jointVentureWorkflow;
+	const output: {
+		workflowId: string;
+		stepId: string;
+		complete: boolean;
+		completeReason: string | null;
+		stepNumber: number;
+		documents: {
+			typeId: string;
+			name: string;
+			investorApprovalRequired: boolean;
+			traderApprovalRequired: boolean;
+			versions: {
+				id: string;
+				documentId: string;
+				investorApproval: Date | null;
+				traderApproval: Date | null;
+				version: number;
+				createdAt: Date;
+			}[];
+		}[];
+	}[] = [];
+
+	for (const sql of jointVentureWorkflow) {
+		let step = output.find((x) => x.stepId === sql.workflow_steps.id);
+		if (!step) {
+			step = {
+				workflowId: sql.workflow_steps.workflowId,
+				stepId: sql.workflow_steps.id,
+				complete: sql.workflow_steps.complete,
+				completeReason: sql.workflow_steps.completionReason,
+				stepNumber: sql.workflow_step_types.stepNumber,
+				documents: [],
+			};
+			output.push(step);
+		}
+
+		if (sql.document_types) {
+			let document = step.documents.find(
+				(a) => a.typeId === sql.document_types?.id
+			);
+			if (!document) {
+				document = {
+					versions: [],
+					typeId: sql.document_types.id,
+					name: sql.document_types.documentName,
+					investorApprovalRequired: sql.document_types.investorApprovalRequired,
+					traderApprovalRequired: sql.document_types.traderApprovalRequired,
+				};
+				step.documents.push(document);
+			}
+			if (sql.document_versions) {
+				document.versions.push(sql.document_versions);
+			}
+		}
+	}
+
+	return output;
 });
 
 export default component$(() => {
@@ -106,9 +171,9 @@ const createWorkflow = async (workflowName: string) => {
 	const template = await db
 		.select()
 		.from(workflowTypes)
-		.fullJoin(
+		.leftJoin(
 			workflowStepTypes,
-			eq(workflowTypes.id, workflowStepTypes.workflow)
+			eq(workflowTypes.id, workflowStepTypes.workflowTypeId)
 		)
 		.where(eq(workflowTypes.name, workflowName));
 
@@ -117,11 +182,13 @@ const createWorkflow = async (workflowName: string) => {
 		.values({ complete: false })
 		.returning({ id: workflows.id });
 
-	const templatedSteps = template.map(({ workflow_step_types }) => ({
-		complete: false,
-		workflowId: workflow!.id,
-		stepType: workflow_step_types?.id,
-	}));
+	const templatedSteps = template
+		.filter(({ workflow_step_types }) => workflow_step_types)
+		.map(({ workflow_step_types }) => ({
+			complete: false,
+			workflowId: workflow!.id,
+			stepType: workflow_step_types!.id,
+		}));
 	await db.insert(workflowSteps).values(templatedSteps);
 
 	return workflow;
