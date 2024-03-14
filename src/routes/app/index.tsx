@@ -18,7 +18,7 @@ import { DieselTabs } from "~/components/tabs";
 import moment from "moment-timezone";
 import { isServer } from "@builder.io/qwik/build";
 import { getSharedMap } from "../plugin";
-import { graphql, graphqlLoader, graphqlRequest } from "~/utils/graphql";
+import { graphql, graphqlRequest } from "~/utils/graphql";
 import { dateString } from "~/utils/dates";
 import { Error } from "~/components/error";
 import Status from "~/components/status";
@@ -532,4 +532,3 @@ export const HomeDisplay = component$<{ data: Data[]; fans: string[] }>(
 		);
 	}
 );
-i;

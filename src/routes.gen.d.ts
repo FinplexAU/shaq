@@ -12,7 +12,8 @@ export type AppRoutes =
   | "/app/map/"
   | "/app/user/"
   | "/auth/callback/"
-  | "/prx/";
+  | "/prx/"
+  | "/v2/contract/[id]/";
 
 export interface AppRouteMap {
   "/": {};
@@ -25,6 +26,7 @@ export interface AppRouteMap {
   "/app/user/": {};
   "/auth/callback/": {};
   "/prx/": {};
+  "/v2/contract/[id]/": { id: string };
 }
 
 export interface AppRouteParamsFunction {
@@ -38,6 +40,7 @@ export interface AppRouteParamsFunction {
   (route: "/app/user/", params?: {}): string;
   (route: "/auth/callback/", params?: {}): string;
   (route: "/prx/", params?: {}): string;
+  (route: "/v2/contract/[id]/", params: { id: string }): string;
 }
 
 export type AppLinkProps =
@@ -50,4 +53,5 @@ export type AppLinkProps =
   | { route: "/app/map/" }
   | { route: "/app/user/" }
   | { route: "/auth/callback/" }
-  | { route: "/prx/" };
+  | { route: "/prx/" }
+  | { route: "/v2/contract/[id]/"; "param:id": string };
