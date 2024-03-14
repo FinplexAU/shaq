@@ -3,7 +3,10 @@ import { routeLoader$ } from "@builder.io/qwik-city";
 import { drizzleDb } from "~/db/db";
 import {
 	contracts,
+	documentTypes,
+	documents,
 	userEntityLinks,
+	workflowStepDocuments,
 	workflowStepTypes,
 	workflowSteps,
 	workflowTypes,
@@ -64,8 +67,28 @@ export const useContractStep = routeLoader$(async ({ resolveValue }) => {
 				.where(eq(contracts.id, contract.id))
 				.returning()
 		)[0];
+		return;
 	}
-	return contract;
+
+	const jointVentureWorkflow = await db
+		.select()
+		.from(workflowSteps)
+		.fullJoin(
+			workflowStepDocuments,
+			eq(workflowStepDocuments.workflowStepId, workflowSteps.id)
+		)
+		.fullJoin(documents, eq(workflowStepDocuments.documentId, documents.id))
+		.fullJoin(
+			documentTypes,
+			eq(documentTypes.requiredBy, workflowSteps.stepType)
+		)
+		.fullJoin(
+			workflowStepTypes,
+			eq(workflowSteps.stepType, workflowStepTypes.id)
+		)
+		.where(eq(workflowSteps.workflowId, contract.jointVenture));
+
+	return jointVentureWorkflow;
 });
 
 export default component$(() => {
