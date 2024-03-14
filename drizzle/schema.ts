@@ -8,7 +8,7 @@ import {
 	numeric,
 } from "drizzle-orm/pg-core";
 
-export const bankDetails = pgTable("bankDetails", {
+export const bankDetails = pgTable("bank_details", {
 	id: uuid("id").primaryKey().defaultRandom(),
 });
 
@@ -37,31 +37,17 @@ export const contracts = pgTable("contracts", {
 		.notNull(),
 });
 
-export const documents = pgTable("documents", {
-	id: uuid("id").primaryKey().defaultRandom(),
-	documentType: uuid("document_type").references(() => documentTypes.id),
-});
-
 export const documentVersions = pgTable("document_versions", {
 	id: uuid("id").primaryKey().defaultRandom(),
 	investorApproval: timestamp("trader_approval"),
 	traderApproval: timestamp("trader_approval"),
+	documentTypeId: uuid("document_type_id").references(() => documentTypes.id),
 	version: integer("version").notNull(),
 	createdAt: timestamp("created_at")
 		.notNull()
 		.$defaultFn(() => new Date()),
-	documentId: uuid("document_id")
-		.references(() => documents.id)
-		.notNull(),
-});
-
-export const workflowStepDocuments = pgTable("workflow_step_documents", {
-	id: uuid("id").primaryKey().defaultRandom(),
 	workflowStepId: uuid("workflow_step_id")
 		.references(() => workflowSteps.id)
-		.notNull(),
-	documentId: uuid("document_id")
-		.references(() => documents.id)
 		.notNull(),
 });
 

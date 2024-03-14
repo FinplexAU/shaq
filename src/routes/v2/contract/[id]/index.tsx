@@ -5,9 +5,7 @@ import {
 	contracts,
 	documentTypes,
 	documentVersions,
-	documents,
 	userEntityLinks,
-	workflowStepDocuments,
 	workflowStepTypes,
 	workflowSteps,
 	workflowTypes,
@@ -83,17 +81,12 @@ export const useContractStep = routeLoader$(async ({ resolveValue }) => {
 			eq(documentTypes.requiredBy, workflowSteps.stepType)
 		)
 		.leftJoin(
-			workflowStepDocuments,
-			eq(workflowStepDocuments.workflowStepId, workflowSteps.id)
-		)
-		.leftJoin(
-			documents,
+			documentVersions,
 			and(
-				eq(workflowStepDocuments.documentId, documents.id),
-				eq(documents.documentType, documentTypes.id)
+				eq(documentVersions.documentTypeId, documentTypes.id),
+				eq(documentVersions.workflowStepId, workflowSteps.id)
 			)
 		)
-		.leftJoin(documentVersions, eq(documentVersions.documentId, documents.id))
 		.where(eq(workflowSteps.workflowId, contract.jointVenture))
 		.orderBy(asc(workflowStepTypes.stepNumber), asc(documentVersions.version));
 
@@ -110,7 +103,6 @@ export const useContractStep = routeLoader$(async ({ resolveValue }) => {
 			traderApprovalRequired: boolean;
 			versions: {
 				id: string;
-				documentId: string;
 				investorApproval: Date | null;
 				traderApproval: Date | null;
 				version: number;
