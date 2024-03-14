@@ -4,6 +4,7 @@ import {
   component$,
   noSerialize,
   Slot,
+  useComputed$,
   useSignal,
   useVisibleTask$,
 } from "@builder.io/qwik";
@@ -19,6 +20,7 @@ import { getRequiredEnv, getSharedMap } from "../plugin";
 import { AppLink } from "~/routes.config";
 import ExternalImage from "~/components/external-image";
 import { Dropdown } from "flowbite";
+import { graphql, graphqlLoader } from "~/utils/graphql";
 
 export const onGet: RequestHandler = async ({ cacheControl }) => {
   // Control caching for this request for best performance and to reduce hosting costs:
@@ -27,6 +29,23 @@ export const onGet: RequestHandler = async ({ cacheControl }) => {
     noCache: true,
   });
 };
+
+const gqlQuery = graphql(`
+  query Index {
+    user {
+      nickname
+      givenName
+      name
+    }
+    entities {
+      accounts {
+        fan
+      }
+    }
+  }
+`);
+
+export const useGqlIndex = routeLoader$(graphqlLoader(gqlQuery, {}));
 
 export const head: DocumentHead = {
   title: "Welcome to Shaq",
@@ -39,11 +58,19 @@ export const head: DocumentHead = {
 };
 
 export default component$(() => {
+  const gql = useGqlIndex();
+  const entities = useComputed$(() => gql.value.entities ?? []);
+
   return (
     <>
       <Header></Header>
       <main class="container flex min-h-[calc(100dvh-64px)] flex-col py-8  max-sm:px-2">
-        <Slot />
+        {entities.value.length === 0 ||
+        entities.value.at(0)?.accounts.length === 0 ? (
+          <RequireOnboarding hasEntities={false}></RequireOnboarding>
+        ) : (
+          <Slot />
+        )}
       </main>
     </>
   );
@@ -264,5 +291,22 @@ export const Header = component$(() => {
         </div>
       </div>
     </nav>
+  );
+});
+
+export const RequireOnboarding = component$<{
+  hasEntities: boolean;
+}>((props) => {
+  return (
+    <div class="text-lg">
+      {props.hasEntities && <p>You do not have any accounts set up.</p>}
+      <p>
+        Please contact us at{" "}
+        <a href="mailto:nerve@finplex.com.au" class="font-semibold underline">
+          nerve@finplex.com.au
+        </a>{" "}
+        to begin the onboarding process.
+      </p>
+    </div>
   );
 });

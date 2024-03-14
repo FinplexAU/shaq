@@ -60,9 +60,7 @@ export const DieselTabs = component$((props: TabsProps) => {
                 },
               ]}
               onClick$={() => {
-                if (props.selectedTab.value === tab.filter)
-                  props.selectedTab.value = null;
-                else props.selectedTab.value = tab.filter;
+                props.selectedTab.value = tab.filter;
               }}
               key={tab.label}
             >
