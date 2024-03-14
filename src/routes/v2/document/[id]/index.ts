@@ -18,9 +18,10 @@ export const onGet: RequestHandler = async ({
 	const object = await safeDb(s3.send(command));
 
 	if (!object.success || !object.data.Body || !object.data.ContentType) {
-		status(400);
+		status(404);
 		return;
 	}
+
 	status(200);
 	headers.set("Content-Type", object.data.ContentType!);
 	const bodyStream = object.data.Body.transformToWebStream();
