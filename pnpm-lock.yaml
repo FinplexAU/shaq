@@ -20,6 +20,9 @@ dependencies:
   '@builder.io/qwik-labs':
     specifier: github:BuilderIo/qwik-labs-build#main
     version: github.com/BuilderIo/qwik-labs-build/635e08da77577c5a4c78603cda74625fc47429f6
+  '@lucia-auth/adapter-drizzle':
+    specifier: ^1.0.4
+    version: 1.0.4(lucia@3.0.1)
   '@lucia-auth/adapter-sqlite':
     specifier: ^3.0.0
     version: 3.0.0(lucia@3.0.1)
@@ -1947,6 +1950,14 @@ packages:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.4.15
     dev: true
+
+  /@lucia-auth/adapter-drizzle@1.0.4(lucia@3.0.1):
+    resolution: {integrity: sha512-eF0DyebhgG8SLBpEG0BiDLm9DLCCYJj3EFN4TvU/oaJ7expEuY5nPZj4mvUpxX8I9DYwC7ROhMWC9WyjY1pQ9Q==}
+    peerDependencies:
+      lucia: 3.x
+    dependencies:
+      lucia: 3.0.1
+    dev: false
 
   /@lucia-auth/adapter-sqlite@3.0.0(lucia@3.0.1):
     resolution: {integrity: sha512-7XMfMMNziFOoqIq2u9W5Z+wo7G7lzNQfUh7wDlkIqKxJMSLtP6GKH+QpK+21X4ZY9dIDmiuiwqZmS3Q3CgpATw==}

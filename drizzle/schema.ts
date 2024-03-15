@@ -73,7 +73,37 @@ export const workflows = pgTable("workflows", {
 
 export const users = pgTable("users", {
 	id: uuid("id").primaryKey().defaultRandom(),
+	email: text("email").unique().notNull(),
+	emailVerified: boolean("email_verified").notNull().default(false),
+	hashedPassword: text("hashed_password").notNull(),
 });
+
+export const userSessions = pgTable("user_session", {
+	id: uuid("id").primaryKey(),
+	userId: uuid("user_id")
+		.notNull()
+		.references(() => users.id),
+	expiresAt: timestamp("expires_at", {
+		withTimezone: true,
+		mode: "date",
+	}).notNull(),
+});
+
+export const userEmailVerificationCodes = pgTable(
+	"user_email_verification_codes",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		code: text("code").notNull(),
+		userId: uuid("user_id")
+			.references(() => users.id)
+			.unique()
+			.notNull(),
+		expiresAt: timestamp("expires_at", {
+			withTimezone: true,
+			mode: "date",
+		}).notNull(),
+	}
+);
 
 export const userEntityLinks = pgTable("user_entity_links", {
 	id: uuid("id").primaryKey().defaultRandom(),

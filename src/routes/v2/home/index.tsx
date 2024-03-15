@@ -3,21 +3,18 @@ import { component$ } from "@builder.io/qwik";
 import { Link, routeLoader$ } from "@builder.io/qwik-city";
 import { eq, inArray } from "drizzle-orm";
 import { drizzleDb } from "~/db/db";
+import { getSharedMap } from "~/routes/plugin";
 
-export const useUserEntities = routeLoader$(async ({ cookie, redirect }) => {
+export const useUserEntities = routeLoader$(async ({ sharedMap }) => {
+	const user = getSharedMap(sharedMap, "user");
 	const db = await drizzleDb;
-	const user = cookie.get("user");
-	if (!user) {
-		console.warn("no user cookie");
-		throw redirect(302, "/v2/");
-	}
 	const usersEntities = await db
 		.select({
 			id: entities.id,
 		})
 		.from(entities)
 		.leftJoin(userEntityLinks, eq(entities.id, userEntityLinks.entity_id))
-		.where(eq(userEntityLinks.user_id, user.value));
+		.where(eq(userEntityLinks.user_id, user.id));
 
 	return usersEntities.map((e) => e.id);
 });

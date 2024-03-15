@@ -18,6 +18,7 @@ import { selectFirst, throwIfNone } from "~/utils/drizzle-utils";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { v4 } from "uuid";
 import { s3 } from "~/utils/aws";
+import { getSharedMap } from "~/routes/plugin";
 import { alias } from "drizzle-orm/pg-core";
 
 export type WorkflowStep = {
@@ -50,12 +51,8 @@ export type Workflow = {
 };
 
 export const useLoadContract = routeLoader$(
-	async ({ cookie, redirect, params }) => {
-		const user = cookie.get("user");
-		if (!user) {
-			console.warn("no user cookie");
-			throw redirect(302, "/v2");
-		}
+	async ({ redirect, params, sharedMap }) => {
+		const user = getSharedMap(sharedMap, "user");
 
 		if (!params.id) {
 			throw redirect(302, "/v2/home");
@@ -82,7 +79,7 @@ export const useLoadContract = routeLoader$(
 			.where(
 				and(
 					eq(userEntityLinks.entity_id, contract.contracts.adminId),
-					eq(userEntityLinks.user_id, user.value)
+					eq(userEntityLinks.user_id, user.id)
 				)
 			);
 
