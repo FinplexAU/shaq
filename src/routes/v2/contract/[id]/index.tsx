@@ -17,7 +17,7 @@ import {
 	workflowTypes,
 	workflows,
 } from "@/drizzle/schema";
-import { eq, and, asc } from "drizzle-orm";
+import { eq, and, asc, desc } from "drizzle-orm";
 import { throwIfNone } from "~/utils/drizzle-utils";
 import Debugger from "~/components/debugger";
 import {
@@ -136,7 +136,11 @@ export const useContractStep = routeLoader$(async ({ resolveValue }) => {
 			)
 		)
 		.where(eq(workflows.id, contract.jointVenture))
-		.orderBy(asc(workflowStepTypes.stepNumber), asc(documentVersions.version))
+		.orderBy(
+			asc(workflowStepTypes.stepNumber),
+			asc(workflowStepTypes.name),
+			desc(documentVersions.version)
+		)
 		.then(throwIfNone);
 
 	const jointVentureWorkflow: Workflow = {
@@ -284,8 +288,6 @@ export default component$(() => {
 					)}
 				</WorkflowSteps>
 			</Workflow>
-
-			<Debugger value={contractSteps.value}></Debugger>
 		</div>
 	);
 });
