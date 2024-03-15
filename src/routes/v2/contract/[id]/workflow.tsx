@@ -22,6 +22,7 @@ import {
 	HiCheckSolid,
 	HiChevronDownSolid,
 } from "@qwikest/icons/heroicons";
+import { AppLink } from "~/routes.config";
 
 export const Workflow = component$(() => (
 	<div class="py-4">
@@ -80,7 +81,7 @@ export const WorkflowDocument = component$(
 		const uploadVersion = useUploadDocument();
 		const showVersions = useSignal(false);
 		const latestDoc = useComputed$(() => {
-			return document.versions.at(-1);
+			return document.versions.at(0);
 		});
 
 		const latestStatus = useComputed$<{
@@ -108,7 +109,13 @@ export const WorkflowDocument = component$(
 					<div class="flex items-center gap-2 text-sm">
 						{latestDoc.value && (
 							<>
-								<button>View Latest</button>
+								<AppLink
+									target="_blank"
+									route="/v2/document/[id]/"
+									param:id={latestDoc.value.id}
+								>
+									View Latest
+								</AppLink>
 								<div role="none" class="h-1 w-1 rounded-full bg-black"></div>
 							</>
 						)}
