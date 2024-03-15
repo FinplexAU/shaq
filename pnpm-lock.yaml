@@ -23,6 +23,9 @@ dependencies:
   '@lucia-auth/adapter-sqlite':
     specifier: ^3.0.0
     version: 3.0.0(lucia@3.0.1)
+  '@qwik-ui/headless':
+    specifier: ^0.3.2
+    version: 0.3.2(@builder.io/qwik@1.4.5)
   '@qwikest/icons':
     specifier: ^0.0.13
     version: 0.0.13(@builder.io/qwik@1.4.5)
@@ -2618,6 +2621,15 @@ packages:
 
   /@popperjs/core@2.11.8:
     resolution: {integrity: sha512-P1st0aksCrn9sGZhp8GMYwBnQsbvAWsZAX44oXNNvLHGqAOcoVxmjZiohstwQ7SqKnbR47akdNi+uleWD8+g6A==}
+    dev: false
+
+  /@qwik-ui/headless@0.3.2(@builder.io/qwik@1.4.5):
+    resolution: {integrity: sha512-KKPmL8JchSMiOR8Ky55wiC3pEs7nzqpZt9iuS2qaeFnA1Y/Iitly7TDsHLqPRi8Wa39AzE1zsCO5GrNvnGF8XA==}
+    engines: {node: '>=16.0.0'}
+    peerDependencies:
+      '@builder.io/qwik': ^1.4.0
+    dependencies:
+      '@builder.io/qwik': 1.4.5(@types/node@20.11.6)(undici@5.22.0)
     dev: false
 
   /@qwikest/icons@0.0.13(@builder.io/qwik@1.4.5):

@@ -1,5 +1,9 @@
 import { Slot, component$, useComputed$, useSignal } from "@builder.io/qwik";
-import { useUploadDocument, type WorkflowStep as TWorkflowStep } from ".";
+import {
+	useUploadDocument,
+	type WorkflowStep as TWorkflowStep,
+	UploadDocumentModal,
+} from ".";
 
 import { Form, Link } from "@builder.io/qwik-city";
 import {
@@ -108,16 +112,7 @@ export const WorkflowDocument = component$(
 								<div role="none" class="h-1 w-1 rounded-full bg-black"></div>
 							</>
 						)}
-						<Form action={uploadVersion}>
-							{/* <input
-							type="hidden"
-							name="documentTypeId"
-							value={document.typeId}
-						></input>
-						<input type="hidden" name="stepId" value={stepId}></input>
-						<input type="file" name="document"></input> */}
-							<button>Upload Version</button>
-						</Form>
+						<UploadDocumentModal document={document} stepId={stepId} />
 					</div>
 				</div>
 				<div class="pb-2 text-sm">
