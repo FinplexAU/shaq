@@ -11,10 +11,16 @@ import {
 } from "~/components/flowbite/components/timeline";
 import TimeAgo from "javascript-time-ago";
 import en from "javascript-time-ago/locale/en";
-import { HiChevronDownSolid } from "@qwikest/icons/heroicons";
+import {
+	HiArrowRightCircleOutline,
+	HiArrowRightSolid,
+	HiCheckBadgeOutline,
+	HiCheckSolid,
+	HiChevronDownSolid,
+} from "@qwikest/icons/heroicons";
 
 export const Workflow = component$(() => (
-	<div>
+	<div class="py-4">
 		<Slot></Slot>
 	</div>
 ));
@@ -151,24 +157,26 @@ export const WorkflowDocument = component$(
 					</p>
 				</div>
 				<div class="pb-4">
-					<label class="block cursor-pointer select-none pb-2 text-sm">
-						<span class="hover:underline">
-							Previous Versions
-							<HiChevronDownSolid
-								class={[
-									"ml-1 inline transition-transform align-icon",
-									{
-										"-rotate-90": !showVersions.value,
-									},
-								]}
-							></HiChevronDownSolid>
-						</span>
-						<input
-							class="hidden"
-							type="checkbox"
-							bind:checked={showVersions}
-						></input>
-					</label>
+					{document.versions.length > 0 && (
+						<label class="block cursor-pointer select-none pb-2 text-sm">
+							<span class="hover:underline">
+								Previous Versions
+								<HiChevronDownSolid
+									class={[
+										"ml-1 inline transition-transform align-icon",
+										{
+											"-rotate-90": !showVersions.value,
+										},
+									]}
+								></HiChevronDownSolid>
+							</span>
+							<input
+								class="hidden"
+								type="checkbox"
+								bind:checked={showVersions}
+							></input>
+						</label>
+					)}
 					{showVersions.value && (
 						<Timeline class="max-w-prose">
 							{document.versions.map((version) => (
@@ -276,7 +284,7 @@ export const WorkflowDocumentVersion = component$(
 									{
 										"text-red-500": approvals.value.investor === "Not Approved",
 										"text-amber-500":
-											approvals.value.trader === "Awaiting Approval",
+											approvals.value.investor === "Awaiting Approval",
 										"text-green-500": approvals.value.investor === "Approved",
 										"text-neutral-500":
 											approvals.value.investor === "Not Required",
@@ -288,6 +296,35 @@ export const WorkflowDocumentVersion = component$(
 						</p>
 					)}
 				</div>
+			</div>
+		);
+	}
+);
+
+export const WorkflowButton = component$(
+	(props: {
+		title: string;
+		completion: "complete" | "in-progress" | "disabled";
+	}) => {
+		return (
+			<div
+				class={[
+					"flex items-center justify-between rounded-lg border p-4",
+					{
+						"border-green-300 bg-green-50 text-green-700":
+							props.completion === "complete",
+						"border-blue-300 bg-blue-100 text-blue-700":
+							props.completion === "in-progress",
+						"border-gray-300 bg-gray-100 text-gray-900":
+							props.completion === "disabled",
+					},
+				]}
+			>
+				<h3>{props.title}</h3>
+				{props.completion === "complete" && <HiCheckSolid></HiCheckSolid>}
+				{props.completion === "in-progress" && (
+					<HiArrowRightSolid></HiArrowRightSolid>
+				)}
 			</div>
 		);
 	}

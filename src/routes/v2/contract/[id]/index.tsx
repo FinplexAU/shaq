@@ -1,11 +1,5 @@
 import { component$ } from "@builder.io/qwik";
-import {
-	routeAction$,
-	routeLoader$,
-	z,
-	zod$,
-	Form,
-} from "@builder.io/qwik-city";
+import { routeAction$, routeLoader$, z, zod$ } from "@builder.io/qwik-city";
 import { drizzleDb } from "~/db/db";
 import {
 	contracts,
@@ -19,9 +13,9 @@ import {
 } from "@/drizzle/schema";
 import { eq, and, asc, desc } from "drizzle-orm";
 import { throwIfNone } from "~/utils/drizzle-utils";
-import Debugger from "~/components/debugger";
 import {
 	Workflow,
+	WorkflowButton,
 	WorkflowStep,
 	WorkflowStepGroup,
 	WorkflowSteps,
@@ -272,29 +266,63 @@ export default component$(() => {
 	const contract = useLoadContract();
 
 	return (
-		<div class="p-2">
-			<div class="grid h-56 place-items-center bg-blue-400/30">
+		<>
+			<div class="grid h-14 place-items-center bg-blue-400/30">
 				<h1 class="text-4xl font-bold">CONTRACT INFO</h1>
 			</div>
-			<Workflow>
-				<WorkflowTitle>
-					{contractSteps.value?.jointVentureWorkflow.workflowName}
-				</WorkflowTitle>
-				<WorkflowSteps>
-					{contractSteps.value?.jointVentureWorkflow.stepGroups.map(
-						(stepGroup, i) => (
-							<WorkflowStepGroup key={i}>
-								{stepGroup.map((step) => (
-									<WorkflowStep key={step.stepId} step={step}>
-										{/* {step.stepName === "Trader Info" && <Form></Form>} */}
-									</WorkflowStep>
-								))}
-							</WorkflowStepGroup>
-						)
-					)}
-				</WorkflowSteps>
-			</Workflow>
-		</div>
+			<div class="grid flex-1 grid-cols-12 ">
+				<div class="col-span-2 space-y-4 border-r p-4">
+					<WorkflowButton
+						title="Joint Venture Set-up"
+						completion={
+							contractSteps.value?.jointVentureWorkflow.complete
+								? "complete"
+								: "in-progress"
+						}
+					></WorkflowButton>
+					<WorkflowButton
+						title="Trade Set-up"
+						completion={"disabled"}
+					></WorkflowButton>
+					<WorkflowButton
+						title="Bank Instrument Set-up"
+						completion={"disabled"}
+					></WorkflowButton>
+					<WorkflowButton
+						title="Bank Instrument Workflow"
+						completion={"disabled"}
+					></WorkflowButton>
+					<WorkflowButton
+						title="Hedge Process"
+						completion={"disabled"}
+					></WorkflowButton>
+					<WorkflowButton
+						title="Trade Process"
+						completion={"disabled"}
+					></WorkflowButton>
+				</div>
+				<div class="col-span-10">
+					<Workflow>
+						<WorkflowTitle>
+							{contractSteps.value?.jointVentureWorkflow.workflowName}
+						</WorkflowTitle>
+						<WorkflowSteps>
+							{contractSteps.value?.jointVentureWorkflow.stepGroups.map(
+								(stepGroup, i) => (
+									<WorkflowStepGroup key={i}>
+										{stepGroup.map((step) => (
+											<WorkflowStep key={step.stepId} step={step}>
+												{/* {step.stepName === "Trader Info" && <Form></Form>} */}
+											</WorkflowStep>
+										))}
+									</WorkflowStepGroup>
+								)
+							)}
+						</WorkflowSteps>
+					</Workflow>
+				</div>
+			</div>
+		</>
 	);
 });
 
