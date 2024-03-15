@@ -3,10 +3,10 @@ import { component$, useSignal } from "@builder.io/qwik";
 import { routeLoader$, z } from "@builder.io/qwik-city";
 import { eq } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
-import Table from "~/components/flowbite/components/Table/table";
-import TableBody from "~/components/flowbite/components/Table/table-body";
-import TableCell from "~/components/flowbite/components/Table/table-cell";
-import TableRow from "~/components/flowbite/components/Table/table-row";
+import Table from "~/components/flowbite/components/table/table";
+import TableBody from "~/components/flowbite/components/table/table-body";
+import TableCell from "~/components/flowbite/components/table/table-cell";
+import TableRow from "~/components/flowbite/components/table/table-row";
 import { drizzleDb, safeDb } from "~/db/db";
 
 const getContractWithEntities = async (id: string) => {

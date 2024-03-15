@@ -36,9 +36,7 @@ export type TableContext = Signal<{
 	hoverable: boolean;
 }>;
 
-export const TableContext = createContextId<TableContext>(
-	"_flowbite_tableContext"
-);
+export const TableContext = createContextId<TableContext>("_flowbite_table");
 
 type TableElementProps = IntrinsicElements["table"];
 

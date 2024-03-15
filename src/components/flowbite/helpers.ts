@@ -1,3 +1,6 @@
+import clsx from "clsx";
+import { twMerge } from "tailwind-merge";
+
 export function isObject(item: unknown): item is Record<string, unknown> {
 	return (
 		item !== null && typeof item === "object" && item.constructor === Object
@@ -51,3 +54,7 @@ export function mergeDeep<T extends object, S extends object>(
 
 	return output;
 }
+
+export const cn = (...inputs: clsx.ClassValue[]) => {
+	return twMerge(clsx(...inputs));
+};
