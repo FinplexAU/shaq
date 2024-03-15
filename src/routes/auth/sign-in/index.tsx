@@ -5,7 +5,11 @@ import { eq } from "drizzle-orm";
 import { Argon2id } from "oslo/password";
 import { v4 } from "uuid";
 import { drizzleDb } from "~/db/db";
-import { getSharedMap } from "~/routes/plugin";
+import {
+	generateVerificationCode,
+	getSharedMap,
+	sendVerificationCode,
+} from "~/routes/plugin";
 import { selectFirst } from "~/utils/drizzle-utils";
 import { safe } from "~/utils/utils";
 
@@ -33,6 +37,11 @@ export const useSignIn = routeAction$(
 
 		if (!validPassword) {
 			return error(400, "Invalid Username or Password");
+		}
+
+		if (!user.emailVerified) {
+			const code = await generateVerificationCode(user.id);
+			await sendVerificationCode(data.email, code);
 		}
 
 		const sessionId = v4();
