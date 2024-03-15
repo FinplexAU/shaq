@@ -1,9 +1,5 @@
 import { Slot, component$, useComputed$, useSignal } from "@builder.io/qwik";
-import {
-	useUploadDocument,
-	type WorkflowStep as TWorkflowStep,
-	UploadDocumentModal,
-} from ".";
+import { useUploadDocument, type WorkflowStep as TWorkflowStep } from ".";
 
 import { Form, Link } from "@builder.io/qwik-city";
 import {
@@ -16,13 +12,12 @@ import {
 import TimeAgo from "javascript-time-ago";
 import en from "javascript-time-ago/locale/en";
 import {
-	HiArrowRightCircleOutline,
 	HiArrowRightSolid,
-	HiCheckBadgeOutline,
 	HiCheckSolid,
 	HiChevronDownSolid,
 } from "@qwikest/icons/heroicons";
 import { AppLink } from "~/routes.config";
+import { UploadDocumentModal } from "./upload-document-modal";
 
 export const Workflow = component$(() => (
 	<div class="py-4">
