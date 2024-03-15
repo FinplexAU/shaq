@@ -96,6 +96,7 @@ export const userEmailVerificationCodes = pgTable(
 		code: text("code").notNull(),
 		userId: uuid("user_id")
 			.references(() => users.id)
+			.unique()
 			.notNull(),
 		expiresAt: timestamp("expires_at", {
 			withTimezone: true,
