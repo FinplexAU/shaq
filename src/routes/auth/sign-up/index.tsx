@@ -28,7 +28,13 @@ export const useSignUp = routeAction$(
 		const code = await generateVerificationCode(userId);
 		await sendVerificationCode(data.email, code);
 
-		const session = await lucia.createSession(userId, {});
+		const session = await lucia.createSession(
+			userId,
+			{},
+			{
+				sessionId: v4(),
+			}
+		);
 		const sessionCookie = lucia.createSessionCookie(session.id);
 
 		cookie.set(
