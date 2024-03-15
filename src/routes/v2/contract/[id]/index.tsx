@@ -199,8 +199,7 @@ export const useUploadDocument = routeAction$(
 			.where(
 				and(
 					eq(documentTypes.id, data.documentTypeId),
-					eq(workflowSteps.id, data.stepId),
-					eq(workflowSteps.workflowId, data.workflowId)
+					eq(workflowSteps.id, data.stepId)
 				)
 			);
 
@@ -240,7 +239,6 @@ export const useUploadDocument = routeAction$(
 	zod$({
 		document: z.any().refine((arg): arg is Blob => arg instanceof Blob),
 		documentTypeId: z.string().uuid(),
-		workflowId: z.string().uuid(),
 		stepId: z.string().uuid(),
 	})
 );
