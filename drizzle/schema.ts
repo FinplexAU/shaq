@@ -39,7 +39,7 @@ export const contracts = pgTable("contracts", {
 
 export const documentVersions = pgTable("document_versions", {
 	id: uuid("id").primaryKey().defaultRandom(),
-	investorApproval: timestamp("trader_approval"),
+	investorApproval: timestamp("investor_approval"),
 	traderApproval: timestamp("trader_approval"),
 	documentTypeId: uuid("document_type_id").references(() => documentTypes.id),
 	version: integer("version").notNull(),

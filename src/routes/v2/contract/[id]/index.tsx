@@ -1,5 +1,5 @@
 import { component$ } from "@builder.io/qwik";
-import { routeLoader$ } from "@builder.io/qwik-city";
+import { routeAction$, routeLoader$, z, zod$ } from "@builder.io/qwik-city";
 import { drizzleDb } from "~/db/db";
 import {
 	contracts,
@@ -14,13 +14,9 @@ import {
 import { eq, and, asc } from "drizzle-orm";
 import { throwIfNone } from "~/utils/drizzle-utils";
 import Debugger from "~/components/debugger";
-import Timeline from "~/components/flowbite/components/Timeline/timeline";
-import TimelineItem from "~/components/flowbite/components/Timeline/timeline-item";
-import TimelinePoint from "~/components/flowbite/components/Timeline/timeline-point";
-import TimelineContent from "~/components/flowbite/components/Timeline/timeline-content";
-import TimelineTime from "~/components/flowbite/components/Timeline/timeline-time";
-import TimelineTitle from "~/components/flowbite/components/Timeline/timeline-title";
-import TimelineBody from "~/components/flowbite/components/Timeline/timeline-body";
+import { PutObjectCommand } from "@aws-sdk/client-s3";
+import { v4 } from "uuid";
+import { s3 } from "~/utils/aws";
 
 export const useLoadContract = routeLoader$(
 	async ({ cookie, redirect, params }) => {
@@ -185,6 +181,69 @@ export const useContractStep = routeLoader$(async ({ resolveValue }) => {
 
 	return { jointVentureWorkflow };
 });
+
+export const useUploadDocument = routeAction$(
+	async (data, { error }) => {
+		const db = await drizzleDb;
+		const dbResult = await db
+			.select()
+			.from(documentTypes)
+			.innerJoin(
+				workflowSteps,
+				eq(documentTypes.requiredBy, workflowSteps.stepType)
+			)
+			.leftJoin(
+				documentVersions,
+				eq(documentVersions.documentTypeId, documentTypes.id)
+			)
+			.where(
+				and(
+					eq(documentTypes.id, data.documentTypeId),
+					eq(workflowSteps.id, data.stepId),
+					eq(workflowSteps.workflowId, data.workflowId)
+				)
+			);
+
+		if (dbResult.length === 0) {
+			return error(404, "Workflow step not found");
+		}
+
+		let newVersion = 0;
+
+		for (let i = 0; i < dbResult.length; i++) {
+			const version = dbResult[i]?.document_versions;
+			if (version) {
+				newVersion = version.version + 1;
+			}
+		}
+		const contentType = data.document.type;
+
+		const key = v4();
+		const command = new PutObjectCommand({
+			Bucket: "shaq-dev",
+			Key: key,
+			Body: Buffer.from(await data.document.arrayBuffer()),
+			ContentType: contentType,
+		});
+
+		await s3.send(command);
+
+		await db.insert(documentVersions).values([
+			{
+				id: key,
+				version: newVersion,
+				workflowStepId: data.stepId,
+				documentTypeId: data.documentTypeId,
+			},
+		]);
+	},
+	zod$({
+		document: z.any().refine((arg): arg is Blob => arg instanceof Blob),
+		documentTypeId: z.string().uuid(),
+		workflowId: z.string().uuid(),
+		stepId: z.string().uuid(),
+	})
+);
 
 export default component$(() => {
 	const contractSteps = useContractStep();
