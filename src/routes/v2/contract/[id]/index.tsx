@@ -1,5 +1,11 @@
 import { component$ } from "@builder.io/qwik";
-import { routeAction$, routeLoader$, z, zod$ } from "@builder.io/qwik-city";
+import {
+	routeAction$,
+	routeLoader$,
+	z,
+	zod$,
+	Form,
+} from "@builder.io/qwik-city";
 import { drizzleDb } from "~/db/db";
 import {
 	contracts,
@@ -14,6 +20,13 @@ import {
 import { eq, and, asc } from "drizzle-orm";
 import { throwIfNone } from "~/utils/drizzle-utils";
 import Debugger from "~/components/debugger";
+import {
+	Workflow,
+	WorkflowStep,
+	WorkflowStepGroup,
+	WorkflowSteps,
+	WorkflowTitle,
+} from "./workflow";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { v4 } from "uuid";
 import { s3 } from "~/utils/aws";
@@ -84,7 +97,7 @@ export type Workflow = {
 	workflowName: string;
 	complete: boolean;
 	completeReason: string | null;
-	steps: WorkflowStep[][];
+	stepGroups: WorkflowStep[][];
 };
 
 export const useContractStep = routeLoader$(async ({ resolveValue }) => {
@@ -131,17 +144,18 @@ export const useContractStep = routeLoader$(async ({ resolveValue }) => {
 		workflowName: "Join Venture Set-up",
 		complete: jointVentureWorkflowQuery[0].workflows.complete,
 		completeReason: jointVentureWorkflowQuery[0].workflows.completionReason,
-		steps: [],
+		stepGroups: [],
 	};
 
 	for (const sql of jointVentureWorkflowQuery) {
-		let stepGroup: WorkflowStep[] | undefined = jointVentureWorkflow.steps.find(
-			(step) => step[0]?.stepNumber === sql.workflow_step_types.stepNumber
-		);
+		let stepGroup: WorkflowStep[] | undefined =
+			jointVentureWorkflow.stepGroups.find(
+				(step) => step[0]?.stepNumber === sql.workflow_step_types.stepNumber
+			);
 
 		if (!stepGroup) {
 			stepGroup = [];
-			jointVentureWorkflow.steps.push(stepGroup);
+			jointVentureWorkflow.stepGroups.push(stepGroup);
 		}
 
 		let step: WorkflowStep | undefined = stepGroup.find(
@@ -252,41 +266,29 @@ export default component$(() => {
 			<div class="grid h-56 place-items-center bg-blue-400/30">
 				<h1 class="text-4xl font-bold">CONTRACT INFO</h1>
 			</div>
+			<Workflow>
+				<WorkflowTitle>
+					{contractSteps.value?.jointVentureWorkflow.workflowName}
+				</WorkflowTitle>
+				<WorkflowSteps>
+					{contractSteps.value?.jointVentureWorkflow.stepGroups.map(
+						(stepGroup, i) => (
+							<WorkflowStepGroup key={i}>
+								{stepGroup.map((step) => (
+									<WorkflowStep key={step.stepId} step={step}>
+										{/* {step.stepName === "Trader Info" && <Form></Form>} */}
+									</WorkflowStep>
+								))}
+							</WorkflowStepGroup>
+						)
+					)}
+				</WorkflowSteps>
+			</Workflow>
+
 			<Debugger value={contractSteps.value}></Debugger>
-			<WorkflowDisplay
-				workflowSteps={contractSteps.value?.jointVentureWorkflow}
-			></WorkflowDisplay>
 		</div>
 	);
 });
-
-const WorkflowDisplay = component$(
-	({ workflowSteps: workflow }: { workflowSteps?: Workflow }) => {
-		if (!workflow) return <></>;
-		return (
-			<div>
-				<h2 class="border-b text-2xl font-bold">{workflow.workflowName}</h2>
-				<ol>
-					{/* {workflow.steps.map((step) => (
-						<li key={step.stepId}>
-							<h3>
-								{step.stepNumber + 1}. {step.stepName}
-							</h3>
-							<div>
-								{step.documents.flatMap((doc) => (
-									<div key={doc.typeId}>
-										<h4>{doc.name}</h4>
-										{doc.versions.at(-1)?.version}
-									</div>
-								))}
-							</div>
-						</li>
-					))} */}
-				</ol>
-			</div>
-		);
-	}
-);
 
 const createWorkflow = async (workflowName: string) => {
 	const db = await drizzleDb;
