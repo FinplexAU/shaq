@@ -16,6 +16,7 @@ export const entities = pgTable("entities", {
 	id: uuid("id").primaryKey().defaultRandom(),
 	company: text("company"),
 	address: text("address"),
+	companyRegistration: text("company_registration"),
 	bankDetailsId: uuid("bank_details_id").references(() => bankDetails.id),
 });
 

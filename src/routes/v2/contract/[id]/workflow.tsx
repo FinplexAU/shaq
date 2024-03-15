@@ -1,8 +1,13 @@
-import { Slot, component$, useComputed$, useSignal } from "@builder.io/qwik";
 import {
-	useUploadDocument,
-	type WorkflowStep as TWorkflowStep,
-} from "./layout";
+	Slot,
+	component$,
+	createContextId,
+	useComputed$,
+	useContext,
+	useContextProvider,
+	useSignal,
+} from "@builder.io/qwik";
+import { WorkflowStep, type WorkflowStep as TWorkflowStep } from "./layout";
 
 import { Link } from "@builder.io/qwik-city";
 import {
@@ -18,6 +23,7 @@ import {
 	HiArrowRightSolid,
 	HiCheckSolid,
 	HiChevronDownSolid,
+	HiEyeSolid,
 } from "@qwikest/icons/heroicons";
 import { AppLink } from "~/routes.config";
 import type { AppLinkProps } from "~/routes.gen";
@@ -45,9 +51,21 @@ export const WorkflowSteps = component$(() => {
 	);
 });
 
-export const WorkflowStepGroup = component$(() => {
+export const StepGroupContext = createContextId<{ available: boolean }>(
+	"step-group"
+);
+
+export const WorkflowStepGroup = component$((props: { available: boolean }) => {
+	useContextProvider(StepGroupContext, {
+		available: props.available,
+	});
 	return (
-		<li class="flex flex-wrap gap-8 border-b border-dashed p-4">
+		<li
+			class={[
+				"flex flex-wrap gap-8 border-b border-dashed p-4",
+				{ "opacity-20": !props.available },
+			]}
+		>
 			<Slot></Slot>
 		</li>
 	);
@@ -58,13 +76,15 @@ export const WorkflowStep = component$(({ step }: { step: TWorkflowStep }) => {
 		<div class="flex-1" key={step.stepId}>
 			<h3 class="pb-4 text-xl font-bold">{step.stepName}</h3>
 			<Slot></Slot>
-			{step.documents.map((document) => (
-				<WorkflowDocument
-					key={document.typeId}
-					document={document}
-					stepId={step.stepId}
-				></WorkflowDocument>
-			))}
+			<ul>
+				{step.documents.map((document) => (
+					<WorkflowDocument
+						key={document.typeId}
+						document={document}
+						step={step}
+					></WorkflowDocument>
+				))}
+			</ul>
 		</div>
 	);
 });
@@ -72,12 +92,13 @@ export const WorkflowStep = component$(({ step }: { step: TWorkflowStep }) => {
 export const WorkflowDocument = component$(
 	({
 		document,
-		stepId,
+		step,
 	}: {
 		document: TWorkflowStep["documents"][number];
-		stepId: string;
+		step: WorkflowStep;
 	}) => {
-		const uploadVersion = useUploadDocument();
+		const stepGroupContext = useContext(StepGroupContext);
+
 		const showVersions = useSignal(false);
 		const latestDoc = useComputed$(() => {
 			return document.versions.at(0);
@@ -102,7 +123,7 @@ export const WorkflowDocument = component$(
 		});
 
 		return (
-			<div key={document.typeId} class="pb-8">
+			<li key={document.typeId} class="pb-8">
 				<div class="pb-2">
 					<h4 class="text-lg font-semibold">{document.name}</h4>
 					<div class="flex items-center gap-2 text-sm">
@@ -115,49 +136,57 @@ export const WorkflowDocument = component$(
 									param:id={latestDoc.value.id}
 								>
 									View Latest
+									<HiEyeSolid class="ml-1 inline-block align-icon"></HiEyeSolid>
 								</AppLink>
 								<div role="none" class="h-1 w-1 rounded-full bg-black"></div>
 							</>
 						)}
-						<UploadDocumentModal document={document} stepId={stepId} />
+						<UploadDocumentModal
+							disabled={!stepGroupContext.available}
+							document={document}
+							step={step}
+						/>
 					</div>
 				</div>
-				<div class="pb-2 text-sm">
-					<p class="font-bold">
-						Trader Approval:{" "}
-						<span
-							class={[
-								"font-normal",
-								{
-									"text-amber-500":
-										latestStatus.value.trader === "Awaiting Approval",
-									"text-green-500": latestStatus.value.trader === "Approved",
-									"text-neutral-500":
-										latestStatus.value.trader === "Not Required",
-								},
-							]}
-						>
-							{latestStatus.value.trader}
-						</span>
-					</p>
-					<p class="font-bold">
-						Investor Approval:{" "}
-						<span
-							class={[
-								"font-normal",
-								{
-									"text-amber-500":
-										latestStatus.value.investor === "Awaiting Approval",
-									"text-green-500": latestStatus.value.investor === "Approved",
-									"text-neutral-500":
-										latestStatus.value.investor === "Not Required",
-								},
-							]}
-						>
-							{latestStatus.value.investor}
-						</span>
-					</p>
-				</div>
+				{latestDoc.value && (
+					<div class="pb-2 text-sm">
+						<p class="font-bold">
+							Trader Approval:{" "}
+							<span
+								class={[
+									"font-normal",
+									{
+										"text-amber-500":
+											latestStatus.value.trader === "Awaiting Approval",
+										"text-green-500": latestStatus.value.trader === "Approved",
+										"text-neutral-500":
+											latestStatus.value.trader === "Not Required",
+									},
+								]}
+							>
+								{latestStatus.value.trader}
+							</span>
+						</p>
+						<p class="font-bold">
+							Investor Approval:{" "}
+							<span
+								class={[
+									"font-normal",
+									{
+										"text-amber-500":
+											latestStatus.value.investor === "Awaiting Approval",
+										"text-green-500":
+											latestStatus.value.investor === "Approved",
+										"text-neutral-500":
+											latestStatus.value.investor === "Not Required",
+									},
+								]}
+							>
+								{latestStatus.value.investor}
+							</span>
+						</p>
+					</div>
+				)}
 				<div>
 					{document.versions.length > 0 && (
 						<label class="block cursor-pointer select-none pb-2 text-sm">
@@ -197,7 +226,7 @@ export const WorkflowDocument = component$(
 						</Timeline>
 					)}
 				</div>
-			</div>
+			</li>
 		);
 	}
 );
@@ -246,12 +275,13 @@ export const WorkflowDocumentVersion = component$(
 		return (
 			<div class="flex flex-wrap rounded-lg border p-2 text-sm text-black shadow-sm">
 				<Link
-					class="flex-1"
+					class="flex-1 hover:underline"
 					target="_blank"
 					href={`/v2/document/${props.version.id}/`}
 				>
 					{`${props.document.name} - Version ${props.version.version + 1}`}
 					{isLatest.value && <span class="font-semibold"> (Latest)</span>}
+					<HiEyeSolid class="ml-1 inline align-icon"></HiEyeSolid>
 				</Link>
 				<time class="text-xs text-neutral-400">
 					{timeAgo.format(props.version.createdAt)}

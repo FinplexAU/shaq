@@ -8,12 +8,13 @@ import {
 	ModalContent,
 	ModalFooter,
 } from "@qwik-ui/headless";
-import { HiXMarkSolid } from "@qwikest/icons/heroicons";
+import { HiArrowUpCircleSolid, HiXMarkSolid } from "@qwikest/icons/heroicons";
 import { Button } from "~/components/button";
 
 export const UploadDocumentModal = component$<{
-	stepId: string;
+	step: WorkflowStep;
 	document: WorkflowStep["documents"][number];
+	disabled?: boolean;
 }>((props) => {
 	const showSig = useSignal(false);
 	const fileInputRef = useSignal<HTMLInputElement>();
@@ -37,19 +38,35 @@ export const UploadDocumentModal = component$<{
 	return (
 		<>
 			<button
-				class="hover:underline"
+				disabled={props.disabled}
+				class="hover:underline disabled:hover:no-underline"
 				onClick$={() => {
 					showSig.value = true;
 				}}
 			>
 				Upload Document
+				<HiArrowUpCircleSolid class="ml-1 inline align-icon"></HiArrowUpCircleSolid>
 			</button>
 			<Modal
 				bind:show={showSig}
-				class="rounded-base p-7 shadow-md backdrop:backdrop-blur backdrop:backdrop-brightness-50 dark:backdrop:backdrop-brightness-100"
+				class="w-[65ch] rounded p-7 shadow-md backdrop:backdrop-blur backdrop:backdrop-brightness-50 dark:backdrop:backdrop-brightness-100"
 			>
 				<ModalHeader>
-					<h2 class="pr-10 text-lg font-bold">Upload {props.document.name}</h2>
+					<h2 class="font-bold">{props.step.stepName}</h2>
+					<h3 class="pb-4 pr-10 text-lg font-semibold">
+						Upload {props.document.name}
+					</h3>
+					<div class="pb-8">
+						<h4 class="font-semibold">Required Approval</h4>
+						<ul>
+							{props.document.investorApprovalRequired && (
+								<li class="list-inside list-disc">Investor</li>
+							)}
+							{props.document.traderApprovalRequired && (
+								<li class="list-inside list-disc">Trader</li>
+							)}
+						</ul>
+					</div>
 				</ModalHeader>
 				<Form
 					action={upload}
@@ -67,8 +84,8 @@ export const UploadDocumentModal = component$<{
 						}
 					}}
 				>
-					<ModalContent class="py-6">
-						<input type="hidden" name="stepId" value={props.stepId} />
+					<ModalContent class="py-4">
+						<input type="hidden" name="stepId" value={props.step.stepId} />
 						<input
 							type="hidden"
 							name="documentTypeId"

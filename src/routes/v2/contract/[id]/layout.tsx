@@ -9,6 +9,7 @@ import {
 	documentVersions,
 	workflowTypes,
 	userEntityLinks,
+	entities,
 } from "@/drizzle/schema";
 import { routeAction$, routeLoader$, z, zod$ } from "@builder.io/qwik-city";
 import { eq, and, asc, desc } from "drizzle-orm";
@@ -17,6 +18,7 @@ import { selectFirst, throwIfNone } from "~/utils/drizzle-utils";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { v4 } from "uuid";
 import { s3 } from "~/utils/aws";
+import { alias } from "drizzle-orm/pg-core";
 
 export type WorkflowStep = {
 	stepId: string;
@@ -60,11 +62,18 @@ export const useLoadContract = routeLoader$(
 		}
 
 		const db = await drizzleDb;
+
+		const admin = alias(entities, "admin");
+		const investor = alias(entities, "investor");
+		const trader = alias(entities, "trader");
+
 		const contract = await db
 			.select()
 			.from(contracts)
+			.innerJoin(admin, eq(admin.id, contracts.adminId))
+			.leftJoin(investor, eq(investor.id, contracts.investorId))
+			.leftJoin(trader, eq(trader.id, contracts.traderId))
 			.where(eq(contracts.id, params.id))
-			.limit(1)
 			.then(selectFirst);
 
 		const isPermitted = await db
@@ -72,7 +81,7 @@ export const useLoadContract = routeLoader$(
 			.from(userEntityLinks)
 			.where(
 				and(
-					eq(userEntityLinks.entity_id, contract.adminId),
+					eq(userEntityLinks.entity_id, contract.contracts.adminId),
 					eq(userEntityLinks.user_id, user.value)
 				)
 			);
@@ -81,7 +90,12 @@ export const useLoadContract = routeLoader$(
 			throw redirect(302, "/v2/home");
 		}
 
-		return contract;
+		return {
+			...contract.contracts,
+			admin: contract.admin,
+			investor: contract.investor,
+			trader: contract.trader,
+		};
 	}
 );
 
