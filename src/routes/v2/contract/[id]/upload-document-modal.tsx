@@ -1,6 +1,6 @@
 import { component$, useSignal, useTask$, $ } from "@builder.io/qwik";
-import type { WorkflowStep } from ".";
-import { useUploadDocument } from ".";
+import type { WorkflowStep } from "./layout";
+import { useUploadDocument } from "./layout";
 import { Form } from "@builder.io/qwik-city";
 import {
 	Modal,
@@ -37,6 +37,7 @@ export const UploadDocumentModal = component$<{
 	return (
 		<>
 			<button
+				class="hover:underline"
 				onClick$={() => {
 					showSig.value = true;
 				}}

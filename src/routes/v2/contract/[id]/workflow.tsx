@@ -1,7 +1,10 @@
 import { Slot, component$, useComputed$, useSignal } from "@builder.io/qwik";
-import { useUploadDocument, type WorkflowStep as TWorkflowStep } from ".";
+import {
+	useUploadDocument,
+	type WorkflowStep as TWorkflowStep,
+} from "./layout";
 
-import { Form, Link } from "@builder.io/qwik-city";
+import { Link } from "@builder.io/qwik-city";
 import {
 	Timeline,
 	TimelineBody,
@@ -17,6 +20,7 @@ import {
 	HiChevronDownSolid,
 } from "@qwikest/icons/heroicons";
 import { AppLink } from "~/routes.config";
+import type { AppLinkProps } from "~/routes.gen";
 import { UploadDocumentModal } from "./upload-document-modal";
 
 export const Workflow = component$(() => (
@@ -98,13 +102,14 @@ export const WorkflowDocument = component$(
 		});
 
 		return (
-			<div key={document.typeId}>
+			<div key={document.typeId} class="pb-8">
 				<div class="pb-2">
 					<h4 class="text-lg font-semibold">{document.name}</h4>
 					<div class="flex items-center gap-2 text-sm">
 						{latestDoc.value && (
 							<>
 								<AppLink
+									class="hover:underline"
 									target="_blank"
 									route="/v2/document/[id]/"
 									param:id={latestDoc.value.id}
@@ -153,19 +158,19 @@ export const WorkflowDocument = component$(
 						</span>
 					</p>
 				</div>
-				<div class="pb-4">
+				<div>
 					{document.versions.length > 0 && (
 						<label class="block cursor-pointer select-none pb-2 text-sm">
 							<span class="hover:underline">
-								Previous Versions
 								<HiChevronDownSolid
 									class={[
-										"ml-1 inline transition-transform align-icon",
+										"mr-1 inline transition-transform align-icon",
 										{
 											"-rotate-90": !showVersions.value,
 										},
 									]}
 								></HiChevronDownSolid>
+								Previous Versions
 							</span>
 							<input
 								class="hidden"
@@ -299,30 +304,34 @@ export const WorkflowDocumentVersion = component$(
 );
 
 export const WorkflowButton = component$(
-	(props: {
-		title: string;
-		completion: "complete" | "in-progress" | "disabled";
-	}) => {
+	(
+		props: {
+			title: string;
+			completion: "complete" | "in-progress" | "disabled";
+		} & AppLinkProps
+	) => {
 		return (
-			<div
-				class={[
-					"flex items-center justify-between rounded-lg border p-4",
-					{
-						"border-green-300 bg-green-50 text-green-700":
-							props.completion === "complete",
-						"border-blue-300 bg-blue-100 text-blue-700":
-							props.completion === "in-progress",
-						"border-gray-300 bg-gray-100 text-gray-900":
-							props.completion === "disabled",
-					},
-				]}
-			>
-				<h3>{props.title}</h3>
-				{props.completion === "complete" && <HiCheckSolid></HiCheckSolid>}
-				{props.completion === "in-progress" && (
-					<HiArrowRightSolid></HiArrowRightSolid>
-				)}
-			</div>
+			<AppLink {...props} class="block pb-4">
+				<div
+					class={[
+						"flex items-center justify-between rounded-lg border p-4",
+						{
+							"border-green-300 bg-green-50 text-green-700":
+								props.completion === "complete",
+							"border-blue-300 bg-blue-100 text-blue-700":
+								props.completion === "in-progress",
+							"border-gray-300 bg-gray-100 text-gray-900":
+								props.completion === "disabled",
+						},
+					]}
+				>
+					<h3>{props.title}</h3>
+					{props.completion === "complete" && <HiCheckSolid></HiCheckSolid>}
+					{props.completion === "in-progress" && (
+						<HiArrowRightSolid></HiArrowRightSolid>
+					)}
+				</div>
+			</AppLink>
 		);
 	}
 );
