@@ -51,7 +51,7 @@ export const useSignIn = routeAction$(
 			sessionCookie.attributes
 		);
 
-		throw redirect(302, "/v2/");
+		throw redirect(302, "/v2/home/");
 	},
 	zod$({
 		email: z.string().email(),
