@@ -29,6 +29,7 @@ export const contracts = pgTable("contracts", {
 	loadingPort: text("loading_port"),
 	productPricing: numeric("product_pricing"),
 	jointVenture: uuid("joint_venture_id").references(() => workflows.id),
+	tradeSetup: uuid("trade_setup_id").references(() => workflows.id),
 	traderId: uuid("trader_id").references(() => entities.id),
 	investorId: uuid("investor_id").references(() => entities.id),
 	supplierId: uuid("supplier_id").references(() => entities.id),

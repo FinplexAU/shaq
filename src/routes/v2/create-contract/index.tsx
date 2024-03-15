@@ -1,19 +1,24 @@
-import { contracts, entities, userEntityLinks } from "@/drizzle/schema";
+import {
+	contracts,
+	entities,
+	userEntityLinks,
+	workflowStepTypes,
+	workflowSteps,
+	workflowTypes,
+	workflows,
+} from "@/drizzle/schema";
 import { component$ } from "@builder.io/qwik";
-import { Form, routeAction$, zod$, z } from "@builder.io/qwik-city";
+import { Form, routeAction$ } from "@builder.io/qwik-city";
+import { eq } from "drizzle-orm";
 import { Button } from "~/components/button";
 import { drizzleDb } from "~/db/db";
+import { getSharedMap } from "~/routes/plugin";
+import { selectFirst } from "~/utils/drizzle-utils";
 
 export const useCreateContract = routeAction$(
-	async (data, { cookie, fail, redirect }) => {
-		const user = cookie.get("user");
+	async (data, { fail, redirect, sharedMap }) => {
+		const user = getSharedMap(sharedMap, "user");
 
-		if (!user) {
-			return fail(400, {
-				message: "Create a user ",
-			});
-		}
-		const userId = user.value;
 		const db = await drizzleDb;
 		// first create the admin entity for the contract
 		const [adminEntity] = await db
@@ -26,34 +31,23 @@ export const useCreateContract = routeAction$(
 		// next link the user to the admin entity
 		await db
 			.insert(userEntityLinks)
-			.values({ user_id: userId, entity_id: adminEntity.id });
+			.values({ user_id: user.id, entity_id: adminEntity.id });
 		// now create contract
 
-		const [contract] = await db
+		const jointVentureWorkflow = await createWorkflow("Joint Venture Set-up");
+		const tradeSetup = await createWorkflow("Trade Set-up");
+		const contract = await db
 			.insert(contracts)
 			.values({
 				adminId: adminEntity.id,
-				deliveryPort: data.deliveryPort,
-				loadingPort: data.loadingPort,
-				logistics: data.logistics,
-				productPricing: data.productPricing.toString(),
-				volume: data.volume.toString(),
-				product: data.product,
+				jointVenture: jointVentureWorkflow?.id,
+				tradeSetup: tradeSetup?.id,
 			})
-			.returning({ id: contracts.id });
+			.returning({ id: contracts.id })
+			.then(selectFirst);
 
-		throw redirect(302, `/v2/contract/${contract?.id}/`);
-	},
-	zod$(
-		z.object({
-			product: z.string(),
-			volume: z.coerce.number(),
-			logistics: z.string(),
-			deliveryPort: z.string(),
-			loadingPort: z.string(),
-			productPricing: z.coerce.number(),
-		})
-	)
+		throw redirect(302, `/v2/contract/${contract.id}/`);
+	}
 );
 
 export default component$(() => {
@@ -61,17 +55,37 @@ export default component$(() => {
 	return (
 		<Form action={createContract} class="flex flex-col items-center gap-2 p-8">
 			<h2>Create Contract</h2>
-			<input type="text" name="product" placeholder="product"></input>
-			<input type="number" name="volume" placeholder="volume"></input>
-			<input type="text" name="logistics" placeholder="logistics"></input>
-			<input type="text" name="deliveryPort" placeholder="deliveryPort"></input>
-			<input type="text" name="loadingPort" placeholder="loadingPort"></input>
-			<input
-				type="number"
-				name="productPricing"
-				placeholder="productPricing"
-			></input>
 			<Button>Create</Button>
 		</Form>
 	);
 });
+
+const createWorkflow = async (workflowName: string) => {
+	const db = await drizzleDb;
+
+	const template = await db
+		.select()
+		.from(workflowTypes)
+		.leftJoin(
+			workflowStepTypes,
+			eq(workflowTypes.id, workflowStepTypes.workflowTypeId)
+		)
+		.where(eq(workflowTypes.name, workflowName));
+
+	const workflow = await db
+		.insert(workflows)
+		.values({ complete: false, workflowType: template[0]?.workflow_types.id })
+		.returning({ id: workflows.id })
+		.then(selectFirst);
+
+	const templatedSteps = template
+		.filter(({ workflow_step_types }) => workflow_step_types)
+		.map(({ workflow_step_types }) => ({
+			complete: false,
+			workflowId: workflow!.id,
+			stepType: workflow_step_types!.id,
+		}));
+	await db.insert(workflowSteps).values(templatedSteps);
+
+	return workflow;
+};

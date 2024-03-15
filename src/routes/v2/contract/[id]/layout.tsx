@@ -7,9 +7,9 @@ import {
 	workflowStepTypes,
 	documentTypes,
 	documentVersions,
-	workflowTypes,
 	userEntityLinks,
 	entities,
+	workflowTypes,
 } from "@/drizzle/schema";
 import { routeAction$, routeLoader$, z, zod$ } from "@builder.io/qwik-city";
 import { eq, and, asc, desc } from "drizzle-orm";
@@ -96,121 +96,109 @@ export const useLoadContract = routeLoader$(
 	}
 );
 
-export const useContractStep = routeLoader$(
-	async ({ resolveValue, pathname }) => {
-		let contract;
-		contract = await resolveValue(useLoadContract);
-		const db = await drizzleDb;
-		if (!contract.jointVenture) {
-			const jointVentureWorkflow = await createWorkflow("Joint Venture Set-up");
-			contract = (
-				await db
-					.update(contracts)
-					.set({ jointVenture: jointVentureWorkflow?.id })
-					.where(eq(contracts.id, contract.id))
-					.returning()
-			)[0];
-			return;
-		}
+export const useWorkflow = routeLoader$(async ({ resolveValue, pathname }) => {
+	const contract = await resolveValue(useLoadContract);
+	const db = await drizzleDb;
 
-		const workflow = pathname
-			.split("/")
-			.filter((v) => v)
-			.at(-1);
-		let workflowId;
-		if (workflow === "joint-venture") {
-			workflowId = contract.jointVenture;
-		}
+	const workflowParam = pathname
+		.split("/")
+		.filter((v) => v)
+		.at(-1);
 
-		if (!workflowId) {
-			return;
-		}
-
-		const jointVentureWorkflowQuery = await db
-			.select()
-			.from(workflows)
-			.innerJoin(workflowSteps, eq(workflowSteps.workflowId, workflows.id))
-			.innerJoin(
-				workflowStepTypes,
-				eq(workflowSteps.stepType, workflowStepTypes.id)
-			)
-			.leftJoin(
-				documentTypes,
-				eq(documentTypes.requiredBy, workflowSteps.stepType)
-			)
-			.leftJoin(
-				documentVersions,
-				and(
-					eq(documentVersions.documentTypeId, documentTypes.id),
-					eq(documentVersions.workflowStepId, workflowSteps.id)
-				)
-			)
-			.where(eq(workflows.id, workflowId))
-			.orderBy(
-				asc(workflowStepTypes.stepNumber),
-				asc(workflowStepTypes.name),
-				desc(documentVersions.version)
-			)
-			.then(throwIfNone);
-
-		const jointVentureWorkflow: Workflow = {
-			workflowId: jointVentureWorkflowQuery[0].workflows.id,
-			workflowName: "Join Venture Set-up",
-			complete: jointVentureWorkflowQuery[0].workflows.complete,
-			completeReason: jointVentureWorkflowQuery[0].workflows.completionReason,
-			stepGroups: [],
-		};
-
-		for (const sql of jointVentureWorkflowQuery) {
-			let stepGroup: WorkflowStep[] | undefined =
-				jointVentureWorkflow.stepGroups.find(
-					(step) => step[0]?.stepNumber === sql.workflow_step_types.stepNumber
-				);
-
-			if (!stepGroup) {
-				stepGroup = [];
-				jointVentureWorkflow.stepGroups.push(stepGroup);
-			}
-
-			let step: WorkflowStep | undefined = stepGroup.find(
-				(step) => step.stepId === sql.workflow_steps.id
-			);
-			if (!step) {
-				step = {
-					stepId: sql.workflow_steps.id,
-					stepName: sql.workflow_step_types.name,
-					complete: sql.workflow_steps.complete,
-					completeReason: sql.workflow_steps.completionReason,
-					stepNumber: sql.workflow_step_types.stepNumber,
-					documents: [],
-				};
-				stepGroup.push(step);
-			}
-
-			if (sql.document_types) {
-				let document = step.documents.find(
-					(a) => a.typeId === sql.document_types?.id
-				);
-				if (!document) {
-					document = {
-						versions: [],
-						typeId: sql.document_types.id,
-						name: sql.document_types.documentName,
-						investorApprovalRequired:
-							sql.document_types.investorApprovalRequired,
-						traderApprovalRequired: sql.document_types.traderApprovalRequired,
-					};
-					step.documents.push(document);
-				}
-				if (sql.document_versions) {
-					document.versions.push(sql.document_versions);
-				}
-			}
-		}
-
-		return { jointVentureWorkflow };
+	let workflowId;
+	if (workflowParam === "joint-venture") {
+		workflowId = contract.jointVenture;
+	} else if (workflowParam === "contract-setup") {
+		workflowId = contract.tradeSetup;
 	}
-);
+
+	if (!workflowId) {
+		return;
+	}
+
+	const workflowQuery = await db
+		.select()
+		.from(workflows)
+		.innerJoin(workflowTypes, eq(workflows.workflowType, workflowTypes.id))
+		.innerJoin(workflowSteps, eq(workflowSteps.workflowId, workflows.id))
+		.innerJoin(
+			workflowStepTypes,
+			eq(workflowSteps.stepType, workflowStepTypes.id)
+		)
+		.leftJoin(
+			documentTypes,
+			eq(documentTypes.requiredBy, workflowSteps.stepType)
+		)
+		.leftJoin(
+			documentVersions,
+			and(
+				eq(documentVersions.documentTypeId, documentTypes.id),
+				eq(documentVersions.workflowStepId, workflowSteps.id)
+			)
+		)
+		.where(eq(workflows.id, workflowId))
+		.orderBy(
+			asc(workflowStepTypes.stepNumber),
+			asc(workflowStepTypes.name),
+			desc(documentVersions.version)
+		)
+		.then(throwIfNone);
+
+	const workflow: Workflow = {
+		workflowId: workflowQuery[0].workflows.id,
+		workflowName: workflowQuery[0].workflow_types.name,
+		complete: workflowQuery[0].workflows.complete,
+		completeReason: workflowQuery[0].workflows.completionReason,
+		stepGroups: [],
+	};
+
+	for (const sql of workflowQuery) {
+		let stepGroup: WorkflowStep[] | undefined = workflow.stepGroups.find(
+			(step) => step[0]?.stepNumber === sql.workflow_step_types.stepNumber
+		);
+
+		if (!stepGroup) {
+			stepGroup = [];
+			workflow.stepGroups.push(stepGroup);
+		}
+
+		let step: WorkflowStep | undefined = stepGroup.find(
+			(step) => step.stepId === sql.workflow_steps.id
+		);
+		if (!step) {
+			step = {
+				stepId: sql.workflow_steps.id,
+				stepName: sql.workflow_step_types.name,
+				complete: sql.workflow_steps.complete,
+				completeReason: sql.workflow_steps.completionReason,
+				stepNumber: sql.workflow_step_types.stepNumber,
+				documents: [],
+			};
+			stepGroup.push(step);
+		}
+
+		if (sql.document_types) {
+			let document = step.documents.find(
+				(a) => a.typeId === sql.document_types?.id
+			);
+			if (!document) {
+				document = {
+					versions: [],
+					typeId: sql.document_types.id,
+					name: sql.document_types.documentName,
+					investorApprovalRequired: sql.document_types.investorApprovalRequired,
+					traderApprovalRequired: sql.document_types.traderApprovalRequired,
+				};
+				step.documents.push(document);
+			}
+			if (sql.document_versions) {
+				document.versions.push(sql.document_versions);
+			}
+		}
+	}
+
+	return workflow;
+});
 
 export const useUploadDocument = routeAction$(
 	async (data, { error }) => {
@@ -331,6 +319,12 @@ export default component$(() => {
 						route="/v2/contract/[id]/joint-venture/"
 						param:id={contract.value.id}
 					></WorkflowButton>
+					<WorkflowButton
+						title="Joint Venture Set-up"
+						completion={contractCompletion.value.jointVenture}
+						route="/v2/contract/[id]/contract-setup/"
+						param:id={contract.value.id}
+					></WorkflowButton>
 					{/* <WorkflowButton
 						title="Trade Set-up"
 						completion={"disabled"}
@@ -359,32 +353,3 @@ export default component$(() => {
 		</>
 	);
 });
-
-const createWorkflow = async (workflowName: string) => {
-	const db = await drizzleDb;
-
-	const template = await db
-		.select()
-		.from(workflowTypes)
-		.leftJoin(
-			workflowStepTypes,
-			eq(workflowTypes.id, workflowStepTypes.workflowTypeId)
-		)
-		.where(eq(workflowTypes.name, workflowName));
-
-	const [workflow] = await db
-		.insert(workflows)
-		.values({ complete: false, workflowType: template[0]?.workflow_types.id })
-		.returning({ id: workflows.id });
-
-	const templatedSteps = template
-		.filter(({ workflow_step_types }) => workflow_step_types)
-		.map(({ workflow_step_types }) => ({
-			complete: false,
-			workflowId: workflow!.id,
-			stepType: workflow_step_types!.id,
-		}));
-	await db.insert(workflowSteps).values(templatedSteps);
-
-	return workflow;
-};

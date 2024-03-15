@@ -7,7 +7,7 @@ import {
 	WorkflowStepGroup,
 	WorkflowStep,
 } from "../workflow";
-import { useContractStep, useLoadContract } from "../layout";
+import { useWorkflow, useLoadContract } from "../layout";
 import { Input } from "~/components/input";
 import { Button } from "~/components/button";
 import { drizzleDb } from "~/db/db";
@@ -16,85 +16,82 @@ import { selectFirst } from "~/utils/drizzle-utils";
 import { safe } from "~/utils/utils";
 import { eq } from "drizzle-orm";
 export default component$(() => {
-	const contractSteps = useContractStep();
+	const contractSteps = useWorkflow();
 	const contract = useLoadContract();
 	return (
 		<Workflow>
-			<WorkflowTitle>
-				{contractSteps.value?.jointVentureWorkflow.workflowName}
-			</WorkflowTitle>
+			<WorkflowTitle>{contractSteps.value?.workflowName}</WorkflowTitle>
 			<WorkflowSteps>
-				{contractSteps.value?.jointVentureWorkflow.stepGroups.map(
-					(stepGroup, i) => (
-						<WorkflowStepGroup
-							key={i}
-							available={
-								(i === 0 ||
-									contractSteps.value.jointVentureWorkflow.stepGroups[
-										i - 1
-									]?.reduce((a, b) => b.complete && a, true)) ??
-								false
-							}
-						>
-							{stepGroup.map((step) => (
-								<WorkflowStep key={step.stepId} step={step}>
-									{step.stepName === "Investor Info" && (
-										<>
-											{step.complete ? (
-												<>
-													<div class="pb-4">
-														<h4 class="text-lg font-bold">
-															{contract.value.investor?.company}
-														</h4>
-														<p class="text-sm">
-															{contract.value.investor?.address}
-														</p>
-														<p class="text-sm">
-															{contract.value.investor?.companyRegistration}
-														</p>
-													</div>
-													<AddEntityUsersForm></AddEntityUsersForm>
-												</>
-											) : (
-												<EntityInfoForm
-													entityField="investor"
-													contractId={contract.value.id}
-													stepId={step.stepId}
-												></EntityInfoForm>
-											)}
-										</>
-									)}
-									{step.stepName === "Trader Info" && (
-										<>
-											{step.complete ? (
-												<>
-													<div class="pb-4">
-														<h4 class="text-lg font-bold">
-															{contract.value.trader?.company}
-														</h4>
-														<p class="text-sm">
-															{contract.value.trader?.address}
-														</p>
-														<p class="text-sm">
-															{contract.value.trader?.companyRegistration}
-														</p>
-													</div>
-													<AddEntityUsersForm></AddEntityUsersForm>
-												</>
-											) : (
-												<EntityInfoForm
-													entityField="trader"
-													contractId={contract.value.id}
-													stepId={step.stepId}
-												></EntityInfoForm>
-											)}
-										</>
-									)}
-								</WorkflowStep>
-							))}
-						</WorkflowStepGroup>
-					)
-				)}
+				{contractSteps.value?.stepGroups.map((stepGroup, i) => (
+					<WorkflowStepGroup
+						key={i}
+						available={
+							(i === 0 ||
+								contractSteps.value.stepGroups[i - 1]?.reduce(
+									(a, b) => b.complete && a,
+									true
+								)) ??
+							false
+						}
+					>
+						{stepGroup.map((step) => (
+							<WorkflowStep key={step.stepId} step={step}>
+								{step.stepName === "Investor Info" && (
+									<>
+										{step.complete ? (
+											<>
+												<div class="pb-4">
+													<h4 class="text-lg font-bold">
+														{contract.value.investor?.company}
+													</h4>
+													<p class="text-sm">
+														{contract.value.investor?.address}
+													</p>
+													<p class="text-sm">
+														{contract.value.investor?.companyRegistration}
+													</p>
+												</div>
+												<AddEntityUsersForm></AddEntityUsersForm>
+											</>
+										) : (
+											<EntityInfoForm
+												entityField="investor"
+												contractId={contract.value.id}
+												stepId={step.stepId}
+											></EntityInfoForm>
+										)}
+									</>
+								)}
+								{step.stepName === "Trader Info" && (
+									<>
+										{step.complete ? (
+											<>
+												<div class="pb-4">
+													<h4 class="text-lg font-bold">
+														{contract.value.trader?.company}
+													</h4>
+													<p class="text-sm">
+														{contract.value.trader?.address}
+													</p>
+													<p class="text-sm">
+														{contract.value.trader?.companyRegistration}
+													</p>
+												</div>
+												<AddEntityUsersForm></AddEntityUsersForm>
+											</>
+										) : (
+											<EntityInfoForm
+												entityField="trader"
+												contractId={contract.value.id}
+												stepId={step.stepId}
+											></EntityInfoForm>
+										)}
+									</>
+								)}
+							</WorkflowStep>
+						))}
+					</WorkflowStepGroup>
+				))}
 			</WorkflowSteps>
 		</Workflow>
 	);
@@ -165,13 +162,6 @@ export const EntityInfoForm = component$(
 		const createEntity = useCreateEntity();
 		return (
 			<Form action={createEntity} class="flex max-w-prose flex-col gap-y-4">
-				<Input type="hidden" name="contractId" value={props.contractId}></Input>
-				<Input type="hidden" name="stepId" value={props.stepId}></Input>
-				<Input
-					type="hidden"
-					name="entityField"
-					value={props.entityField}
-				></Input>
 				<Input
 					title="Company Name"
 					placeholder="Company Name"
@@ -186,6 +176,13 @@ export const EntityInfoForm = component$(
 					title="Company Registration"
 					placeholder="Company Registration"
 					name="companyRegistration"
+				></Input>
+				<Input type="hidden" name="contractId" value={props.contractId}></Input>
+				<Input type="hidden" name="stepId" value={props.stepId}></Input>
+				<Input
+					type="hidden"
+					name="entityField"
+					value={props.entityField}
 				></Input>
 				<Button class="mx-auto">Submit</Button>
 			</Form>

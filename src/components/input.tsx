@@ -2,7 +2,7 @@ import { type PropsOf, component$ } from "@builder.io/qwik";
 
 export const Input = component$((props: PropsOf<"input">) => {
 	return (
-		<div>
+		<div class={{ hidden: props.type === "hidden" }}>
 			<label
 				for={props.id}
 				class="mb-2 block text-sm font-medium text-gray-900 dark:text-white"
