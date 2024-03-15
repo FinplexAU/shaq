@@ -7,9 +7,9 @@ import {
 	useContextProvider,
 	useSignal,
 } from "@builder.io/qwik";
-import { WorkflowStep, type WorkflowStep as TWorkflowStep } from "./layout";
+import { type WorkflowStep as TWorkflowStep } from "./layout";
 
-import { Link } from "@builder.io/qwik-city";
+import { Link, useLocation } from "@builder.io/qwik-city";
 import {
 	Timeline,
 	TimelineBody,
@@ -25,7 +25,7 @@ import {
 	HiChevronDownSolid,
 	HiEyeSolid,
 } from "@qwikest/icons/heroicons";
-import { AppLink } from "~/routes.config";
+import { AppLink, appUrl } from "~/routes.config";
 import type { AppLinkProps } from "~/routes.gen";
 import { UploadDocumentModal } from "./upload-document-modal";
 
@@ -95,7 +95,7 @@ export const WorkflowDocument = component$(
 		step,
 	}: {
 		document: TWorkflowStep["documents"][number];
-		step: WorkflowStep;
+		step: TWorkflowStep;
 	}) => {
 		const stepGroupContext = useContext(StepGroupContext);
 
@@ -337,28 +337,37 @@ export const WorkflowButton = component$(
 	(
 		props: {
 			title: string;
-			completion: "complete" | "in-progress" | "disabled";
+			completion: boolean;
 		} & AppLinkProps
 	) => {
+		const loc = useLocation();
+		const isOnPath = useComputed$(() => {
+			return (
+				loc.url.pathname ===
+				(appUrl as any)(props.route as any, props, "param:")
+			);
+		});
 		return (
 			<AppLink {...props} class="block pb-4">
 				<div
 					class={[
-						"flex items-center justify-between rounded-lg border p-4",
+						"flex items-center justify-between rounded-lg border p-4 transition-transform",
 						{
-							"border-green-300 bg-green-50 text-green-700":
-								props.completion === "complete",
+							"border-green-300 bg-green-50 text-green-700": props.completion,
 							"border-blue-300 bg-blue-100 text-blue-700":
-								props.completion === "in-progress",
+								isOnPath.value && !props.completion,
 							"border-gray-300 bg-gray-100 text-gray-900":
-								props.completion === "disabled",
+								!props.completion && !isOnPath.value,
 						},
 					]}
 				>
 					<h3>{props.title}</h3>
-					{props.completion === "complete" && <HiCheckSolid></HiCheckSolid>}
-					{props.completion === "in-progress" && (
+
+					{loc.url.pathname ===
+					(appUrl as any)(props.route as any, props, "param:") ? (
 						<HiArrowRightSolid></HiArrowRightSolid>
+					) : (
+						props.completion && <HiCheckSolid></HiCheckSolid>
 					)}
 				</div>
 			</AppLink>

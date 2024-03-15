@@ -284,15 +284,14 @@ export const useContractCompletion = routeLoader$(async ({ resolveValue }) => {
 
 	const db = await drizzleDb;
 
-	const workflowCompletion: Record<
-		"jointVenture",
-		"disabled" | "in-progress" | "complete"
-	> = { jointVenture: "disabled" };
+	const workflowCompletion: Record<"jointVenture", boolean> = {
+		jointVenture: false,
+	};
 
 	if (!contract.jointVenture) {
 		return workflowCompletion;
 	} else {
-		workflowCompletion.jointVenture = "in-progress";
+		workflowCompletion.jointVenture = false;
 	}
 
 	const jointVenture = await db
@@ -304,7 +303,7 @@ export const useContractCompletion = routeLoader$(async ({ resolveValue }) => {
 		.then(selectFirst);
 
 	if (jointVenture.complete) {
-		workflowCompletion.jointVenture = "complete";
+		workflowCompletion.jointVenture = true;
 	}
 
 	return workflowCompletion;
@@ -322,7 +321,7 @@ export default component$(() => {
 				<div class="col-span-2 border-r p-4">
 					<WorkflowButton
 						title="Contract Info"
-						completion={"complete"}
+						completion={true}
 						route="/v2/contract/[id]/"
 						param:id={contract.value.id}
 					></WorkflowButton>
