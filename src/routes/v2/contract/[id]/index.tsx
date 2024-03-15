@@ -1,4 +1,4 @@
-import { component$ } from "@builder.io/qwik";
+import { component$, useComputed$ } from "@builder.io/qwik";
 import { routeLoader$ } from "@builder.io/qwik-city";
 import { drizzleDb } from "~/db/db";
 import {
@@ -12,6 +12,8 @@ import {
 	workflows,
 } from "@/drizzle/schema";
 import { eq, and, asc } from "drizzle-orm";
+import { selectFirst, throwIfNone } from "~/utils/drizzle-utils";
+import Debugger from "~/components/debugger";
 
 export const useLoadContract = routeLoader$(
 	async ({ cookie, redirect, params }) => {
@@ -53,6 +55,35 @@ export const useLoadContract = routeLoader$(
 	}
 );
 
+export type WorkflowStep = {
+	stepId: string;
+	stepName: string;
+	stepNumber: number;
+	complete: boolean;
+	completeReason: string | null;
+	documents: {
+		typeId: string;
+		name: string;
+		investorApprovalRequired: boolean;
+		traderApprovalRequired: boolean;
+		versions: {
+			id: string;
+			investorApproval: Date | null;
+			traderApproval: Date | null;
+			version: number;
+			createdAt: Date;
+		}[];
+	}[];
+};
+
+export type Workflow = {
+	workflowId: string;
+	workflowName: string;
+	complete: boolean;
+	completeReason: string | null;
+	steps: WorkflowStep[];
+};
+
 export const useContractStep = routeLoader$(async ({ resolveValue }) => {
 	let contract;
 	contract = await resolveValue(useLoadContract);
@@ -69,9 +100,10 @@ export const useContractStep = routeLoader$(async ({ resolveValue }) => {
 		return;
 	}
 
-	const jointVentureWorkflow = await db
+	const jointVentureWorkflowQuery = await db
 		.select()
-		.from(workflowSteps)
+		.from(workflows)
+		.innerJoin(workflowSteps, eq(workflowSteps.workflowId, workflows.id))
 		.innerJoin(
 			workflowStepTypes,
 			eq(workflowSteps.stepType, workflowStepTypes.id)
@@ -87,42 +119,32 @@ export const useContractStep = routeLoader$(async ({ resolveValue }) => {
 				eq(documentVersions.workflowStepId, workflowSteps.id)
 			)
 		)
-		.where(eq(workflowSteps.workflowId, contract.jointVenture))
-		.orderBy(asc(workflowStepTypes.stepNumber), asc(documentVersions.version));
+		.where(eq(workflows.id, contract.jointVenture))
+		.then(throwIfNone);
+	// .orderBy(asc(workflowStepTypes.stepNumber), asc(documentVersions.version));
 
-	const output: {
-		workflowId: string;
-		stepId: string;
-		complete: boolean;
-		completeReason: string | null;
-		stepNumber: number;
-		documents: {
-			typeId: string;
-			name: string;
-			investorApprovalRequired: boolean;
-			traderApprovalRequired: boolean;
-			versions: {
-				id: string;
-				investorApproval: Date | null;
-				traderApproval: Date | null;
-				version: number;
-				createdAt: Date;
-			}[];
-		}[];
-	}[] = [];
+	const jointVentureWorkflow: Workflow = {
+		workflowId: jointVentureWorkflowQuery[0].workflows.id,
+		workflowName: "Join Venture Set-up",
+		complete: jointVentureWorkflowQuery[0].workflows.complete,
+		completeReason: jointVentureWorkflowQuery[0].workflows.completionReason,
+		steps: [],
+	};
 
-	for (const sql of jointVentureWorkflow) {
-		let step = output.find((x) => x.stepId === sql.workflow_steps.id);
+	for (const sql of jointVentureWorkflowQuery) {
+		let step: WorkflowStep | undefined = jointVentureWorkflow.steps.find(
+			(step) => step.stepId === sql.workflow_steps.id
+		);
 		if (!step) {
 			step = {
-				workflowId: sql.workflow_steps.workflowId,
 				stepId: sql.workflow_steps.id,
+				stepName: sql.workflow_step_types.name,
 				complete: sql.workflow_steps.complete,
 				completeReason: sql.workflow_steps.completionReason,
 				stepNumber: sql.workflow_step_types.stepNumber,
 				documents: [],
 			};
-			output.push(step);
+			jointVentureWorkflow.steps.push(step);
 		}
 
 		if (sql.document_types) {
@@ -145,17 +167,33 @@ export const useContractStep = routeLoader$(async ({ resolveValue }) => {
 		}
 	}
 
-	return output;
+	return jointVentureWorkflow;
 });
 
 export default component$(() => {
-	const contract = useContractStep();
+	const contractSteps = useContractStep();
+
 	return (
 		<div>
-			<pre>{JSON.stringify(contract.value, null, 2)}</pre>
+			<Debugger value={contractSteps.value}></Debugger>
+			{/* <WorkflowDisplay
+				title="Joint Venture Set-up"
+				workflowSteps={contractSteps.value[0]}
+			></WorkflowDisplay> */}
 		</div>
 	);
 });
+
+// const WorkflowDisplay = component$(
+// 	({ workflowSteps, title }: { workflowSteps: WorkflowStep[]; title: string }) => {
+// 		return (
+// 			<div>
+// 				<h2>{title}</h2>
+//                 <>{workflowSteps.}</>
+// 			</div>
+// 		);
+// 	}
+// );
 
 const createWorkflow = async (workflowName: string) => {
 	const db = await drizzleDb;
@@ -171,7 +209,7 @@ const createWorkflow = async (workflowName: string) => {
 
 	const [workflow] = await db
 		.insert(workflows)
-		.values({ complete: false })
+		.values({ complete: false, workflowType: template[0]?.workflow_types.id })
 		.returning({ id: workflows.id });
 
 	const templatedSteps = template

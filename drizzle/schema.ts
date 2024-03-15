@@ -65,6 +65,7 @@ export const workflowSteps = pgTable("workflow_steps", {
 
 export const workflows = pgTable("workflows", {
 	id: uuid("id").primaryKey().defaultRandom(),
+	workflowType: uuid("workflow_type").references(() => workflowTypes.id),
 	complete: boolean("complete").notNull(),
 	completionReason: text("completion_reason"),
 });
