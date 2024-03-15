@@ -126,6 +126,9 @@ export const onRequest: RequestHandler = async (ev) => {
 		throw ev.redirect(302, "/auth/sign-in");
 	}
 
+	if (!user.emailVerified && ev.pathname !== "/v2/verify-email/")
+		throw ev.redirect(302, "/v2/verify-email/");
+
 	ev.sharedMap.set("user", user);
 	ev.sharedMap.set("session", session);
 
