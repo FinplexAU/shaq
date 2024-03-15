@@ -184,7 +184,7 @@ export const EntityInfoForm = component$(
 					name="entityField"
 					value={props.entityField}
 				></Input>
-				<Button class="mx-auto">Submit</Button>
+				<Button>Submit</Button>
 			</Form>
 		);
 	}
@@ -207,7 +207,7 @@ export const AddEntityUsersForm = component$(() => {
 				name="email"
 				placeholder="business@email.com"
 			></Input>
-			<Button class="mx-auto">Add</Button>
+			<Button>Add</Button>
 		</Form>
 	);
 });

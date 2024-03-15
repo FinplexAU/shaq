@@ -37,7 +37,7 @@ export const Workflow = component$(() => (
 
 export const WorkflowTitle = component$(() => {
 	return (
-		<h2 class="px-4 pb-8 text-2xl font-bold">
+		<h2 class="px-4 text-2xl font-bold">
 			<Slot></Slot>
 		</h2>
 	);
@@ -45,7 +45,7 @@ export const WorkflowTitle = component$(() => {
 
 export const WorkflowSteps = component$(() => {
 	return (
-		<ol>
+		<ol class="list-inside list-decimal">
 			<Slot></Slot>
 		</ol>
 	);
@@ -62,10 +62,11 @@ export const WorkflowStepGroup = component$((props: { available: boolean }) => {
 	return (
 		<li
 			class={[
-				"flex flex-wrap gap-8 border-b border-dashed p-4",
+				"flex flex-wrap gap-8 border-b-2 border-dashed p-4",
 				{ "opacity-20": !props.available },
 			]}
 		>
+			<p class="absolute list-item text-sm text-gray-400"></p>
 			<Slot></Slot>
 		</li>
 	);
@@ -73,8 +74,8 @@ export const WorkflowStepGroup = component$((props: { available: boolean }) => {
 
 export const WorkflowStep = component$(({ step }: { step: TWorkflowStep }) => {
 	return (
-		<div class="flex-1" key={step.stepId}>
-			<h3 class="pb-4 text-xl font-bold">{step.stepName}</h3>
+		<div class="flex-1 py-8" key={step.stepId}>
+			<h3 class="pb-4 text-xl font-semibold">{step.stepName}</h3>
 			<Slot></Slot>
 			<ul>
 				{step.documents.map((document) => (
@@ -125,7 +126,7 @@ export const WorkflowDocument = component$(
 		return (
 			<li key={document.typeId} class="pb-8">
 				<div class="pb-2">
-					<h4 class="text-lg font-semibold">{document.name}</h4>
+					<h4 class="text-lg font-normal">{document.name}</h4>
 					<div class="flex items-center gap-2 text-sm">
 						{latestDoc.value && (
 							<>
@@ -353,9 +354,9 @@ export const WorkflowButton = component$(
 					class={[
 						"flex items-center justify-between rounded-lg border p-4 transition-transform",
 						{
-							"border-green-300 bg-green-50 text-green-700": props.completion,
-							"border-blue-300 bg-blue-100 text-blue-700":
-								isOnPath.value && !props.completion,
+							"border-green-300 bg-green-50 text-green-700":
+								props.completion && !isOnPath.value,
+							"border-blue-300 bg-blue-100 text-blue-700": isOnPath.value,
 							"border-gray-300 bg-gray-100 text-gray-900":
 								!props.completion && !isOnPath.value,
 						},

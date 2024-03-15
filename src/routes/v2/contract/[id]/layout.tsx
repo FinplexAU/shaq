@@ -272,29 +272,20 @@ export const useContractCompletion = routeLoader$(async ({ resolveValue }) => {
 
 	const db = await drizzleDb;
 
-	const workflowCompletion: Record<"jointVenture", boolean> = {
-		jointVenture: false,
-	};
+	const jointVenture = alias(workflows, "jointVenture");
+	const tradeSetup = alias(workflows, "tradeSetup");
 
-	if (!contract.jointVenture) {
-		return workflowCompletion;
-	} else {
-		workflowCompletion.jointVenture = false;
-	}
-
-	const jointVenture = await db
+	const workflowsQuery = await db
 		.select({
-			complete: workflows.complete,
+			jointVenture: jointVenture.complete,
+			tradeSetup: tradeSetup.complete,
 		})
-		.from(workflows)
-		.where(eq(workflows.id, contract.jointVenture))
+		.from(jointVenture)
+		.innerJoin(tradeSetup, eq(tradeSetup.id, contract.tradeSetup!))
+		.where(eq(jointVenture.id, contract.jointVenture!))
 		.then(selectFirst);
 
-	if (jointVenture.complete) {
-		workflowCompletion.jointVenture = true;
-	}
-
-	return workflowCompletion;
+	return workflowsQuery;
 });
 
 export default component$(() => {
@@ -302,11 +293,8 @@ export default component$(() => {
 	const contractCompletion = useContractCompletion();
 	return (
 		<>
-			<div class="grid h-14 place-items-center bg-blue-400/30">
-				<h1 class="text-4xl font-bold">CONTRACT INFO</h1>
-			</div>
 			<div class="grid flex-1 grid-cols-12 ">
-				<div class="col-span-2 border-r p-4">
+				<nav class="col-span-2 border-r p-4">
 					<WorkflowButton
 						title="Contract Info"
 						completion={true}
@@ -321,7 +309,7 @@ export default component$(() => {
 					></WorkflowButton>
 					<WorkflowButton
 						title="Joint Venture Set-up"
-						completion={contractCompletion.value.jointVenture}
+						completion={contractCompletion.value.tradeSetup}
 						route="/v2/contract/[id]/contract-setup/"
 						param:id={contract.value.id}
 					></WorkflowButton>
@@ -345,10 +333,10 @@ export default component$(() => {
 						title="Trade Process"
 						completion={"disabled"}
 					></WorkflowButton> */}
-				</div>
-				<div class="col-span-10">
+				</nav>
+				<main class="col-span-10 max-h-[calc(100vh-64px)] overflow-y-auto">
 					<Slot></Slot>
-				</div>
+				</main>
 			</div>
 		</>
 	);

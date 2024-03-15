@@ -19,7 +19,8 @@ export type AppRoutes =
   | "/v2/contract/[id]/joint-venture/"
   | "/v2/create-contract/"
   | "/v2/document/[id]/"
-  | "/v2/home/";
+  | "/v2/home/"
+  | "/v2/verify-email/";
 
 export interface AppRouteMap {
   "/": {};
@@ -39,6 +40,7 @@ export interface AppRouteMap {
   "/v2/create-contract/": {};
   "/v2/document/[id]/": { id: string };
   "/v2/home/": {};
+  "/v2/verify-email/": {};
 }
 
 export interface AppRouteParamsFunction {
@@ -59,6 +61,7 @@ export interface AppRouteParamsFunction {
   (route: "/v2/create-contract/", params?: {}): string;
   (route: "/v2/document/[id]/", params: { id: string }): string;
   (route: "/v2/home/", params?: {}): string;
+  (route: "/v2/verify-email/", params?: {}): string;
 }
 
 export type AppLinkProps =
@@ -78,4 +81,5 @@ export type AppLinkProps =
   | { route: "/v2/contract/[id]/joint-venture/"; "param:id": string }
   | { route: "/v2/create-contract/" }
   | { route: "/v2/document/[id]/"; "param:id": string }
-  | { route: "/v2/home/" };
+  | { route: "/v2/home/" }
+  | { route: "/v2/verify-email/" };
