@@ -255,7 +255,13 @@ export const useUploadDocument = routeAction$(
 		]);
 	},
 	zod$({
-		document: z.any().refine((arg): arg is Blob => arg instanceof Blob),
+		document: z
+			.any()
+			.refine((arg): arg is Blob => arg instanceof Blob)
+			.refine(
+				(arg) => arg.size > 0,
+				"Document must have a size greater than 0"
+			),
 		documentTypeId: z.string().uuid(),
 		stepId: z.string().uuid(),
 	})
