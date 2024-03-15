@@ -308,7 +308,7 @@ export default component$(() => {
 						param:id={contract.value.id}
 					></WorkflowButton>
 					<WorkflowButton
-						title="Joint Venture Set-up"
+						title="Trade Set-up"
 						completion={contractCompletion.value.tradeSetup}
 						route="/v2/contract/[id]/contract-setup/"
 						param:id={contract.value.id}
