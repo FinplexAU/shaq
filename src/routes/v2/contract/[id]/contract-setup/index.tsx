@@ -57,16 +57,16 @@ export default component$(() => {
 	const contractCompletion = useContractCompletion();
 	const submitTradeInfo = useSubmitTradeInfo();
 
-	const isAvailable = useStepGroupAvailable(workflow.value?.stepGroups);
+	const isAvailable = useStepGroupAvailable(
+		workflow.value?.stepGroups,
+		contractCompletion.value.jointVenture
+	);
 	return (
 		<Workflow>
 			<WorkflowTitle>{workflow.value?.workflowName}</WorkflowTitle>
 			<WorkflowSteps>
 				{workflow.value?.stepGroups.map((stepGroup, i) => (
-					<WorkflowStepGroup
-						key={i}
-						available={contractCompletion.value.jointVenture && isAvailable(i)}
-					>
+					<WorkflowStepGroup key={i} available={isAvailable(i)}>
 						{stepGroup.map((step) => (
 							<WorkflowStep key={step.stepId} step={step}>
 								{i === 0 && step.complete && (
