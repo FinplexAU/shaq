@@ -12,7 +12,7 @@ import {
 	workflowTypes,
 } from "@/drizzle/schema";
 import { routeAction$, routeLoader$, z, zod$ } from "@builder.io/qwik-city";
-import { eq, and, asc, desc } from "drizzle-orm";
+import { eq, and, asc, desc, or } from "drizzle-orm";
 import { drizzleDb } from "~/db/db";
 import { selectFirst, throwIfNone } from "~/utils/drizzle-utils";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
@@ -48,15 +48,18 @@ export type Workflow = {
 	complete: boolean;
 	completeReason: string | null;
 	stepGroups: WorkflowStep[][];
+	isAdmin: boolean;
+	isTrader: boolean;
+	isInvestor: boolean;
 };
 
 export const useLoadContract = routeLoader$(
-	async ({ redirect, params, sharedMap }) => {
-		const user = getSharedMap(sharedMap, "user");
-
+	async ({ redirect, params, sharedMap, error }) => {
 		if (!params.id) {
 			throw redirect(302, "/v2/home");
 		}
+
+		const user = getSharedMap(sharedMap, "user");
 
 		const db = await drizzleDb;
 
@@ -73,18 +76,37 @@ export const useLoadContract = routeLoader$(
 			.where(eq(contracts.id, params.id))
 			.then(selectFirst);
 
-		const isPermitted = await db
+		const permissionLookup = await db
 			.select()
 			.from(userEntityLinks)
 			.where(
 				and(
-					eq(userEntityLinks.entity_id, contract.contracts.adminId),
-					eq(userEntityLinks.user_id, user.id)
+					eq(userEntityLinks.userId, user.id),
+					or(
+						eq(userEntityLinks.entityId, contract.contracts.adminId),
+						contract.contracts.traderId
+							? eq(userEntityLinks.entityId, contract.contracts.traderId)
+							: undefined,
+						contract.contracts.investorId
+							? eq(userEntityLinks.entityId, contract.contracts.investorId)
+							: undefined
+					)
 				)
 			);
 
-		if (isPermitted.length === 0) {
-			throw redirect(302, "/v2/home");
+		const isAdmin = Boolean(
+			permissionLookup.find((x) => x.entityId === contract.contracts.adminId)
+		);
+		const isTrader = Boolean(
+			permissionLookup.find((x) => x.entityId === contract.contracts.traderId)
+		);
+		const isInvestor = Boolean(
+			permissionLookup.find((x) => x.entityId === contract.contracts.investorId)
+		);
+		const isPermitted = isAdmin || isTrader || isInvestor;
+
+		if (!isPermitted) {
+			throw error(404, "Not found");
 		}
 
 		return {
@@ -92,6 +114,9 @@ export const useLoadContract = routeLoader$(
 			admin: contract.admin,
 			investor: contract.investor,
 			trader: contract.trader,
+			isAdmin,
+			isTrader,
+			isInvestor,
 		};
 	}
 );
@@ -145,6 +170,9 @@ export const useWorkflow = routeLoader$(async ({ resolveValue, pathname }) => {
 		.then(throwIfNone);
 
 	const workflow: Workflow = {
+		isAdmin: contract.isAdmin,
+		isInvestor: contract.isInvestor,
+		isTrader: contract.isTrader,
 		workflowId: workflowQuery[0].workflows.id,
 		workflowName: workflowQuery[0].workflow_types.name,
 		complete: workflowQuery[0].workflows.complete,

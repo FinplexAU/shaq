@@ -31,7 +31,7 @@ export const useCreateContract = routeAction$(
 		// next link the user to the admin entity
 		await db
 			.insert(userEntityLinks)
-			.values({ user_id: user.id, entity_id: adminEntity.id });
+			.values({ userId: user.id, entityId: adminEntity.id });
 		// now create contract
 
 		const jointVentureWorkflow = await createWorkflow("Joint Venture Set-up");
@@ -40,8 +40,8 @@ export const useCreateContract = routeAction$(
 			.insert(contracts)
 			.values({
 				adminId: adminEntity.id,
-				jointVenture: jointVentureWorkflow?.id,
-				tradeSetup: tradeSetup?.id,
+				jointVenture: jointVentureWorkflow.id,
+				tradeSetup: tradeSetup.id,
 			})
 			.returning({ id: contracts.id })
 			.then(selectFirst);
@@ -85,7 +85,8 @@ const createWorkflow = async (workflowName: string) => {
 			workflowId: workflow!.id,
 			stepType: workflow_step_types!.id,
 		}));
-	await db.insert(workflowSteps).values(templatedSteps);
+	if (templatedSteps.length > 0)
+		await db.insert(workflowSteps).values(templatedSteps);
 
 	return workflow;
 };

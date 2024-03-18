@@ -74,6 +74,7 @@ export const workflows = pgTable("workflows", {
 
 export const users = pgTable("users", {
 	id: uuid("id").primaryKey().defaultRandom(),
+	name: text("name").notNull(),
 	email: text("email").unique().notNull(),
 	emailVerified: boolean("email_verified").notNull().default(false),
 	hashedPassword: text("hashed_password").notNull(),
@@ -108,10 +109,10 @@ export const userEmailVerificationCodes = pgTable(
 
 export const userEntityLinks = pgTable("user_entity_links", {
 	id: uuid("id").primaryKey().defaultRandom(),
-	user_id: uuid("user_id")
+	userId: uuid("user_id")
 		.references(() => users.id)
 		.notNull(),
-	entity_id: uuid("entity_id")
+	entityId: uuid("entity_id")
 		.references(() => entities.id)
 		.notNull(),
 });

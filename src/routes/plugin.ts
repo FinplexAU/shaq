@@ -21,7 +21,7 @@ type Session = ExternalSession;
 export type SharedMap = {
 	lucia: ReturnType<typeof initializeLucia>;
 	session: Session;
-	user: { id: string; email: string; emailVerified: boolean };
+	user: { id: string; email: string; emailVerified: boolean; name: string };
 };
 
 export const getSharedMap = <T extends keyof SharedMap>(
@@ -78,7 +78,7 @@ export const generateVerificationCode = async (userId: string) => {
 		.delete(userEmailVerificationCodes)
 		.where(eq(userEmailVerificationCodes.userId, userId));
 
-	const code = generateRandomString(8, alphabet("0-9"));
+	const code = generateRandomString(6, alphabet("0-9"));
 	await db.insert(userEmailVerificationCodes).values([
 		{
 			userId: userId,
@@ -96,7 +96,10 @@ export const onRequest: RequestHandler = async (ev) => {
 
 	ev.sharedMap.set("lucia", lucia);
 
-	if (!ev.pathname.startsWith("/v2/")) {
+	if (
+		!ev.pathname.startsWith("/v2/") &&
+		ev.pathname !== "/auth/verify-email/"
+	) {
 		await ev.next();
 		return;
 	}
@@ -126,8 +129,8 @@ export const onRequest: RequestHandler = async (ev) => {
 		throw ev.redirect(302, "/auth/sign-in");
 	}
 
-	if (!user.emailVerified && ev.pathname !== "/v2/verify-email/")
-		throw ev.redirect(302, "/v2/verify-email/");
+	if (!user.emailVerified && ev.pathname !== "/auth/verify-email/")
+		throw ev.redirect(302, "/auth/verify-email/");
 
 	ev.sharedMap.set("user", user);
 	ev.sharedMap.set("session", session);

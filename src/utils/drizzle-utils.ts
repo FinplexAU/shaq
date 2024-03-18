@@ -1,6 +1,8 @@
 export const selectFirst = <T extends any[]>(values: T): T[number] => {
-	if (values.length !== 1)
+	if (values.length !== 1) {
+		console.log(values);
 		throw new Error("Found non unique or inexistent value");
+	}
 	return values[0]!;
 };
 

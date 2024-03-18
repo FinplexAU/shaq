@@ -1,42 +1,32 @@
-import { contracts, entities, userEntityLinks } from "@/drizzle/schema";
+import { contracts, userEntityLinks } from "@/drizzle/schema";
 import { component$ } from "@builder.io/qwik";
 import { Link, routeLoader$ } from "@builder.io/qwik-city";
-import { eq, inArray } from "drizzle-orm";
+import { and, eq, or } from "drizzle-orm";
 import { drizzleDb } from "~/db/db";
 import { getSharedMap } from "~/routes/plugin";
 
-export const useUserEntities = routeLoader$(async ({ sharedMap }) => {
+export const useAllowedContracts = routeLoader$(async ({ sharedMap }) => {
 	const user = getSharedMap(sharedMap, "user");
 	const db = await drizzleDb;
-	const usersEntities = await db
-		.select({
-			id: entities.id,
-		})
-		.from(entities)
-		.leftJoin(userEntityLinks, eq(entities.id, userEntityLinks.entity_id))
-		.where(eq(userEntityLinks.user_id, user.id));
 
-	return usersEntities.map((e) => e.id);
-});
-
-export const useAdminContracts = routeLoader$(async ({ resolveValue }) => {
-	const entities = await resolveValue(useUserEntities);
-
-	if (entities.length < 1) {
-		return [];
-	}
-
-	const db = await drizzleDb;
-	const adminContracts = await db
+	const permissionLookup = await db
 		.select()
 		.from(contracts)
-		.where(inArray(contracts.adminId, entities));
+		.leftJoin(
+			userEntityLinks,
+			or(
+				eq(userEntityLinks.entityId, contracts.adminId),
+				eq(userEntityLinks.entityId, contracts.traderId),
+				eq(userEntityLinks.entityId, contracts.investorId)
+			)
+		)
+		.where(and(eq(userEntityLinks.userId, user.id)));
 
-	return adminContracts;
+	return permissionLookup.map((x) => x.contracts);
 });
 
 export default component$(() => {
-	const adminContracts = useAdminContracts();
+	const adminContracts = useAllowedContracts();
 
 	return (
 		<div class="p-2">
