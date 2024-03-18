@@ -138,7 +138,7 @@ export default component$(() => {
 				<Button>Sign Up</Button>
 			</Form>
 			<div class="flex w-full justify-end">
-				<AppLink route="/auth/sign-in/" class="text-black/80">
+				<AppLink route="/auth/sign-in/" class="text-sm text-black/80">
 					Already have an account? Sign In
 				</AppLink>
 			</div>

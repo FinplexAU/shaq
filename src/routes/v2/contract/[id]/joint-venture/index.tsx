@@ -194,13 +194,13 @@ export const useAddEntityUser = globalAction$(
 
 export const AddEntityUsersForm = component$(() => {
 	return (
-		<Form class="flex max-w-prose flex-col gap-y-4">
+		<Form class="flex max-w-prose flex-col">
 			<Input
 				title="Email"
 				name="email"
 				placeholder="business@email.com"
 			></Input>
-			<Button>Add</Button>
+			<Button class="mt-4">Add</Button>
 		</Form>
 	);
 });
