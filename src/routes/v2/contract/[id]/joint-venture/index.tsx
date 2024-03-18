@@ -6,6 +6,7 @@ import {
 	WorkflowSteps,
 	WorkflowStepGroup,
 	WorkflowStep,
+	useStepGroupAvailable,
 } from "../workflow";
 import { useWorkflow, useLoadContract } from "../layout";
 import { Input } from "~/components/input";
@@ -18,22 +19,14 @@ import { eq } from "drizzle-orm";
 export default component$(() => {
 	const contractSteps = useWorkflow();
 	const contract = useLoadContract();
+	const isAvailable = useStepGroupAvailable(contractSteps.value?.stepGroups);
+
 	return (
 		<Workflow>
 			<WorkflowTitle>{contractSteps.value?.workflowName}</WorkflowTitle>
 			<WorkflowSteps>
 				{contractSteps.value?.stepGroups.map((stepGroup, i) => (
-					<WorkflowStepGroup
-						key={i}
-						available={
-							(i === 0 ||
-								contractSteps.value.stepGroups[i - 1]?.reduce(
-									(a, b) => b.complete && a,
-									true
-								)) ??
-							false
-						}
-					>
+					<WorkflowStepGroup key={i} available={isAvailable(i)}>
 						{stepGroup.map((step) => (
 							<WorkflowStep key={step.stepId} step={step}>
 								{step.stepName === "Investor Info" && (

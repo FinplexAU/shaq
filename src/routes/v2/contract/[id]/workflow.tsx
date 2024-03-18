@@ -7,7 +7,7 @@ import {
 	useContextProvider,
 	useSignal,
 } from "@builder.io/qwik";
-import { type WorkflowStep as TWorkflowStep } from "./layout";
+import { WorkflowStep, type WorkflowStep as TWorkflowStep } from "./layout";
 
 import { Link, useLocation } from "@builder.io/qwik-city";
 import {
@@ -375,3 +375,25 @@ export const WorkflowButton = component$(
 		);
 	}
 );
+
+export const useStepGroupAvailable = (
+	stepGroups?: WorkflowStep[][],
+	...previousWorkflows: boolean[]
+) => {
+	const incompletePrevious = useComputed$(() =>
+		previousWorkflows.some((p) => !p)
+	);
+
+	return (i: number): boolean => {
+		if (incompletePrevious.value) {
+			return false;
+		}
+		if (i === 0) {
+			return true;
+		}
+
+		return (
+			stepGroups?.[i - 1]?.reduce((a, b) => b.complete && a, true) ?? false
+		);
+	};
+};

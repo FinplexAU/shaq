@@ -7,6 +7,7 @@ import {
 	WorkflowStepGroup,
 	WorkflowSteps,
 	WorkflowTitle,
+	useStepGroupAvailable,
 } from "../workflow";
 import { Button } from "~/components/button";
 import { Input } from "~/components/input";
@@ -55,6 +56,8 @@ export default component$(() => {
 	const workflow = useWorkflow();
 	const contractCompletion = useContractCompletion();
 	const submitTradeInfo = useSubmitTradeInfo();
+
+	const isAvailable = useStepGroupAvailable(workflow.value?.stepGroups);
 	return (
 		<Workflow>
 			<WorkflowTitle>{workflow.value?.workflowName}</WorkflowTitle>
@@ -62,15 +65,7 @@ export default component$(() => {
 				{workflow.value?.stepGroups.map((stepGroup, i) => (
 					<WorkflowStepGroup
 						key={i}
-						available={
-							(contractCompletion.value.jointVenture &&
-								(i === 0 ||
-									workflow.value.stepGroups[i - 1]?.reduce(
-										(a, b) => b.complete && a,
-										true
-									))) ??
-							false
-						}
+						available={contractCompletion.value.jointVenture && isAvailable(i)}
 					>
 						{stepGroup.map((step) => (
 							<WorkflowStep key={step.stepId} step={step}>
