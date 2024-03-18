@@ -98,7 +98,7 @@ export const UploadDocumentModal = component$<{
 						)}
 						<div class="flex">
 							<input
-								class="block w-full cursor-pointer rounded-lg border border-gray-300 bg-gray-50 text-sm text-gray-900 file:!bg-gradient-to-t file:!from-blue-400 file:!to-blue-500/80 "
+								class="block w-full cursor-pointer rounded-lg border border-gray-300 bg-gray-50 text-sm text-gray-900 outline-none file:!bg-gradient-to-t file:!from-blue-400 file:!to-blue-500/80 "
 								type="file"
 								name="document"
 								ref={fileInputRef}

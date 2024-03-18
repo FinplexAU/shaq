@@ -7,7 +7,7 @@ import {
 	useContextProvider,
 	useSignal,
 } from "@builder.io/qwik";
-import { WorkflowStep, type WorkflowStep as TWorkflowStep } from "./layout";
+import { type WorkflowStep as TWorkflowStep } from "./layout";
 
 import { Link, useLocation } from "@builder.io/qwik-city";
 import {
@@ -377,7 +377,7 @@ export const WorkflowButton = component$(
 );
 
 export const useStepGroupAvailable = (
-	stepGroups?: WorkflowStep[][],
+	stepGroups?: TWorkflowStep[][],
 	...previousWorkflows: boolean[]
 ) => {
 	const incompletePrevious = useComputed$(() =>
