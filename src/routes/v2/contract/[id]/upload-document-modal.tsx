@@ -42,13 +42,13 @@ export const UploadDocumentModal = component$<{
 				onClick$={() => {
 					showSig.value = true;
 				}}
-				class="grid h-full w-full place-items-center outline-none"
+				class="!p-0 outline-none"
 			>
 				<Slot></Slot>
 			</button>
 			<Modal
 				bind:show={showSig}
-				class="w-[65ch] rounded p-7 shadow-md backdrop:backdrop-blur backdrop:backdrop-brightness-50 dark:backdrop:backdrop-brightness-100"
+				class="!h-auto max-h-fit w-[65ch] rounded p-7 shadow-md backdrop:backdrop-blur backdrop:backdrop-brightness-50 dark:backdrop:backdrop-brightness-100"
 			>
 				<ModalHeader>
 					<h2 class="font-bold">{props.step.stepName}</h2>
@@ -117,7 +117,7 @@ export const UploadDocumentModal = component$<{
 							)}
 						</div>
 					</ModalContent>
-					<ModalFooter class="flex justify-end gap-4">
+					<ModalFooter class="flex justify-end gap-4 pb-4">
 						<Button onClick$={() => (showSig.value = false)} type="button">
 							Cancel
 						</Button>

@@ -155,7 +155,7 @@ export const WorkflowDocument = component$(
 
 		return (
 			<li key={document.typeId} class="">
-				<div class="grid grid-cols-12 items-center gap-1 overflow-hidden rounded  [&>*]:h-full [&>*]:bg-gray-100 [&>*]:px-2 [&>*]:py-1">
+				<div class="grid grid-cols-12 items-center gap-1 overflow-hidden rounded [&>*]:h-full [&>*]:bg-gray-100 [&>*]:px-2 [&>*]:py-1">
 					<div
 						class={[
 							"grid place-items-center",
@@ -237,11 +237,11 @@ export const WorkflowDocument = component$(
 							latestStatus.value.investor
 						)}
 					</div>
-					<div class="grid cursor-pointer place-items-center hover:bg-gray-200">
-						<UploadDocumentModal document={document} step={step}>
+					<UploadDocumentModal document={document} step={step}>
+						<div class="grid h-full w-full cursor-pointer place-items-center hover:bg-gray-200">
 							<HiArrowUpCircleSolid></HiArrowUpCircleSolid>
-						</UploadDocumentModal>
-					</div>
+						</div>
+					</UploadDocumentModal>
 					{showVersions.value && (
 						<div class="col-span-full">
 							{document.versions.length > 0 ? (
