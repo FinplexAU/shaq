@@ -35,13 +35,5 @@ export const useSignOut = globalAction$(async (_, req) => {
 });
 
 export default component$(() => {
-	const nav = useNavigate();
-	useOnDocument(
-		"visibilitychange",
-		$(() => {
-			if (document.visibilityState === "visible") nav();
-		})
-	);
-
 	return <Slot></Slot>;
 });
