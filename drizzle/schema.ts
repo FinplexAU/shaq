@@ -45,9 +45,7 @@ export const documentVersions = pgTable("document_versions", {
 	traderApproval: timestamp("trader_approval"),
 	documentTypeId: uuid("document_type_id").references(() => documentTypes.id),
 	version: integer("version").notNull(),
-	createdAt: timestamp("created_at")
-		.notNull()
-		.$defaultFn(() => new Date()),
+	createdAt: timestamp("created_at").notNull().defaultNow(),
 	workflowStepId: uuid("workflow_step_id")
 		.references(() => workflowSteps.id)
 		.notNull(),
@@ -55,7 +53,7 @@ export const documentVersions = pgTable("document_versions", {
 
 export const workflowSteps = pgTable("workflow_steps", {
 	id: uuid("id").primaryKey().defaultRandom(),
-	complete: boolean("complete").notNull(),
+	complete: timestamp("complete"),
 	completionReason: text("completion_reason"),
 	workflowId: uuid("workflow_id")
 		.references(() => workflows.id)
@@ -68,7 +66,7 @@ export const workflowSteps = pgTable("workflow_steps", {
 export const workflows = pgTable("workflows", {
 	id: uuid("id").primaryKey().defaultRandom(),
 	workflowType: uuid("workflow_type").references(() => workflowTypes.id),
-	complete: boolean("complete").notNull(),
+	complete: timestamp("complete"),
 	completionReason: text("completion_reason"),
 });
 

@@ -33,7 +33,7 @@ export const useSubmitTradeInfo = routeAction$(
 			.where(eq(contracts.id, data.contractId));
 
 		await db.update(workflowSteps).set({
-			complete: true,
+			complete: new Date(),
 			completionReason: "Received trade information",
 		});
 	},
@@ -61,6 +61,7 @@ export default component$(() => {
 		workflow.value?.stepGroups,
 		contractCompletion.value.jointVenture
 	);
+
 	return (
 		<Workflow>
 			<WorkflowTitle>{workflow.value?.workflowName}</WorkflowTitle>

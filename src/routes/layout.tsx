@@ -1,9 +1,5 @@
-import { Slot, component$, useOnDocument, $ } from "@builder.io/qwik";
-import {
-	globalAction$,
-	useNavigate,
-	type RequestHandler,
-} from "@builder.io/qwik-city";
+import { Slot, component$ } from "@builder.io/qwik";
+import { globalAction$, type RequestHandler } from "@builder.io/qwik-city";
 import { getSharedMap } from "./plugin";
 import { safe } from "~/utils/utils";
 

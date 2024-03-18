@@ -85,7 +85,12 @@ export const UploadDocumentModal = component$<{
 					}}
 				>
 					<ModalContent class="py-4">
-						<input type="hidden" name="stepId" value={props.step.stepId} />
+						<input
+							type="hidden"
+							name="stepId"
+							value={props.step.stepId}
+							required
+						/>
 						<input
 							type="hidden"
 							name="documentTypeId"

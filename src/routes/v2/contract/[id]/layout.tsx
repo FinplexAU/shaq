@@ -7,7 +7,6 @@ import {
 	workflowStepTypes,
 	documentTypes,
 	documentVersions,
-	userEntityLinks,
 	entities,
 	workflowTypes,
 } from "@/drizzle/schema";
@@ -20,12 +19,14 @@ import { v4 } from "uuid";
 import { s3 } from "~/utils/aws";
 import { getSharedMap } from "~/routes/plugin";
 import { alias } from "drizzle-orm/pg-core";
+import { getContractPermissions } from "~/db/permissions";
+import { completeWorkflowStepIfNeeded } from "~/db/completion";
 
 export type WorkflowStep = {
 	stepId: string;
 	stepName: string;
 	stepNumber: number;
-	complete: boolean;
+	complete: Date | null;
 	completeReason: string | null;
 	documents: {
 		typeId: string;
@@ -45,7 +46,7 @@ export type WorkflowStep = {
 export type Workflow = {
 	workflowId: string;
 	workflowName: string;
-	complete: boolean;
+	complete: Date | null;
 	completeReason: string | null;
 	stepGroups: WorkflowStep[][];
 	isAdmin: boolean;
@@ -76,36 +77,9 @@ export const useLoadContract = routeLoader$(
 			.where(eq(contracts.id, params.id))
 			.then(selectFirst);
 
-		const permissionLookup = await db
-			.select()
-			.from(userEntityLinks)
-			.where(
-				and(
-					eq(userEntityLinks.userId, user.id),
-					or(
-						eq(userEntityLinks.entityId, contract.contracts.adminId),
-						contract.contracts.traderId
-							? eq(userEntityLinks.entityId, contract.contracts.traderId)
-							: undefined,
-						contract.contracts.investorId
-							? eq(userEntityLinks.entityId, contract.contracts.investorId)
-							: undefined
-					)
-				)
-			);
+		const permissions = await getContractPermissions(params.id, user.id);
 
-		const isAdmin = Boolean(
-			permissionLookup.find((x) => x.entityId === contract.contracts.adminId)
-		);
-		const isTrader = Boolean(
-			permissionLookup.find((x) => x.entityId === contract.contracts.traderId)
-		);
-		const isInvestor = Boolean(
-			permissionLookup.find((x) => x.entityId === contract.contracts.investorId)
-		);
-		const isPermitted = isAdmin || isTrader || isInvestor;
-
-		if (!isPermitted) {
+		if (!permissions.isPermitted) {
 			throw error(404, "Not found");
 		}
 
@@ -114,21 +88,20 @@ export const useLoadContract = routeLoader$(
 			admin: contract.admin,
 			investor: contract.investor,
 			trader: contract.trader,
-			isAdmin,
-			isTrader,
-			isInvestor,
+			...permissions,
 		};
 	}
 );
 
-export const useWorkflow = routeLoader$(async ({ resolveValue, pathname }) => {
-	const contract = await resolveValue(useLoadContract);
+export const useWorkflow = routeLoader$(async ({ pathname, resolveValue }) => {
 	const db = await drizzleDb;
 
 	const workflowParam = pathname
 		.split("/")
 		.filter((v) => v)
 		.at(-1);
+
+	const contract = await resolveValue(useLoadContract);
 
 	let workflowId;
 	if (workflowParam === "joint-venture") {
@@ -229,8 +202,15 @@ export const useWorkflow = routeLoader$(async ({ resolveValue, pathname }) => {
 });
 
 export const useUploadDocument = routeAction$(
-	async (data, { error }) => {
+	async (data, { error, sharedMap, params }) => {
+		const user = getSharedMap(sharedMap, "user");
 		const db = await drizzleDb;
+
+		const contract = await getContractPermissions(params.id!, user.id);
+		if (!contract.isPermitted) {
+			return error(404, "Workflow step not found");
+		}
+
 		const dbResult = await db
 			.select()
 			.from(documentTypes)
@@ -247,10 +227,11 @@ export const useUploadDocument = routeAction$(
 					eq(documentTypes.id, data.documentTypeId),
 					eq(workflowSteps.id, data.stepId)
 				)
-			);
+			)
+			.then(throwIfNone);
 
-		if (dbResult.length === 0) {
-			return error(404, "Workflow step not found");
+		if (dbResult[0].workflow_steps.complete) {
+			return error(400, "Step already complete");
 		}
 
 		let newVersion = 0;
@@ -295,6 +276,74 @@ export const useUploadDocument = routeAction$(
 	})
 );
 
+export const useApproveDocument = routeAction$(
+	async (data, { error, sharedMap, params }) => {
+		const db = await drizzleDb;
+
+		const user = getSharedMap(sharedMap, "user");
+
+		const contract = await getContractPermissions(params.id!, user.id);
+
+		if (!contract.isPermitted) {
+			return error(404, "Not found");
+		}
+		if (!contract.isTrader && !contract.isInvestor) {
+			return error(401, "Not authorized to approve a document");
+		}
+
+		const doc = await db
+			.select()
+			.from(documentVersions)
+			.innerJoin(
+				documentTypes,
+				eq(documentTypes.id, documentVersions.documentTypeId)
+			)
+			.innerJoin(
+				workflowSteps,
+				eq(workflowSteps.id, documentVersions.workflowStepId)
+			)
+			.innerJoin(
+				contracts,
+				or(
+					eq(contracts.jointVenture, workflowSteps.workflowId),
+					eq(contracts.tradeSetup, workflowSteps.id)
+				)
+			)
+			.where(eq(documentVersions.id, data.documentVersionId))
+			.then(selectFirst);
+
+		const traderApproval = doc.document_versions.traderApproval;
+		const investorApproval = doc.document_versions.investorApproval;
+
+		if (doc.workflow_steps.complete || (traderApproval && investorApproval)) {
+			return error(400, "Cannot approve again");
+		}
+
+		const setTraderApproval =
+			!traderApproval &&
+			contract.isTrader &&
+			doc.document_types.traderApprovalRequired;
+		const setInvestorApproval =
+			!investorApproval &&
+			contract.isInvestor &&
+			doc.document_types.investorApprovalRequired;
+		const date = new Date();
+
+		await db
+			.update(documentVersions)
+			.set({
+				traderApproval: setTraderApproval ? date : undefined,
+				investorApproval: setInvestorApproval ? date : undefined,
+			})
+			.where(eq(documentVersions.id, data.documentVersionId));
+
+		await completeWorkflowStepIfNeeded(doc.workflow_steps.id);
+	},
+	zod$({
+		documentVersionId: z.string().uuid(),
+	})
+);
+
 export const useContractCompletion = routeLoader$(async ({ resolveValue }) => {
 	const contract = await resolveValue(useLoadContract);
 
@@ -331,13 +380,13 @@ export default component$(() => {
 					></WorkflowButton>
 					<WorkflowButton
 						title="Joint Venture Set-up"
-						completion={contractCompletion.value.jointVenture}
+						completion={Boolean(contractCompletion.value.jointVenture)}
 						route="/v2/contract/[id]/joint-venture/"
 						param:id={contract.value.id}
 					></WorkflowButton>
 					<WorkflowButton
 						title="Trade Set-up"
-						completion={contractCompletion.value.tradeSetup}
+						completion={Boolean(contractCompletion.value.tradeSetup)}
 						route="/v2/contract/[id]/contract-setup/"
 						param:id={contract.value.id}
 					></WorkflowButton>

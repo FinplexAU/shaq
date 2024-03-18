@@ -116,7 +116,7 @@ export const useCreateEntity = globalAction$(
 						db
 							.update(workflowSteps)
 							.set({
-								complete: true,
+								complete: new Date(),
 								completionReason: "Entity Information Received",
 							})
 							.where(eq(workflowSteps.id, data.stepId))

@@ -7,9 +7,13 @@ import {
 	useContextProvider,
 	useSignal,
 } from "@builder.io/qwik";
-import { type WorkflowStep as TWorkflowStep } from "./layout";
+import {
+	useLoadContract,
+	type WorkflowStep as TWorkflowStep,
+	useApproveDocument,
+} from "./layout";
 
-import { Link, useLocation } from "@builder.io/qwik-city";
+import { Form, Link, useLocation } from "@builder.io/qwik-city";
 import {
 	Timeline,
 	TimelineBody,
@@ -21,6 +25,7 @@ import TimeAgo from "javascript-time-ago";
 import en from "javascript-time-ago/locale/en";
 import {
 	HiArrowRightSolid,
+	HiCheckCircleSolid,
 	HiCheckSolid,
 	HiChevronDownSolid,
 	HiEyeSolid,
@@ -98,11 +103,25 @@ export const WorkflowDocument = component$(
 		document: TWorkflowStep["documents"][number];
 		step: TWorkflowStep;
 	}) => {
+		const approveDocument = useApproveDocument();
 		const stepGroupContext = useContext(StepGroupContext);
+		const contract = useLoadContract();
 
 		const showVersions = useSignal(false);
 		const latestDoc = useComputed$(() => {
 			return document.versions.at(0);
+		});
+
+		const requiresUserApproval = useComputed$(() => {
+			return (
+				latestDoc.value &&
+				((contract.value.isTrader &&
+					document.traderApprovalRequired &&
+					!latestDoc.value.traderApproval) ||
+					(contract.value.isInvestor &&
+						document.investorApprovalRequired &&
+						!latestDoc.value.investorApproval))
+			);
 		});
 
 		const latestStatus = useComputed$<{
@@ -140,6 +159,25 @@ export const WorkflowDocument = component$(
 									<HiEyeSolid class="ml-1 inline-block align-icon"></HiEyeSolid>
 								</AppLink>
 								<div role="none" class="h-1 w-1 rounded-full bg-black"></div>
+								{requiresUserApproval.value && (
+									<>
+										<Form action={approveDocument}>
+											<input
+												type="hidden"
+												name="documentVersionId"
+												value={latestDoc.value.id}
+											/>
+											<button class="hover:underline">
+												Approve
+												<HiCheckCircleSolid class="ml-1 inline-block align-icon" />
+											</button>
+										</Form>
+										<div
+											role="none"
+											class="h-1 w-1 rounded-full bg-black"
+										></div>
+									</>
+								)}
 							</>
 						)}
 						<UploadDocumentModal
@@ -378,7 +416,7 @@ export const WorkflowButton = component$(
 
 export const useStepGroupAvailable = (
 	stepGroups?: TWorkflowStep[][],
-	...previousWorkflows: boolean[]
+	...previousWorkflows: (Date | null)[]
 ) => {
 	const incompletePrevious = useComputed$(() =>
 		previousWorkflows.some((p) => !p)
@@ -393,7 +431,8 @@ export const useStepGroupAvailable = (
 		}
 
 		return (
-			stepGroups?.[i - 1]?.reduce((a, b) => b.complete && a, true) ?? false
+			stepGroups?.[i - 1]?.reduce((a, b) => Boolean(b.complete) && a, true) ??
+			false
 		);
 	};
 };

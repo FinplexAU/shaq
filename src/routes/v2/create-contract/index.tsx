@@ -74,14 +74,13 @@ const createWorkflow = async (workflowName: string) => {
 
 	const workflow = await db
 		.insert(workflows)
-		.values({ complete: false, workflowType: template[0]?.workflow_types.id })
+		.values({ workflowType: template[0]?.workflow_types.id })
 		.returning({ id: workflows.id })
 		.then(selectFirst);
 
 	const templatedSteps = template
 		.filter(({ workflow_step_types }) => workflow_step_types)
 		.map(({ workflow_step_types }) => ({
-			complete: false,
 			workflowId: workflow!.id,
 			stepType: workflow_step_types!.id,
 		}));
