@@ -68,9 +68,9 @@ export default component$(() => {
 			</Form>
 			<div class="flex w-full justify-between">
 				<Form action={signOut}>
-					<button class="text-black/80">Sign out</button>
+					<button class="text-sm text-black/80">Sign out</button>
 				</Form>
-				<button class="text-black/80">Cant find email? Resend</button>
+				<button class="text-sm text-black/80">Cant find email? Resend</button>
 			</div>
 		</>
 	);

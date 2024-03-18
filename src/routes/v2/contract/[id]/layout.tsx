@@ -321,7 +321,7 @@ export default component$(() => {
 	const contractCompletion = useContractCompletion();
 	return (
 		<>
-			<div class="grid flex-1 grid-cols-12 ">
+			<div class="grid flex-1 grid-cols-12">
 				<nav class="col-span-2 border-r p-4">
 					<WorkflowButton
 						title="Contract Info"

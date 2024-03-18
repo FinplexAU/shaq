@@ -1,13 +1,5 @@
 import type { NoSerialize } from "@builder.io/qwik";
-import {
-	$,
-	component$,
-	noSerialize,
-	Slot,
-	useComputed$,
-	useSignal,
-	useVisibleTask$,
-} from "@builder.io/qwik";
+import { $, component$, Slot, useComputed$, useSignal } from "@builder.io/qwik";
 import type { DocumentHead, RequestHandler } from "@builder.io/qwik-city";
 import {
 	useLocation,
@@ -140,7 +132,7 @@ export const Header = component$(() => {
 	});
 
 	return (
-		<nav class="sticky select-none border-b border-gray-200 bg-white dark:bg-gray-900">
+		<nav class="sticky top-0 select-none border-b border-gray-200 bg-white dark:bg-gray-900">
 			<div class="mx-auto flex max-w-screen-xl flex-wrap items-center justify-between p-4">
 				<AppLink
 					route="/app/"
