@@ -29,7 +29,7 @@ export default component$(() => {
 					<WorkflowStepGroup key={i} available={isAvailable(i)}>
 						{stepGroup.map((step) => (
 							<WorkflowStep key={step.stepId} step={step}>
-								{step.stepName === "Investor Info" && (
+								{step.stepName === "Investor Information" && (
 									<>
 										{step.complete ? (
 											<>
@@ -55,7 +55,7 @@ export default component$(() => {
 										)}
 									</>
 								)}
-								{step.stepName === "Trader Info" && (
+								{step.stepName === "Trader Information" && (
 									<>
 										{step.complete ? (
 											<>

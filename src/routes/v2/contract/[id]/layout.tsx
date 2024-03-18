@@ -138,7 +138,8 @@ export const useWorkflow = routeLoader$(async ({ pathname, resolveValue }) => {
 		.orderBy(
 			asc(workflowStepTypes.stepNumber),
 			asc(workflowStepTypes.name),
-			desc(documentVersions.version)
+			desc(documentVersions.version),
+			asc(documentTypes.documentName)
 		)
 		.then(throwIfNone);
 
@@ -277,7 +278,7 @@ export const useUploadDocument = routeAction$(
 );
 
 export const useApproveDocument = routeAction$(
-	async (data, { error, sharedMap, params }) => {
+	async (data, { error, sharedMap, params, fail }) => {
 		const db = await drizzleDb;
 
 		const user = getSharedMap(sharedMap, "user");
@@ -288,7 +289,7 @@ export const useApproveDocument = routeAction$(
 			return error(404, "Not found");
 		}
 		if (!contract.isTrader && !contract.isInvestor) {
-			return error(401, "Not authorized to approve a document");
+			return fail(401, { message: "Not authorized to approve a document" });
 		}
 
 		const doc = await db
@@ -316,17 +317,19 @@ export const useApproveDocument = routeAction$(
 		const investorApproval = doc.document_versions.investorApproval;
 
 		if (doc.workflow_steps.complete || (traderApproval && investorApproval)) {
-			return error(400, "Cannot approve again");
+			return fail(400, { message: "Document cannot be approved again." });
 		}
 
 		const setTraderApproval =
 			!traderApproval &&
 			contract.isTrader &&
 			doc.document_types.traderApprovalRequired;
+
 		const setInvestorApproval =
 			!investorApproval &&
 			contract.isInvestor &&
 			doc.document_types.investorApprovalRequired;
+
 		const date = new Date();
 
 		await db

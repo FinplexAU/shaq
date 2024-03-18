@@ -1,4 +1,4 @@
-import { component$, useSignal, useTask$, $ } from "@builder.io/qwik";
+import { component$, useSignal, useTask$, $, Slot } from "@builder.io/qwik";
 import type { WorkflowStep } from "./layout";
 import { useUploadDocument } from "./layout";
 import { Form } from "@builder.io/qwik-city";
@@ -8,7 +8,7 @@ import {
 	ModalContent,
 	ModalFooter,
 } from "@qwik-ui/headless";
-import { HiArrowUpCircleSolid, HiXMarkSolid } from "@qwikest/icons/heroicons";
+import { HiXMarkSolid } from "@qwikest/icons/heroicons";
 import { Button } from "~/components/button";
 
 export const UploadDocumentModal = component$<{
@@ -39,13 +39,12 @@ export const UploadDocumentModal = component$<{
 		<>
 			<button
 				disabled={props.disabled}
-				class="hover:underline disabled:hover:no-underline"
 				onClick$={() => {
 					showSig.value = true;
 				}}
+				class="grid h-full w-full place-items-center outline-none"
 			>
-				Upload Document
-				<HiArrowUpCircleSolid class="ml-1 inline align-icon"></HiArrowUpCircleSolid>
+				<Slot></Slot>
 			</button>
 			<Modal
 				bind:show={showSig}

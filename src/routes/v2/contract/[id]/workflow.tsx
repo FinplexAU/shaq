@@ -3,7 +3,6 @@ import {
 	component$,
 	createContextId,
 	useComputed$,
-	useContext,
 	useContextProvider,
 	useSignal,
 } from "@builder.io/qwik";
@@ -25,9 +24,9 @@ import TimeAgo from "javascript-time-ago";
 import en from "javascript-time-ago/locale/en";
 import {
 	HiArrowRightSolid,
-	HiCheckCircleSolid,
+	HiArrowUpCircleSolid,
 	HiCheckSolid,
-	HiChevronDownSolid,
+	HiDocumentSolid,
 	HiEyeSolid,
 } from "@qwikest/icons/heroicons";
 import { AppLink, appUrl } from "~/routes.config";
@@ -82,7 +81,16 @@ export const WorkflowStep = component$(({ step }: { step: TWorkflowStep }) => {
 		<div class="flex-1 py-8" key={step.stepId}>
 			<h3 class="pb-4 text-xl font-semibold">{step.stepName}</h3>
 			<Slot></Slot>
-			<ul>
+			<ul class="grid gap-2">
+				{step.documents.length > 0 ? (
+					<div class="grid grid-cols-12 items-center gap-1 text-xs [&>*]:px-2 ">
+						<p class="">View</p>
+						<p class="col-span-6 ">Title</p>
+						<p class="col-span-2 ">Trader</p>
+						<p class="col-span-2 ">Investor</p>
+						<p>Upload</p>
+					</div>
+				) : undefined}
 				{step.documents.map((document) => (
 					<WorkflowDocument
 						key={document.typeId}
@@ -104,7 +112,7 @@ export const WorkflowDocument = component$(
 		step: TWorkflowStep;
 	}) => {
 		const approveDocument = useApproveDocument();
-		const stepGroupContext = useContext(StepGroupContext);
+		// const stepGroupContext = useContext(StepGroupContext);
 		const contract = useLoadContract();
 
 		const showVersions = useSignal(false);
@@ -114,155 +122,150 @@ export const WorkflowDocument = component$(
 
 		const requiresUserApproval = useComputed$(() => {
 			return (
-				latestDoc.value &&
-				((contract.value.isTrader &&
-					document.traderApprovalRequired &&
-					!latestDoc.value.traderApproval) ||
-					(contract.value.isInvestor &&
+				latestDoc.value && {
+					trader:
+						contract.value.isTrader &&
+						document.traderApprovalRequired &&
+						!latestDoc.value.traderApproval,
+					investor:
+						contract.value.isInvestor &&
 						document.investorApprovalRequired &&
-						!latestDoc.value.investorApproval))
+						!latestDoc.value.investorApproval,
+				}
 			);
 		});
 
 		const latestStatus = useComputed$<{
-			trader: "Approved" | "Awaiting Approval" | "Not Required";
-			investor: "Approved" | "Awaiting Approval" | "Not Required";
+			trader: "Approved" | "Awaiting" | "Not Required";
+			investor: "Approved" | "Awaiting" | "Not Required";
 		}>(() => {
 			const trader = document.traderApprovalRequired
 				? latestDoc.value?.traderApproval
 					? "Approved"
-					: "Awaiting Approval"
+					: "Awaiting"
 				: "Not Required";
 			const investor = document.investorApprovalRequired
 				? latestDoc.value?.investorApproval
 					? "Approved"
-					: "Awaiting Approval"
+					: "Awaiting"
 				: "Not Required";
 
 			return { trader, investor };
 		});
 
 		return (
-			<li key={document.typeId} class="pb-8">
-				<div class="pb-2">
-					<h4 class="text-lg font-normal">{document.name}</h4>
-					<div class="flex items-center gap-2 text-sm">
-						{latestDoc.value && (
-							<>
-								<AppLink
-									class="hover:underline"
-									target="_blank"
-									route="/v2/document/[id]/"
-									param:id={latestDoc.value.id}
-								>
-									View Latest
-									<HiEyeSolid class="ml-1 inline-block align-icon"></HiEyeSolid>
-								</AppLink>
-								<div role="none" class="h-1 w-1 rounded-full bg-black"></div>
-								{requiresUserApproval.value && (
-									<>
-										<Form action={approveDocument}>
-											<input
-												type="hidden"
-												name="documentVersionId"
-												value={latestDoc.value.id}
-											/>
-											<button class="hover:underline">
-												Approve
-												<HiCheckCircleSolid class="ml-1 inline-block align-icon" />
-											</button>
-										</Form>
-										<div
-											role="none"
-											class="h-1 w-1 rounded-full bg-black"
-										></div>
-									</>
-								)}
-							</>
+			<li key={document.typeId} class="">
+				<div class="grid grid-cols-12 items-center gap-1 overflow-hidden rounded  [&>*]:h-full [&>*]:bg-gray-100 [&>*]:px-2 [&>*]:py-1">
+					<div
+						class={[
+							"grid place-items-center",
+							{
+								"cursor-pointer hover:bg-gray-200": Boolean(latestDoc.value),
+							},
+						]}
+					>
+						{latestDoc.value ? (
+							<AppLink
+								target="_blank"
+								route="/v2/document/[id]/"
+								param:id={latestDoc.value.id}
+								class="grid h-full w-full place-items-center"
+							>
+								<HiDocumentSolid></HiDocumentSolid>{" "}
+							</AppLink>
+						) : undefined}
+					</div>
+					<p
+						class="col-span-6 flex-1 cursor-pointer hover:bg-gray-200"
+						onClick$={() => {
+							showVersions.value = !showVersions.value;
+						}}
+					>
+						{document.name}
+					</p>
+					<div
+						class={[
+							"col-span-2 border",
+							{
+								"border-amber-300 !bg-amber-50 text-amber-500":
+									latestStatus.value.trader === "Awaiting",
+								"border-green-300 !bg-green-50 text-green-700":
+									latestStatus.value.trader === "Approved",
+								"text-neutral-500":
+									latestStatus.value.trader === "Not Required",
+								"hover:!bg-amber-100": requiresUserApproval.value?.trader,
+							},
+						]}
+					>
+						{requiresUserApproval.value?.trader ? (
+							<Form action={approveDocument}>
+								<input
+									type="hidden"
+									name="documentVersionId"
+									value={latestDoc.value?.id}
+								/>
+								<button class="h-full w-full text-left">Approve</button>
+							</Form>
+						) : (
+							latestStatus.value.trader
 						)}
-						<UploadDocumentModal
-							disabled={!stepGroupContext.available}
-							document={document}
-							step={step}
-						/>
 					</div>
-				</div>
-				{latestDoc.value && (
-					<div class="pb-2 text-sm">
-						<p class="font-bold">
-							Trader Approval:{" "}
-							<span
-								class={[
-									"font-normal",
-									{
-										"text-amber-500":
-											latestStatus.value.trader === "Awaiting Approval",
-										"text-green-500": latestStatus.value.trader === "Approved",
-										"text-neutral-500":
-											latestStatus.value.trader === "Not Required",
-									},
-								]}
-							>
-								{latestStatus.value.trader}
-							</span>
-						</p>
-						<p class="font-bold">
-							Investor Approval:{" "}
-							<span
-								class={[
-									"font-normal",
-									{
-										"text-amber-500":
-											latestStatus.value.investor === "Awaiting Approval",
-										"text-green-500":
-											latestStatus.value.investor === "Approved",
-										"text-neutral-500":
-											latestStatus.value.investor === "Not Required",
-									},
-								]}
-							>
-								{latestStatus.value.investor}
-							</span>
-						</p>
+					<div
+						class={[
+							"col-span-2 border",
+							{
+								"border-amber-300 !bg-amber-50 text-amber-500":
+									latestStatus.value.investor === "Awaiting",
+								"border-green-300 !bg-green-50 text-green-700":
+									latestStatus.value.investor === "Approved",
+								"text-neutral-500":
+									latestStatus.value.investor === "Not Required",
+								"hover:!bg-amber-100": requiresUserApproval.value?.investor,
+							},
+						]}
+					>
+						{requiresUserApproval.value?.investor ? (
+							<Form action={approveDocument}>
+								<input
+									type="hidden"
+									name="documentVersionId"
+									value={latestDoc.value?.id}
+								/>
+								<button class="h-full w-full text-left">Approve</button>
+							</Form>
+						) : (
+							latestStatus.value.investor
+						)}
 					</div>
-				)}
-				<div>
-					{document.versions.length > 0 && (
-						<label class="block cursor-pointer select-none pb-2 text-sm">
-							<span class="hover:underline">
-								<HiChevronDownSolid
-									class={[
-										"mr-1 inline transition-transform align-icon",
-										{
-											"-rotate-90": !showVersions.value,
-										},
-									]}
-								></HiChevronDownSolid>
-								Previous Versions
-							</span>
-							<input
-								class="hidden"
-								type="checkbox"
-								bind:checked={showVersions}
-							></input>
-						</label>
-					)}
+					<div class="grid cursor-pointer place-items-center hover:bg-gray-200">
+						<UploadDocumentModal document={document} step={step}>
+							<HiArrowUpCircleSolid></HiArrowUpCircleSolid>
+						</UploadDocumentModal>
+					</div>
 					{showVersions.value && (
-						<Timeline class="max-w-prose">
-							{document.versions.map((version) => (
-								<TimelineItem key={version.id}>
-									<TimelinePoint></TimelinePoint>
-									<TimelineContent>
-										<TimelineBody>
-											<WorkflowDocumentVersion
-												version={version}
-												document={document}
-											></WorkflowDocumentVersion>
-										</TimelineBody>
-									</TimelineContent>
-								</TimelineItem>
-							))}
-						</Timeline>
+						<div class="col-span-full">
+							{document.versions.length > 0 ? (
+								<Timeline class="max-w-prose">
+									{document.versions.map((version) => (
+										<TimelineItem key={version.id}>
+											<TimelinePoint></TimelinePoint>
+											<TimelineContent>
+												<TimelineBody>
+													<WorkflowDocumentVersion
+														version={version}
+														document={document}
+													></WorkflowDocumentVersion>
+												</TimelineBody>
+											</TimelineContent>
+										</TimelineItem>
+									))}
+								</Timeline>
+							) : (
+								<p class="text-sm text-neutral-400">
+									No document have been uploaded yet.
+								</p>
+							)}
+						</div>
 					)}
 				</div>
 			</li>
@@ -312,7 +315,7 @@ export const WorkflowDocumentVersion = component$(
 		});
 
 		return (
-			<div class="flex flex-wrap rounded-lg border p-2 text-sm text-black shadow-sm">
+			<div class="flex flex-wrap rounded-lg border bg-white p-2 text-sm text-black shadow-sm">
 				<Link
 					class="flex-1 hover:underline"
 					target="_blank"
@@ -343,6 +346,10 @@ export const WorkflowDocumentVersion = component$(
 								]}
 							>
 								{approvals.value.trader}
+								<span class="text-xs text-neutral-400">
+									{props.version.traderApproval &&
+										` - ${timeAgo.format(props.version.traderApproval)}`}
+								</span>
 							</span>
 						</p>
 					)}
