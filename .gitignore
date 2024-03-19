@@ -39,3 +39,4 @@ lerna-debug.log*
 functions/**/*.js
 
 src/__generated__
+vite.config.ts.timestamp*
