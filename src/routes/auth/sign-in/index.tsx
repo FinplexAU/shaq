@@ -14,7 +14,7 @@ import { sendVerificationCode } from "~/utils/email";
 import { safe } from "~/utils/utils";
 
 export const useSignIn = routeAction$(
-	async (data, { sharedMap, redirect, cookie, error, env }) => {
+	async (data, { sharedMap, redirect, cookie, env, fail }) => {
 		const db = await drizzleDb;
 		const lucia = getSharedMap(sharedMap, "lucia");
 
@@ -27,7 +27,9 @@ export const useSignIn = routeAction$(
 		);
 
 		if (!user.success) {
-			return error(400, "Invalid Username or Password");
+			return fail(400, {
+				message: "Incorrect email or password.",
+			});
 		}
 
 		const validPassword = await new Argon2id().verify(
@@ -36,7 +38,9 @@ export const useSignIn = routeAction$(
 		);
 
 		if (!validPassword) {
-			return error(400, "Invalid Username or Password");
+			return fail(400, {
+				message: "Incorrect email or password.",
+			});
 		}
 
 		if (!user.emailVerified) {
@@ -69,17 +73,22 @@ export const useSignIn = routeAction$(
 );
 
 export default component$(() => {
-	const action = useSignIn();
+	const signIn = useSignIn();
 	return (
 		<>
 			<h1 class="pb-4 text-center text-3xl">Sign In</h1>
-			<Form action={action} class="flex flex-col py-2">
-				<EmailInput />
-				<PasswordInput />
+			<Form action={signIn} class="flex flex-col py-2">
+				<EmailInput error={signIn.value?.fieldErrors?.email?.at(0)} />
+				<PasswordInput error={signIn.value?.fieldErrors?.password?.at(0)} />
+
 				<Button>Sign In</Button>
 			</Form>
-			<div class="flex w-full justify-end">
-				<AppLink route="/auth/sign-up/" class="text-sm text-black/80">
+
+			<div class="flex w-full justify-between">
+				<span class="text-sm text-red-500">
+					{signIn.value?.failed && signIn.value.message}
+				</span>
+				<AppLink route="/auth/sign-up/" class="min-w-max text-sm text-black/80">
 					No account? Sign Up
 				</AppLink>
 			</div>
@@ -87,16 +96,16 @@ export default component$(() => {
 	);
 });
 
-export const PasswordInput = component$(() => {
+export const PasswordInput = component$((props: { error?: string }) => {
 	return (
-		<>
+		<div class="relative pb-6">
 			<label
 				for="password"
 				class="sr-only mb-2 block text-sm font-medium text-gray-900 dark:text-white"
 			>
 				Password
 			</label>
-			<div class="relative mb-6">
+			<div class="relative">
 				<div class="pointer-events-none absolute inset-y-0 start-0 flex items-center ps-3.5">
 					<HiKeySolid class="h-4 w-4" />
 				</div>
@@ -104,25 +113,33 @@ export const PasswordInput = component$(() => {
 					type="password"
 					id="password"
 					name="password"
-					class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 ps-10 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500  dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 dark:focus:border-blue-500 dark:focus:ring-blue-500"
+					class={[
+						"block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 ps-10 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500  dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 dark:focus:border-blue-500 dark:focus:ring-blue-500",
+						{
+							"outline outline-red-700": props.error,
+						},
+					]}
 					placeholder="Password"
 					required
 				/>
 			</div>
-		</>
+			{props.error && (
+				<span class="absolute text-sm text-red-500">Invalid password.</span>
+			)}
+		</div>
 	);
 });
 
-export const EmailInput = component$(() => {
+export const EmailInput = component$((props: { error?: string }) => {
 	return (
-		<>
+		<div class="relative pb-6">
 			<label
 				for="email"
 				class="sr-only mb-2 block text-sm font-medium text-gray-900 dark:text-white"
 			>
 				Email
 			</label>
-			<div class="relative mb-6">
+			<div class="relative">
 				<div class="pointer-events-none absolute inset-y-0 start-0 flex items-center ps-3.5">
 					<HiEnvelopeSolid class="h-4 w-4" />
 				</div>
@@ -130,11 +147,19 @@ export const EmailInput = component$(() => {
 					type="email"
 					id="email"
 					name="email"
-					class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 ps-10 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500  dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 dark:focus:border-blue-500 dark:focus:ring-blue-500"
+					class={[
+						"block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 ps-10 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500  dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 dark:focus:border-blue-500 dark:focus:ring-blue-500",
+						{
+							"outline outline-red-700": props.error,
+						},
+					]}
 					placeholder="name@example.com"
 					required
 				/>
 			</div>
-		</>
+			{props.error && (
+				<span class="absolute text-sm text-red-500">{props.error}</span>
+			)}
+		</div>
 	);
 });
