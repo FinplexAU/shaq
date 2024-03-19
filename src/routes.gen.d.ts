@@ -15,12 +15,14 @@ export type AppRoutes =
   | "/auth/verify-email/"
   | "/prx/"
   | "/v2/"
+  | "/v2/cash/"
   | "/v2/contract/[id]/"
   | "/v2/contract/[id]/contract-setup/"
   | "/v2/contract/[id]/joint-venture/"
   | "/v2/create-contract/"
   | "/v2/document/[id]/"
-  | "/v2/home/";
+  | "/v2/home/"
+  | "/v2/map/";
 
 export interface AppRouteMap {
   "/": {};
@@ -35,12 +37,14 @@ export interface AppRouteMap {
   "/auth/verify-email/": {};
   "/prx/": {};
   "/v2/": {};
+  "/v2/cash/": {};
   "/v2/contract/[id]/": { id: string };
   "/v2/contract/[id]/contract-setup/": { id: string };
   "/v2/contract/[id]/joint-venture/": { id: string };
   "/v2/create-contract/": {};
   "/v2/document/[id]/": { id: string };
   "/v2/home/": {};
+  "/v2/map/": {};
 }
 
 export interface AppRouteParamsFunction {
@@ -56,12 +60,14 @@ export interface AppRouteParamsFunction {
   (route: "/auth/verify-email/", params?: {}): string;
   (route: "/prx/", params?: {}): string;
   (route: "/v2/", params?: {}): string;
+  (route: "/v2/cash/", params?: {}): string;
   (route: "/v2/contract/[id]/", params: { id: string }): string;
   (route: "/v2/contract/[id]/contract-setup/", params: { id: string }): string;
   (route: "/v2/contract/[id]/joint-venture/", params: { id: string }): string;
   (route: "/v2/create-contract/", params?: {}): string;
   (route: "/v2/document/[id]/", params: { id: string }): string;
   (route: "/v2/home/", params?: {}): string;
+  (route: "/v2/map/", params?: {}): string;
 }
 
 export type AppLinkProps =
@@ -77,9 +83,11 @@ export type AppLinkProps =
   | { route: "/auth/verify-email/" }
   | { route: "/prx/" }
   | { route: "/v2/" }
+  | { route: "/v2/cash/" }
   | { route: "/v2/contract/[id]/"; "param:id": string }
   | { route: "/v2/contract/[id]/contract-setup/"; "param:id": string }
   | { route: "/v2/contract/[id]/joint-venture/"; "param:id": string }
   | { route: "/v2/create-contract/" }
   | { route: "/v2/document/[id]/"; "param:id": string }
-  | { route: "/v2/home/" };
+  | { route: "/v2/home/" }
+  | { route: "/v2/map/" };
