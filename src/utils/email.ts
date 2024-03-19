@@ -17,7 +17,10 @@ export const sendVerificationCode = async (
 ) => {
 	console.log(email, code);
 	const result = await sendEmail(env, {
-		from: "noreply@finplex.com.au",
+		from: {
+			email: "noreply@finplex.com.au",
+			name: "Diesel Platform",
+		},
 		to: email,
 		subject: "Diesel Platform Verification Code",
 		text: `Thank you for registering with the Diesel Platform. Your verification code is ${code}, it will expire in 15 minutes`,
