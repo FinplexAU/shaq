@@ -7,8 +7,7 @@ export const onGet: RequestHandler = async ({ cacheControl }) => {
 	// Control caching for this request for best performance and to reduce hosting costs:
 	// https://qwik.builder.io/docs/caching/
 	cacheControl({
-		staleWhileRevalidate: 60 * 60 * 24 * 7,
-		maxAge: 5,
+		noCache: true,
 	});
 };
 
