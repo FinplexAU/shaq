@@ -8,16 +8,13 @@ import { v4 } from "uuid";
 import { Button } from "~/components/button";
 import { drizzleDb } from "~/db/db";
 import { AppLink } from "~/routes.config";
-import {
-	generateVerificationCode,
-	getSharedMap,
-	sendVerificationCode,
-} from "~/routes/plugin";
+import { generateVerificationCode, getSharedMap } from "~/routes/plugin";
 import { selectFirst } from "~/utils/drizzle-utils";
+import { sendVerificationCode } from "~/utils/email";
 import { safe } from "~/utils/utils";
 
 export const useSignIn = routeAction$(
-	async (data, { sharedMap, redirect, cookie, error }) => {
+	async (data, { sharedMap, redirect, cookie, error, env }) => {
 		const db = await drizzleDb;
 		const lucia = getSharedMap(sharedMap, "lucia");
 
@@ -44,7 +41,7 @@ export const useSignIn = routeAction$(
 
 		if (!user.emailVerified) {
 			const code = await generateVerificationCode(user.id);
-			await sendVerificationCode(data.email, code);
+			await sendVerificationCode(env, data.email, code);
 		}
 
 		const sessionId = v4();

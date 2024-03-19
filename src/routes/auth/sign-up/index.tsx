@@ -6,14 +6,11 @@ import { v4 } from "uuid";
 import { Button } from "~/components/button";
 import { drizzleDb } from "~/db/db";
 import { AppLink } from "~/routes.config";
-import {
-	generateVerificationCode,
-	getSharedMap,
-	sendVerificationCode,
-} from "~/routes/plugin";
+import { generateVerificationCode, getSharedMap } from "~/routes/plugin";
+import { sendVerificationCode } from "~/utils/email";
 
 export const useSignUp = routeAction$(
-	async (data, { sharedMap, redirect, cookie }) => {
+	async (data, { sharedMap, redirect, cookie, env }) => {
 		const db = await drizzleDb;
 		const lucia = getSharedMap(sharedMap, "lucia");
 
@@ -29,7 +26,7 @@ export const useSignUp = routeAction$(
 			},
 		]);
 		const code = await generateVerificationCode(userId);
-		await sendVerificationCode(data.email, code);
+		await sendVerificationCode(env, data.email, code);
 
 		const session = await lucia.createSession(
 			userId,

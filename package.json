@@ -66,6 +66,7 @@
 		"@lucia-auth/adapter-sqlite": "^3.0.0",
 		"@qwik-ui/headless": "^0.3.2",
 		"@qwikest/icons": "^0.0.13",
+		"@sendgrid/mail": "^8.1.1",
 		"@upstash/redis": "^1.28.4",
 		"arctic": "^1.2.0",
 		"clsx": "^2.1.0",

@@ -68,10 +68,6 @@ export const getRequiredEnv = (env: EnvGetter, key: string) => {
 	return x;
 };
 
-export const sendVerificationCode = async (email: string, code: string) => {
-	console.log(email, code);
-};
-
 export const generateVerificationCode = async (userId: string) => {
 	const db = await drizzleDb;
 	await db
