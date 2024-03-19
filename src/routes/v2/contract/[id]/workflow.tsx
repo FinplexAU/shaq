@@ -70,7 +70,7 @@ export const WorkflowStepGroup = component$((props: { available: boolean }) => {
 				{ "opacity-20": !props.available },
 			]}
 		>
-			<p class="absolute list-item text-sm text-gray-400"></p>
+			<p class="fixed list-item text-sm text-gray-400"></p>
 			<Slot></Slot>
 		</li>
 	);
@@ -182,7 +182,9 @@ export const WorkflowDocument = component$(
 						}}
 					>
 						{document.name}{" "}
-						{latestDoc.value && `(v${latestDoc.value.version + 1})`}
+						<span class="text-sm text-gray-400">
+							{latestDoc.value && `(v${latestDoc.value.version + 1})`}
+						</span>
 					</p>
 					<div
 						class={[

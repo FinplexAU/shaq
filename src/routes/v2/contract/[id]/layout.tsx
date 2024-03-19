@@ -138,8 +138,8 @@ export const useWorkflow = routeLoader$(async ({ pathname, resolveValue }) => {
 		.orderBy(
 			asc(workflowStepTypes.stepNumber),
 			asc(workflowStepTypes.name),
-			desc(documentVersions.version),
-			asc(documentTypes.documentName)
+			asc(documentTypes.documentName),
+			desc(documentVersions.version)
 		)
 		.then(throwIfNone);
 
@@ -212,37 +212,25 @@ export const useUploadDocument = routeAction$(
 			return error(404, "Workflow step not found");
 		}
 
-		const dbResult = await db
-			.select()
-			.from(documentTypes)
+		const [previousDocument] = await db
+			.select({ version: documentVersions.version })
+			.from(documentVersions)
 			.innerJoin(
-				workflowSteps,
-				eq(documentTypes.requiredBy, workflowSteps.stepType)
+				documentTypes,
+				eq(documentTypes.id, documentVersions.documentTypeId)
 			)
-			.leftJoin(
-				documentVersions,
-				eq(documentVersions.documentTypeId, documentTypes.id)
-			)
-			.where(
-				and(
-					eq(documentTypes.id, data.documentTypeId),
-					eq(workflowSteps.id, data.stepId)
-				)
-			)
-			.then(throwIfNone);
+			.orderBy(desc(documentVersions.version))
+			.limit(1)
+			.where(and(eq(documentVersions.workflowStepId, data.stepId)));
 
-		if (dbResult[0].workflow_steps.complete) {
-			return error(400, "Step already complete");
-		}
+		console.log(previousDocument);
 
-		let newVersion = 0;
+		// if (dbResult[0].workflow_steps.complete) {
+		// 	return error(400, "Step already complete");
+		// }
 
-		for (let i = 0; i < dbResult.length; i++) {
-			const version = dbResult[i]?.document_versions;
-			if (version) {
-				newVersion = version.version + 1;
-			}
-		}
+		const newVersion: number = previousDocument?.version ?? 0;
+
 		const contentType = data.document.type;
 
 		const key = v4();
