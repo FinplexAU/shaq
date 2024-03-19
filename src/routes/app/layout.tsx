@@ -8,11 +8,12 @@ import {
 	useVisibleTask$,
 } from "@builder.io/qwik";
 import type { DocumentHead, RequestHandler } from "@builder.io/qwik-city";
-import { useLocation, routeLoader$, Form } from "@builder.io/qwik-city";
-import { getSharedMap } from "../plugin";
+import { useLocation, Form } from "@builder.io/qwik-city";
 import { AppLink } from "~/routes.config";
 import ExternalImage from "~/components/external-image";
 import { Dropdown } from "flowbite";
+import { useUser } from "../v2/layout";
+import { useSignOut } from "../layout";
 
 export const onGet: RequestHandler = async ({ cacheControl }) => {
 	// Control caching for this request for best performance and to reduce hosting costs:
@@ -40,13 +41,10 @@ export default component$(() => {
 	);
 });
 
-export const useUser = routeLoader$(({ sharedMap }) => {
-	return getSharedMap(sharedMap, "user");
-});
-
 export const Header = component$(() => {
 	const loc = useLocation();
-	// const user = useUser();
+	const user = useUser();
+	const signOut = useSignOut();
 	// const logOut = useLogOut();
 	// const nav = useNavigate();
 
@@ -70,18 +68,6 @@ export const Header = component$(() => {
 			)
 		);
 	});
-
-	// 	// Refresh on coming back to tab
-	// 	const refresh = () => {
-	// 		if (document.visibilityState === "visible") {
-	// 			nav();
-	// 		}
-	// 	};
-	// 	document.addEventListener("visibilitychange", refresh);
-	// 	return () => {
-	// 		document.removeEventListener("visibilitychange", refresh);
-	// 	};
-	// });
 
 	const closeDropdown = $(() => {
 		dropdown.value?.hide();
@@ -126,30 +112,24 @@ export const Header = component$(() => {
 					>
 						<div class="px-4 py-3">
 							<span class="block text-sm text-gray-900 dark:text-white">
-								{/* {user.value.name} */}
+								{user.value.name}
 							</span>
 							<span class="block truncate text-sm text-gray-500 dark:text-gray-400">
-								{/* {user.value.email} */}
+								{user.value.email}
 							</span>
 						</div>
 						<ul class="py-2">
 							<li>
 								<AppLink
 									onClick$={closeDropdown}
-									route="/app/user/"
+									route="/v2/home/"
 									class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-600 dark:hover:text-white"
 								>
 									Settings
 								</AppLink>
 							</li>
 							<li>
-								<Form
-								// action={logOut}
-								// onSubmitCompleted$={(x) => {
-								// 	const url = x.detail.value.toString();
-								// 	nav(url);
-								// }}
-								>
+								<Form action={signOut}>
 									<button class="w-full">
 										<p class="px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-600 dark:hover:text-white">
 											Sign out

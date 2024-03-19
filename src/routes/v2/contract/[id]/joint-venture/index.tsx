@@ -27,7 +27,7 @@ import {
 import { selectFirst } from "~/utils/drizzle-utils";
 import { safe } from "~/utils/utils";
 import { and, count, eq, inArray } from "drizzle-orm";
-import { sendContractInvite, sendEmail } from "~/utils/email";
+import { sendContractInvite } from "~/utils/email";
 
 export const useEntityEmails = routeLoader$(async ({ resolveValue }) => {
 	const contract = await resolveValue(useLoadContract);
@@ -102,14 +102,12 @@ export default component$(() => {
 														{emails.value.investor.map((email) => (
 															<li class="list-inside" key={email.email}>
 																{email.email}
+																<span class="pl-2 text-sm font-light text-neutral-400">
+																	{!email.created && <>(Pending)</>}
+																</span>
 															</li>
 														))}
 													</ul>
-												</div>
-												<div>
-													{emails.value.investor.map((email) => (
-														<p key={email.email}>{email.email}</p>
-													))}
 												</div>
 												<AddEntityUsersForm
 													entityId={contract.value.investor.id}
@@ -136,13 +134,16 @@ export default component$(() => {
 													<p class="text-sm">
 														{contract.value.trader.companyRegistration}
 													</p>
-												</div>
-												<div>
-													{emails.value.investor.map((email) => (
-														<li class="list-inside" key={email.email}>
-															{email.email}
-														</li>
-													))}
+													<ul class="list-disc py-2 text-sm">
+														{emails.value.trader.map((email) => (
+															<li class="list-inside" key={email.email}>
+																{email.email}
+																<span class="pl-2 text-sm font-light text-neutral-400">
+																	{!email.created && <>(Pending)</>}
+																</span>
+															</li>
+														))}
+													</ul>
 												</div>
 												<AddEntityUsersForm
 													entityId={contract.value.trader.id}
