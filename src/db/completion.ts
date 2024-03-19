@@ -3,8 +3,9 @@ import {
 	documentTypes,
 	workflowSteps,
 	workflows,
+	workflowStepTypes,
 } from "@/drizzle/schema";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { throwIfNone } from "~/utils/drizzle-utils";
 import { drizzleDb } from "./db";
 
@@ -13,29 +14,44 @@ export const completeWorkflowStepIfNeeded = async (workflowStepId: string) => {
 
 	const docs = await db
 		.select()
-		.from(documentVersions)
+		.from(workflowSteps)
 		.innerJoin(
-			documentTypes,
-			eq(documentTypes.id, documentVersions.documentTypeId)
+			workflowStepTypes,
+			eq(workflowStepTypes.id, workflowSteps.stepType)
 		)
-		.innerJoin(
-			workflowSteps,
-			eq(workflowSteps.id, documentVersions.workflowStepId)
+		.leftJoin(documentTypes, eq(documentTypes.requiredBy, workflowStepTypes.id))
+		.leftJoin(
+			documentVersions,
+			and(
+				eq(documentVersions.documentTypeId, documentTypes.id),
+				eq(documentVersions.workflowStepId, workflowSteps.id)
+			)
 		)
 		.where(eq(workflowSteps.id, workflowStepId))
+		.orderBy(documentTypes.id, documentVersions.version)
 		.then(throwIfNone);
+	console.log(docs);
 
 	for (const doc of docs) {
-		if (
-			doc.document_types.investorApprovalRequired &&
-			!doc.document_versions.investorApproval
-		) {
+		// There is an expected document that is not uploaded
+		const version = doc.document_versions;
+		const type = doc.document_types;
+		if (!version || !type) {
 			return;
 		}
+
 		if (
-			doc.document_types.traderApprovalRequired &&
-			!doc.document_versions.traderApproval
-		) {
+			docs.some(
+				(x) =>
+					x.document_versions && x.document_versions.version > version.version
+			)
+		)
+			continue;
+
+		if (type.investorApprovalRequired && !version.investorApproval) {
+			return;
+		}
+		if (type.traderApprovalRequired && !version.traderApproval) {
 			return;
 		}
 	}
@@ -46,6 +62,7 @@ export const completeWorkflowStepIfNeeded = async (workflowStepId: string) => {
 			complete: new Date(),
 		})
 		.where(eq(workflowSteps.id, workflowStepId));
+	console.log("Comeplete");
 
 	await completeWorkflowIfNeeded(docs[0].workflow_steps.workflowId);
 };
