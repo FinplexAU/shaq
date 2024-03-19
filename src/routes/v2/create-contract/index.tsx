@@ -20,18 +20,6 @@ export const useCreateContract = routeAction$(
 		const user = getSharedMap(sharedMap, "user");
 
 		const db = await drizzleDb;
-		// first create the admin entity for the contract
-		const [adminEntity] = await db
-			.insert(entities)
-			.values({})
-			.returning({ id: entities.id });
-		if (!adminEntity) {
-			return fail(500, { message: "Something went wrong" });
-		}
-		// next link the user to the admin entity
-		await db
-			.insert(userEntityLinks)
-			.values({ userId: user.id, entityId: adminEntity.id });
 		// now create contract
 
 		const jointVentureWorkflow = await createWorkflow("Joint Venture Set-up");
@@ -39,12 +27,25 @@ export const useCreateContract = routeAction$(
 		const contract = await db
 			.insert(contracts)
 			.values({
-				adminId: adminEntity.id,
 				jointVenture: jointVentureWorkflow.id,
 				tradeSetup: tradeSetup.id,
 			})
 			.returning({ id: contracts.id })
 			.then(selectFirst);
+
+		// first create the admin entity for the contract
+		const [adminEntity] = await db
+			.insert(entities)
+			.values({ contractId: contract.id, role: "admin" })
+			.returning({ id: entities.id });
+
+		if (!adminEntity) {
+			return fail(500, { message: "Something went wrong" });
+		}
+		// next link the user to the admin entity
+		await db
+			.insert(userEntityLinks)
+			.values({ email: user.email, entityId: adminEntity.id });
 
 		throw redirect(302, `/v2/contract/${contract.id}/`);
 	}

@@ -64,18 +64,20 @@ export const useLoadContract = routeLoader$(
 
 		const db = await drizzleDb;
 
-		const admin = alias(entities, "admin");
-		const investor = alias(entities, "investor");
-		const trader = alias(entities, "trader");
-
 		const contract = await db
 			.select()
 			.from(contracts)
-			.innerJoin(admin, eq(admin.id, contracts.adminId))
-			.leftJoin(investor, eq(investor.id, contracts.investorId))
-			.leftJoin(trader, eq(trader.id, contracts.traderId))
+			.leftJoin(entities, eq(contracts.id, entities.contractId))
 			.where(eq(contracts.id, params.id))
-			.then(selectFirst);
+			.then(throwIfNone);
+
+		const admin = contract.find((x) => x.entities?.role === "admin")?.entities;
+		const trader = contract.find(
+			(x) => x.entities?.role === "trader"
+		)?.entities;
+		const investor = contract.find(
+			(x) => x.entities?.role === "investor"
+		)?.entities;
 
 		const permissions = await getContractPermissions(params.id, user.id);
 
@@ -84,10 +86,10 @@ export const useLoadContract = routeLoader$(
 		}
 
 		return {
-			...contract.contracts,
-			admin: contract.admin,
-			investor: contract.investor,
-			trader: contract.trader,
+			...contract[0].contracts,
+			admin,
+			investor,
+			trader,
 			...permissions,
 		};
 	}

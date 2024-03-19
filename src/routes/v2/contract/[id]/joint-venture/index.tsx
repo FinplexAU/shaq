@@ -1,5 +1,11 @@
 import { component$ } from "@builder.io/qwik";
-import { Form, globalAction$, zod$, z } from "@builder.io/qwik-city";
+import {
+	Form,
+	globalAction$,
+	zod$,
+	z,
+	routeLoader$,
+} from "@builder.io/qwik-city";
 import {
 	Workflow,
 	WorkflowTitle,
@@ -12,13 +18,46 @@ import { useWorkflow, useLoadContract } from "../layout";
 import { Input } from "~/components/input";
 import { Button } from "~/components/button";
 import { drizzleDb } from "~/db/db";
-import { contracts, entities, workflowSteps } from "@/drizzle/schema";
+import { entities, userEntityLinks, workflowSteps } from "@/drizzle/schema";
 import { selectFirst } from "~/utils/drizzle-utils";
 import { safe } from "~/utils/utils";
-import { eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
+
+export const useEntityEmails = routeLoader$(async ({ resolveValue }) => {
+	const contract = await resolveValue(useLoadContract);
+	const db = await drizzleDb;
+
+	const emails = await db
+		.select()
+		.from(entities)
+		.innerJoin(userEntityLinks, eq(userEntityLinks.entityId, entities.id))
+		.where(
+			and(
+				eq(entities.contractId, contract.id),
+				inArray(entities.role, ["trader", "investor"])
+			)
+		);
+
+	const result: { trader: string[]; investor: string[] } = {
+		trader: [],
+		investor: [],
+	};
+
+	for (const row of emails) {
+		if (row.entities.role === "trader") {
+			result.trader.push(row.user_entity_links.email);
+		}
+		if (row.entities.role === "investor") {
+			result.investor.push(row.user_entity_links.email);
+		}
+	}
+	return result;
+});
+
 export default component$(() => {
 	const contractSteps = useWorkflow();
 	const contract = useLoadContract();
+	const emails = useEntityEmails();
 	const isAvailable = useStepGroupAvailable(contractSteps.value?.stepGroups);
 
 	return (
@@ -31,24 +70,31 @@ export default component$(() => {
 							<WorkflowStep key={step.stepId} step={step}>
 								{step.stepName === "Investor Information" && (
 									<>
-										{step.complete ? (
+										{step.complete && contract.value.investor ? (
 											<>
 												<div class="pb-4">
 													<h4 class="text-lg font-bold">
-														{contract.value.investor?.company}
+														{contract.value.investor.company}
 													</h4>
 													<p class="text-sm">
-														{contract.value.investor?.address}
+														{contract.value.investor.address}
 													</p>
 													<p class="text-sm">
-														{contract.value.investor?.companyRegistration}
+														{contract.value.investor.companyRegistration}
 													</p>
 												</div>
-												<AddEntityUsersForm></AddEntityUsersForm>
+												<div>
+													{emails.value.investor.map((email) => (
+														<p key={email}>{email}</p>
+													))}
+												</div>
+												<AddEntityUsersForm
+													entityId={contract.value.investor.id}
+												></AddEntityUsersForm>
 											</>
 										) : (
 											<EntityInfoForm
-												entityField="investor"
+												role="investor"
 												contractId={contract.value.id}
 												stepId={step.stepId}
 											></EntityInfoForm>
@@ -57,24 +103,29 @@ export default component$(() => {
 								)}
 								{step.stepName === "Trader Information" && (
 									<>
-										{step.complete ? (
+										{step.complete && contract.value.trader ? (
 											<>
 												<div class="pb-4">
 													<h4 class="text-lg font-bold">
-														{contract.value.trader?.company}
+														{contract.value.trader.company}
 													</h4>
+													<p class="text-sm">{contract.value.trader.address}</p>
 													<p class="text-sm">
-														{contract.value.trader?.address}
-													</p>
-													<p class="text-sm">
-														{contract.value.trader?.companyRegistration}
+														{contract.value.trader.companyRegistration}
 													</p>
 												</div>
-												<AddEntityUsersForm></AddEntityUsersForm>
+												<div>
+													{emails.value.trader.map((email) => (
+														<p key={email}>{email}</p>
+													))}
+												</div>
+												<AddEntityUsersForm
+													entityId={contract.value.trader.id}
+												></AddEntityUsersForm>
 											</>
 										) : (
 											<EntityInfoForm
-												entityField="trader"
+												role="trader"
 												contractId={contract.value.id}
 												stepId={step.stepId}
 											></EntityInfoForm>
@@ -91,7 +142,7 @@ export default component$(() => {
 });
 
 export const useCreateEntity = globalAction$(
-	async (data, { fail }) => {
+	async (data) => {
 		const db = await drizzleDb;
 
 		const entity = await safe(
@@ -105,26 +156,16 @@ export const useCreateEntity = globalAction$(
 		);
 
 		if (entity.success) {
-			const field: `${"investor" | "trader" | "supplier" | "admin" | "exitBuyer"}Id` = `${data.entityField}Id`;
-			const contractUpdate = await safe(
-				db.update(contracts).set({ [field]: entity.id })
-			);
-
-			if (contractUpdate.success) {
-				if (data.stepId) {
-					await safe(
-						db
-							.update(workflowSteps)
-							.set({
-								complete: new Date(),
-								completionReason: "Entity Information Received",
-							})
-							.where(eq(workflowSteps.id, data.stepId))
-					);
-				}
-				return contractUpdate.success;
-			} else {
-				return fail(500, { message: "Something went wrong" });
+			if (data.stepId) {
+				await safe(
+					db
+						.update(workflowSteps)
+						.set({
+							complete: new Date(),
+							completionReason: "Entity Information Received",
+						})
+						.where(eq(workflowSteps.id, data.stepId))
+				);
 			}
 		}
 	},
@@ -135,13 +176,7 @@ export const useCreateEntity = globalAction$(
 			companyRegistration: z.string().min(1),
 			contractId: z.string().uuid(),
 			stepId: z.string().uuid().optional().describe("Step to mark as complete"),
-			entityField: z.enum([
-				"investor",
-				"trader",
-				"supplier",
-				"admin",
-				"exitBuyer",
-			]),
+			role: z.enum(["investor", "trader", "supplier", "admin", "exitBuyer"]),
 		})
 	)
 );
@@ -149,7 +184,7 @@ export const useCreateEntity = globalAction$(
 export const EntityInfoForm = component$(
 	(props: {
 		contractId: string;
-		entityField: "investor" | "trader" | "supplier" | "admin" | "exitBuyer";
+		role: "investor" | "trader" | "supplier" | "admin" | "exitBuyer";
 		stepId?: string;
 	}) => {
 		const createEntity = useCreateEntity();
@@ -172,11 +207,7 @@ export const EntityInfoForm = component$(
 				></Input>
 				<Input type="hidden" name="contractId" value={props.contractId}></Input>
 				<Input type="hidden" name="stepId" value={props.stepId}></Input>
-				<Input
-					type="hidden"
-					name="entityField"
-					value={props.entityField}
-				></Input>
+				<Input type="hidden" name="role" value={props.role}></Input>
 				<Button>Submit</Button>
 			</Form>
 		);
@@ -184,22 +215,41 @@ export const EntityInfoForm = component$(
 );
 
 export const useAddEntityUser = globalAction$(
-	async () => {},
+	async (data, { error }) => {
+		const db = await drizzleDb;
+		const entries = await db
+			.select()
+			.from(userEntityLinks)
+			.where(
+				and(
+					eq(userEntityLinks.email, data.email),
+					eq(userEntityLinks.entityId, data.entityId)
+				)
+			);
+		if (entries.find((x) => x.email === data.email)) {
+			return error(400, "User already added to entity");
+		}
+
+		await db.insert(userEntityLinks).values([data]);
+	},
 	zod$(
 		z.object({
 			email: z.string().email(),
+			entityId: z.string().uuid(),
 		})
 	)
 );
 
-export const AddEntityUsersForm = component$(() => {
+export const AddEntityUsersForm = component$<{ entityId: string }>((props) => {
+	const addEntityUser = useAddEntityUser();
 	return (
-		<Form class="flex max-w-prose flex-col">
+		<Form class="flex max-w-prose flex-col" action={addEntityUser}>
 			<Input
 				title="Email"
 				name="email"
 				placeholder="business@email.com"
 			></Input>
+			<input hidden name="entityId" value={props.entityId} />
 			<Button class="mt-4">Add</Button>
 		</Form>
 	);

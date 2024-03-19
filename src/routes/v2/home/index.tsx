@@ -1,7 +1,7 @@
-import { contracts, userEntityLinks } from "@/drizzle/schema";
+import { contracts, entities, userEntityLinks, users } from "@/drizzle/schema";
 import { component$ } from "@builder.io/qwik";
 import { Link, routeLoader$ } from "@builder.io/qwik-city";
-import { and, eq, or } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { drizzleDb } from "~/db/db";
 import { getSharedMap } from "~/routes/plugin";
 
@@ -12,15 +12,10 @@ export const useAllowedContracts = routeLoader$(async ({ sharedMap }) => {
 	const permissionLookup = await db
 		.select()
 		.from(contracts)
-		.leftJoin(
-			userEntityLinks,
-			or(
-				eq(userEntityLinks.entityId, contracts.adminId),
-				eq(userEntityLinks.entityId, contracts.traderId),
-				eq(userEntityLinks.entityId, contracts.investorId)
-			)
-		)
-		.where(and(eq(userEntityLinks.userId, user.id)));
+		.innerJoin(entities, eq(contracts.id, entities.contractId))
+		.innerJoin(userEntityLinks, eq(userEntityLinks.entityId, entities.id))
+		.innerJoin(users, eq(users.email, userEntityLinks.email))
+		.where(eq(users.id, user.id));
 
 	return permissionLookup.map((x) => x.contracts);
 });

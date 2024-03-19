@@ -6,18 +6,11 @@ import {
 	uuid,
 	integer,
 	numeric,
+	pgEnum,
 } from "drizzle-orm/pg-core";
 
 export const bankDetails = pgTable("bank_details", {
 	id: uuid("id").primaryKey().defaultRandom(),
-});
-
-export const entities = pgTable("entities", {
-	id: uuid("id").primaryKey().defaultRandom(),
-	company: text("company"),
-	address: text("address"),
-	companyRegistration: text("company_registration"),
-	bankDetailsId: uuid("bank_details_id").references(() => bankDetails.id),
 });
 
 export const contracts = pgTable("contracts", {
@@ -30,13 +23,26 @@ export const contracts = pgTable("contracts", {
 	productPricing: numeric("product_pricing"),
 	jointVenture: uuid("joint_venture_id").references(() => workflows.id),
 	tradeSetup: uuid("trade_setup_id").references(() => workflows.id),
-	traderId: uuid("trader_id").references(() => entities.id),
-	investorId: uuid("investor_id").references(() => entities.id),
-	supplierId: uuid("supplier_id").references(() => entities.id),
-	exitBuyerId: uuid("exit_buyer_id").references(() => entities.id),
-	adminId: uuid("admin_id")
-		.references(() => entities.id)
+});
+
+export const entityRole = pgEnum("entity_role", [
+	"admin",
+	"trader",
+	"investor",
+	"supplier",
+	"exitBuyer",
+]);
+
+export const entities = pgTable("entities", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	contractId: uuid("contract_id")
+		.references(() => contracts.id)
 		.notNull(),
+	company: text("company"),
+	address: text("address"),
+	companyRegistration: text("company_registration"),
+	bankDetailsId: uuid("bank_details_id").references(() => bankDetails.id),
+	role: entityRole("role").notNull(),
 });
 
 export const documentVersions = pgTable("document_versions", {
@@ -107,9 +113,7 @@ export const userEmailVerificationCodes = pgTable(
 
 export const userEntityLinks = pgTable("user_entity_links", {
 	id: uuid("id").primaryKey().defaultRandom(),
-	userId: uuid("user_id")
-		.references(() => users.id)
-		.notNull(),
+	email: text("email").notNull(),
 	entityId: uuid("entity_id")
 		.references(() => entities.id)
 		.notNull(),

@@ -1,5 +1,5 @@
-import { contracts, userEntityLinks } from "@/drizzle/schema";
-import { and, eq, or } from "drizzle-orm";
+import { entities, userEntityLinks, users } from "@/drizzle/schema";
+import { and, eq } from "drizzle-orm";
 import { drizzleDb } from "~/db/db";
 import { throwIfNone } from "../utils/drizzle-utils";
 
@@ -9,34 +9,21 @@ export const getContractPermissions = async (
 ) => {
 	const db = await drizzleDb;
 	const permissionLookup = await db
-		.select({
-			entityId: userEntityLinks.entityId,
-			adminId: contracts.adminId,
-			traderId: contracts.traderId,
-			investorId: contracts.investorId,
-		})
-		.from(contracts)
-		.innerJoin(
-			userEntityLinks,
-			or(
-				eq(userEntityLinks.entityId, contracts.adminId),
-				eq(userEntityLinks.entityId, contracts.traderId),
-				eq(userEntityLinks.entityId, contracts.investorId)
-			)
-		)
-		.where(
-			and(eq(userEntityLinks.userId, userId), eq(contracts.id, contractId))
-		)
+		.select()
+		.from(entities)
+		.innerJoin(userEntityLinks, eq(userEntityLinks.entityId, entities.id))
+		.innerJoin(users, eq(users.email, userEntityLinks.email))
+		.where(and(eq(users.id, userId), eq(entities.contractId, contractId)))
 		.then(throwIfNone);
 
 	const isAdmin = Boolean(
-		permissionLookup.find((x) => x.entityId === x.adminId)
+		permissionLookup.find((x) => x.entities.role === "admin")
 	);
 	const isTrader = Boolean(
-		permissionLookup.find((x) => x.entityId === x.traderId)
+		permissionLookup.find((x) => x.entities.role === "trader")
 	);
 	const isInvestor = Boolean(
-		permissionLookup.find((x) => x.entityId === x.investorId)
+		permissionLookup.find((x) => x.entities.role === "investor")
 	);
 
 	const isPermitted = isAdmin || isTrader || isInvestor;

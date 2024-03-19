@@ -1,5 +1,5 @@
 import { Slot, component$ } from "@builder.io/qwik";
-import { RequestHandler, routeLoader$ } from "@builder.io/qwik-city";
+import { routeLoader$ } from "@builder.io/qwik-city";
 import { getSharedMap } from "../plugin";
 import { Header } from "../app/layout";
 
