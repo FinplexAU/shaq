@@ -4,23 +4,16 @@ import {
 	component$,
 	noSerialize,
 	Slot,
-	useComputed$,
 	useSignal,
 	useVisibleTask$,
 } from "@builder.io/qwik";
 import type { DocumentHead, RequestHandler } from "@builder.io/qwik-city";
-import {
-	useLocation,
-	routeLoader$,
-	globalAction$,
-	Form,
-	useNavigate,
-} from "@builder.io/qwik-city";
-import { getRequiredEnv, getSharedMap } from "../plugin";
+import { useLocation, Form } from "@builder.io/qwik-city";
 import { AppLink } from "~/routes.config";
 import ExternalImage from "~/components/external-image";
 import { Dropdown } from "flowbite";
-import { graphql, graphqlLoader } from "~/utils/graphql";
+import { useUser } from "../v2/layout";
+import { useSignOut } from "../layout";
 
 export const onGet: RequestHandler = async ({ cacheControl }) => {
 	// Control caching for this request for best performance and to reduce hosting costs:
@@ -29,23 +22,6 @@ export const onGet: RequestHandler = async ({ cacheControl }) => {
 		noCache: true,
 	});
 };
-
-const gqlQuery = graphql(`
-	query Index {
-		user {
-			nickname
-			givenName
-			name
-		}
-		entities {
-			accounts {
-				fan
-			}
-		}
-	}
-`);
-
-export const useGqlIndex = routeLoader$(graphqlLoader(gqlQuery, {}));
 
 export const head: DocumentHead = {
 	title: "Welcome to Shaq",
@@ -58,53 +34,22 @@ export const head: DocumentHead = {
 };
 
 export default component$(() => {
-	const gql = useGqlIndex();
-	const entities = useComputed$(() => gql.value.entities ?? []);
-
 	return (
 		<>
-			<Header></Header>
-			<main class="container flex min-h-[calc(100dvh-64px)] flex-col py-8  max-sm:px-2">
-				{entities.value.length === 0 ||
-				entities.value.at(0)?.accounts.length === 0 ? (
-					<RequireOnboarding hasEntities={false}></RequireOnboarding>
-				) : (
-					<Slot />
-				)}
-			</main>
+			<Slot />
 		</>
 	);
 });
 
-export const useUser = routeLoader$(({ sharedMap }) => {
-	return getSharedMap(sharedMap, "user");
-});
-
-export const useLogOut = globalAction$(async (_, ev) => {
-	const lucia = getSharedMap(ev.sharedMap, "lucia");
-	const session = getSharedMap(ev.sharedMap, "session");
-
-	// Invalidate session locally.
-	await lucia.invalidateSession(session.id);
-	const cookie = lucia.createBlankSessionCookie();
-	ev.cookie.set(cookie.name, cookie.value, cookie.attributes);
-
-	// Redirect to auth0 to log out there
-	const baseUrl = getRequiredEnv(ev.env, "AUTH0_APP_DOMAIN");
-	const redirectTo = new URL("/app/", ev.url);
-	const url = `${baseUrl}/oidc/logout?id_token_hint=${session.idToken.token}&post_logout_redirect_uri=${redirectTo.toString()}`;
-
-	return url;
-});
-
 export const Header = component$(() => {
 	const loc = useLocation();
-	// const user = useUser();
+	const user = useUser();
+	const signOut = useSignOut();
 	// const logOut = useLogOut();
-	const nav = useNavigate();
+	// const nav = useNavigate();
 
 	const dropdown = useSignal<NoSerialize<Dropdown>>();
-	const dropdownElement = useSignal<HTMLDivElement>();
+	const dropdownElement = useSignal<HTMLElement>();
 	const dropdownButtonElement = useSignal<HTMLButtonElement>();
 
 	const instanceOptions = {
@@ -116,25 +61,13 @@ export const Header = component$(() => {
 	useVisibleTask$(() => {
 		dropdown.value = noSerialize(
 			new Dropdown(
-				dropdownElement.value!,
+				dropdownElement.value,
 				dropdownButtonElement.value,
 				{ placement: "bottom" },
 				instanceOptions
 			)
 		);
 	});
-
-	// 	// Refresh on coming back to tab
-	// 	const refresh = () => {
-	// 		if (document.visibilityState === "visible") {
-	// 			nav();
-	// 		}
-	// 	};
-	// 	document.addEventListener("visibilitychange", refresh);
-	// 	return () => {
-	// 		document.removeEventListener("visibilitychange", refresh);
-	// 	};
-	// });
 
 	const closeDropdown = $(() => {
 		dropdown.value?.hide();
@@ -179,30 +112,24 @@ export const Header = component$(() => {
 					>
 						<div class="px-4 py-3">
 							<span class="block text-sm text-gray-900 dark:text-white">
-								{/* {user.value.name} */}
+								{user.value.name}
 							</span>
 							<span class="block truncate text-sm text-gray-500 dark:text-gray-400">
-								{/* {user.value.email} */}
+								{user.value.email}
 							</span>
 						</div>
 						<ul class="py-2">
 							<li>
 								<AppLink
 									onClick$={closeDropdown}
-									route="/app/user/"
+									route="/v2/home/"
 									class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-600 dark:hover:text-white"
 								>
 									Settings
 								</AppLink>
 							</li>
 							<li>
-								<Form
-								// action={logOut}
-								// onSubmitCompleted$={(x) => {
-								// 	const url = x.detail.value.toString();
-								// 	nav(url);
-								// }}
-								>
+								<Form action={signOut}>
 									<button class="w-full">
 										<p class="px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-600 dark:hover:text-white">
 											Sign out
