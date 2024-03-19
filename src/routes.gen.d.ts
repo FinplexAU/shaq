@@ -22,7 +22,8 @@ export type AppRoutes =
   | "/v2/create-contract/"
   | "/v2/document/[id]/"
   | "/v2/home/"
-  | "/v2/map/";
+  | "/v2/map/"
+  | "/v2/workflow-generator/";
 
 export interface AppRouteMap {
   "/": {};
@@ -45,6 +46,7 @@ export interface AppRouteMap {
   "/v2/document/[id]/": { id: string };
   "/v2/home/": {};
   "/v2/map/": {};
+  "/v2/workflow-generator/": {};
 }
 
 export interface AppRouteParamsFunction {
@@ -68,6 +70,7 @@ export interface AppRouteParamsFunction {
   (route: "/v2/document/[id]/", params: { id: string }): string;
   (route: "/v2/home/", params?: {}): string;
   (route: "/v2/map/", params?: {}): string;
+  (route: "/v2/workflow-generator/", params?: {}): string;
 }
 
 export type AppLinkProps =
@@ -90,4 +93,5 @@ export type AppLinkProps =
   | { route: "/v2/create-contract/" }
   | { route: "/v2/document/[id]/"; "param:id": string }
   | { route: "/v2/home/" }
-  | { route: "/v2/map/" };
+  | { route: "/v2/map/" }
+  | { route: "/v2/workflow-generator/" };

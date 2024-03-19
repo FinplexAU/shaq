@@ -82,11 +82,13 @@ export default component$(() => {
 													<p class="text-sm">
 														{contract.value.investor.companyRegistration}
 													</p>
-												</div>
-												<div>
-													{emails.value.investor.map((email) => (
-														<p key={email}>{email}</p>
-													))}
+													<ul class="list-disc py-2 text-sm">
+														{emails.value.investor.map((email) => (
+															<li class="list-inside" key={email}>
+																{email}
+															</li>
+														))}
+													</ul>
 												</div>
 												<AddEntityUsersForm
 													entityId={contract.value.investor.id}

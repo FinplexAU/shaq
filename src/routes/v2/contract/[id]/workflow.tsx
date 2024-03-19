@@ -66,11 +66,11 @@ export const WorkflowStepGroup = component$((props: { available: boolean }) => {
 	return (
 		<li
 			class={[
-				"flex flex-wrap gap-8 border-b-2 border-dashed p-4",
+				"relative flex flex-wrap gap-8 border-b-2 border-dashed p-4",
 				{ "opacity-20": !props.available },
 			]}
 		>
-			<p class="fixed list-item text-sm text-gray-400"></p>
+			<p class="absolute  list-item text-sm text-gray-400"></p>
 			<Slot></Slot>
 		</li>
 	);
@@ -78,7 +78,7 @@ export const WorkflowStepGroup = component$((props: { available: boolean }) => {
 
 export const WorkflowStep = component$(({ step }: { step: TWorkflowStep }) => {
 	return (
-		<div class="flex-1 py-8" key={step.stepId}>
+		<div class=" flex-1 py-8" key={step.stepId}>
 			<h3 class="pb-4 text-xl font-semibold">{step.stepName}</h3>
 			<Slot></Slot>
 			<ul class="grid gap-2">
@@ -154,7 +154,7 @@ export const WorkflowDocument = component$(
 		});
 
 		return (
-			<li key={document.typeId} class="">
+			<li key={document.typeId}>
 				<div class="grid grid-cols-12 items-center gap-1 overflow-hidden rounded [&>*]:h-full [&>*]:bg-gray-100 [&>*]:px-2 [&>*]:py-1">
 					<div
 						class={[
@@ -171,7 +171,7 @@ export const WorkflowDocument = component$(
 								param:id={latestDoc.value.id}
 								class="grid h-full w-full place-items-center"
 							>
-								<HiDocumentSolid></HiDocumentSolid>{" "}
+								<HiDocumentSolid class="text-lg"></HiDocumentSolid>{" "}
 							</AppLink>
 						) : undefined}
 					</div>
@@ -182,7 +182,7 @@ export const WorkflowDocument = component$(
 						}}
 					>
 						{document.name}{" "}
-						<span class="text-sm text-gray-400">
+						<span class="text-sm font-light text-neutral-400">
 							{latestDoc.value && `(v${latestDoc.value.version + 1})`}
 						</span>
 					</p>
@@ -242,7 +242,7 @@ export const WorkflowDocument = component$(
 					</div>
 					<UploadDocumentModal document={document} step={step}>
 						<div class="grid h-full w-full cursor-pointer place-items-center hover:bg-gray-200">
-							<HiArrowUpCircleSolid></HiArrowUpCircleSolid>
+							<HiArrowUpCircleSolid class="text-xl"></HiArrowUpCircleSolid>
 						</div>
 					</UploadDocumentModal>
 					{showVersions.value && (

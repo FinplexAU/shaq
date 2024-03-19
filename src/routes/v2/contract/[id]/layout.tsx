@@ -364,26 +364,27 @@ export default component$(() => {
 	return (
 		<>
 			<div class="grid flex-1 grid-cols-12">
-				<nav class="col-span-2 border-r p-4">
-					<WorkflowButton
-						title="Contract Info"
-						completion={true}
-						route="/v2/contract/[id]/"
-						param:id={contract.value.id}
-					></WorkflowButton>
-					<WorkflowButton
-						title="Joint Venture Set-up"
-						completion={Boolean(contractCompletion.value.jointVenture)}
-						route="/v2/contract/[id]/joint-venture/"
-						param:id={contract.value.id}
-					></WorkflowButton>
-					<WorkflowButton
-						title="Trade Set-up"
-						completion={Boolean(contractCompletion.value.tradeSetup)}
-						route="/v2/contract/[id]/contract-setup/"
-						param:id={contract.value.id}
-					></WorkflowButton>
-					{/* <WorkflowButton
+				<nav class="relative col-span-2 border-r ">
+					<div class="sticky top-16 p-4">
+						<WorkflowButton
+							title="Contract Info"
+							completion={true}
+							route="/v2/contract/[id]/"
+							param:id={contract.value.id}
+						></WorkflowButton>
+						<WorkflowButton
+							title="Joint Venture Set-up"
+							completion={Boolean(contractCompletion.value.jointVenture)}
+							route="/v2/contract/[id]/joint-venture/"
+							param:id={contract.value.id}
+						></WorkflowButton>
+						<WorkflowButton
+							title="Trade Set-up"
+							completion={Boolean(contractCompletion.value.tradeSetup)}
+							route="/v2/contract/[id]/contract-setup/"
+							param:id={contract.value.id}
+						></WorkflowButton>
+						{/* <WorkflowButton
 						title="Trade Set-up"
 						completion={"disabled"}
 					></WorkflowButton>
@@ -403,8 +404,9 @@ export default component$(() => {
 						title="Trade Process"
 						completion={"disabled"}
 					></WorkflowButton> */}
+					</div>
 				</nav>
-				<main class="col-span-10 max-h-[calc(100vh-64px)] overflow-y-auto">
+				<main class="col-span-10 overflow-y-auto">
 					<Slot></Slot>
 				</main>
 			</div>

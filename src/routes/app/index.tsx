@@ -245,12 +245,6 @@ export const useSetApproved = routeAction$(
 	})
 );
 
-const getServerHours = server$(function () {
-	const timezone = this.request.headers.get("cf-timezone");
-	if (!timezone) return new Date().getHours();
-	else return moment().tz(timezone).hours();
-});
-
 const toRow = (row: Data) => {
 	const outputRow = [];
 
