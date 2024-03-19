@@ -19,7 +19,6 @@ export type AppRoutes =
   | "/v2/contract/[id]/"
   | "/v2/contract/[id]/contract-setup/"
   | "/v2/contract/[id]/joint-venture/"
-  | "/v2/create-contract/"
   | "/v2/document/[id]/"
   | "/v2/home/"
   | "/v2/map/"
@@ -42,7 +41,6 @@ export interface AppRouteMap {
   "/v2/contract/[id]/": { id: string };
   "/v2/contract/[id]/contract-setup/": { id: string };
   "/v2/contract/[id]/joint-venture/": { id: string };
-  "/v2/create-contract/": {};
   "/v2/document/[id]/": { id: string };
   "/v2/home/": {};
   "/v2/map/": {};
@@ -66,7 +64,6 @@ export interface AppRouteParamsFunction {
   (route: "/v2/contract/[id]/", params: { id: string }): string;
   (route: "/v2/contract/[id]/contract-setup/", params: { id: string }): string;
   (route: "/v2/contract/[id]/joint-venture/", params: { id: string }): string;
-  (route: "/v2/create-contract/", params?: {}): string;
   (route: "/v2/document/[id]/", params: { id: string }): string;
   (route: "/v2/home/", params?: {}): string;
   (route: "/v2/map/", params?: {}): string;
@@ -90,7 +87,6 @@ export type AppLinkProps =
   | { route: "/v2/contract/[id]/"; "param:id": string }
   | { route: "/v2/contract/[id]/contract-setup/"; "param:id": string }
   | { route: "/v2/contract/[id]/joint-venture/"; "param:id": string }
-  | { route: "/v2/create-contract/" }
   | { route: "/v2/document/[id]/"; "param:id": string }
   | { route: "/v2/home/" }
   | { route: "/v2/map/" }

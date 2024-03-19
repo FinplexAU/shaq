@@ -368,7 +368,7 @@ export default component$(() => {
 					<div class="sticky top-16 p-4">
 						<WorkflowButton
 							title="Contract Info"
-							completion={true}
+							completion={false}
 							route="/v2/contract/[id]/"
 							param:id={contract.value.id}
 						></WorkflowButton>

@@ -55,7 +55,7 @@ export const useCreateContract = routeAction$(
 		// now create contract
 
 		const jointVentureWorkflow = await createWorkflow("Joint Venture Set-up");
-		const tradeSetup = await createWorkflow("Bank Instrument");
+		const tradeSetup = await createWorkflow("Trade Set-up");
 		const contract = await db
 			.insert(contracts)
 			.values({

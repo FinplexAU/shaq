@@ -3,6 +3,7 @@ import {
 	component$,
 	createContextId,
 	useComputed$,
+	useContext,
 	useContextProvider,
 	useSignal,
 } from "@builder.io/qwik";
@@ -70,7 +71,10 @@ export const WorkflowStepGroup = component$((props: { available: boolean }) => {
 				{ "opacity-20": !props.available },
 			]}
 		>
-			<p class="absolute  list-item text-sm text-gray-400"></p>
+			{!props.available && (
+				<div class="absolute left-0 top-0 z-10 h-full w-full"></div>
+			)}
+			<p class="absolute list-item text-sm text-gray-400"></p>
 			<Slot></Slot>
 		</li>
 	);
@@ -112,7 +116,7 @@ export const WorkflowDocument = component$(
 		step: TWorkflowStep;
 	}) => {
 		const approveDocument = useApproveDocument();
-		// const stepGroupContext = useContext(StepGroupContext);
+		const stepGroupContext = useContext(StepGroupContext);
 		const contract = useLoadContract();
 
 		const showVersions = useSignal(false);
@@ -240,7 +244,11 @@ export const WorkflowDocument = component$(
 							latestStatus.value.investor
 						)}
 					</div>
-					<UploadDocumentModal document={document} step={step}>
+					<UploadDocumentModal
+						document={document}
+						step={step}
+						disabled={!stepGroupContext.available}
+					>
 						<div class="grid h-full w-full cursor-pointer place-items-center hover:bg-gray-200">
 							<HiArrowUpCircleSolid class="text-xl"></HiArrowUpCircleSolid>
 						</div>
