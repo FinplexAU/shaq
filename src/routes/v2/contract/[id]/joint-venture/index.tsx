@@ -18,10 +18,16 @@ import { useWorkflow, useLoadContract } from "../layout";
 import { Input } from "~/components/input";
 import { Button } from "~/components/button";
 import { drizzleDb } from "~/db/db";
-import { entities, userEntityLinks, workflowSteps } from "@/drizzle/schema";
+import {
+	entities,
+	userEntityLinks,
+	users,
+	workflowSteps,
+} from "@/drizzle/schema";
 import { selectFirst } from "~/utils/drizzle-utils";
 import { safe } from "~/utils/utils";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, count, eq, inArray } from "drizzle-orm";
+import { sendContractInvite, sendEmail } from "~/utils/email";
 
 export const useEntityEmails = routeLoader$(async ({ resolveValue }) => {
 	const contract = await resolveValue(useLoadContract);
@@ -31,6 +37,7 @@ export const useEntityEmails = routeLoader$(async ({ resolveValue }) => {
 		.select()
 		.from(entities)
 		.innerJoin(userEntityLinks, eq(userEntityLinks.entityId, entities.id))
+		.leftJoin(users, eq(users.email, userEntityLinks.email))
 		.where(
 			and(
 				eq(entities.contractId, contract.id),
@@ -38,17 +45,26 @@ export const useEntityEmails = routeLoader$(async ({ resolveValue }) => {
 			)
 		);
 
-	const result: { trader: string[]; investor: string[] } = {
+	const result: {
+		trader: { email: string; created: boolean }[];
+		investor: { email: string; created: boolean }[];
+	} = {
 		trader: [],
 		investor: [],
 	};
 
 	for (const row of emails) {
 		if (row.entities.role === "trader") {
-			result.trader.push(row.user_entity_links.email);
+			result.trader.push({
+				email: row.user_entity_links.email,
+				created: Boolean(row.users),
+			});
 		}
 		if (row.entities.role === "investor") {
-			result.investor.push(row.user_entity_links.email);
+			result.investor.push({
+				email: row.user_entity_links.email,
+				created: Boolean(row.users),
+			});
 		}
 	}
 	return result;
@@ -84,11 +100,16 @@ export default component$(() => {
 													</p>
 													<ul class="list-disc py-2 text-sm">
 														{emails.value.investor.map((email) => (
-															<li class="list-inside" key={email}>
-																{email}
+															<li class="list-inside" key={email.email}>
+																{email.email}
 															</li>
 														))}
 													</ul>
+												</div>
+												<div>
+													{emails.value.investor.map((email) => (
+														<p key={email.email}>{email.email}</p>
+													))}
 												</div>
 												<AddEntityUsersForm
 													entityId={contract.value.investor.id}
@@ -117,8 +138,10 @@ export default component$(() => {
 													</p>
 												</div>
 												<div>
-													{emails.value.trader.map((email) => (
-														<p key={email}>{email}</p>
+													{emails.value.investor.map((email) => (
+														<li class="list-inside" key={email.email}>
+															{email.email}
+														</li>
 													))}
 												</div>
 												<AddEntityUsersForm
@@ -217,22 +240,33 @@ export const EntityInfoForm = component$(
 );
 
 export const useAddEntityUser = globalAction$(
-	async (data, { error }) => {
+	async (data, { error, url, params, env }) => {
+		const id = params.id!;
 		const db = await drizzleDb;
 		const entries = await db
-			.select()
+			.select({ count: count(userEntityLinks.id) })
 			.from(userEntityLinks)
 			.where(
 				and(
 					eq(userEntityLinks.email, data.email),
 					eq(userEntityLinks.entityId, data.entityId)
 				)
-			);
-		if (entries.find((x) => x.email === data.email)) {
+			)
+			.then(selectFirst);
+
+		if (entries.count > 0) {
 			return error(400, "User already added to entity");
 		}
 
 		await db.insert(userEntityLinks).values([data]);
+
+		const existingUser = await db
+			.select({ count: count(users.id) })
+			.from(users)
+			.where(eq(users.email, data.email))
+			.then(selectFirst);
+
+		await sendContractInvite(env, data.email, url, id, existingUser.count > 0);
 	},
 	zod$(
 		z.object({
@@ -250,6 +284,7 @@ export const AddEntityUsersForm = component$<{ entityId: string }>((props) => {
 				title="Email"
 				name="email"
 				placeholder="business@email.com"
+				required
 			></Input>
 			<input hidden name="entityId" value={props.entityId} />
 			<Button class="mt-4">Add</Button>

@@ -27,3 +27,30 @@ export const sendVerificationCode = async (
 	});
 	console.log(result);
 };
+
+export const sendContractInvite = async (
+	env: EnvGetter,
+	email: string,
+	baseUrl: URL,
+	contractId: string,
+	newUser: boolean
+) => {
+	let emailContent;
+	if (newUser) {
+		const accessUrl = new URL(`/v2/contract/${contractId}/`, baseUrl);
+		emailContent = `You were added to a new contract. You can access it here: ${accessUrl.toString()}`;
+	} else {
+		const accessUrl = new URL(`/auth/sign-up/`, baseUrl);
+		emailContent = `You were invited to manage a contract. Please sign up here: ${accessUrl.toString()}`;
+	}
+	const result = await sendEmail(env, {
+		from: {
+			email: "noreply@finplex.com.au",
+			name: "Diesel Platform",
+		},
+		to: email,
+		subject: "You have been invited to a contract",
+		text: emailContent,
+	});
+	console.log(result);
+};
