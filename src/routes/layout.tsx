@@ -1,5 +1,9 @@
-import { Slot, component$ } from "@builder.io/qwik";
-import { globalAction$, type RequestHandler } from "@builder.io/qwik-city";
+import { $, Slot, component$, useOnDocument } from "@builder.io/qwik";
+import {
+	globalAction$,
+	useNavigate,
+	type RequestHandler,
+} from "@builder.io/qwik-city";
 import { getSharedMap } from "./plugin";
 import { safe } from "~/utils/utils";
 
@@ -30,5 +34,12 @@ export const useSignOut = globalAction$(async (_, req) => {
 });
 
 export default component$(() => {
+	const nav = useNavigate();
+	useOnDocument(
+		"visibilitychange",
+		$(() => {
+			if (document.visibilityState === "visible") nav();
+		})
+	);
 	return <Slot></Slot>;
 });
