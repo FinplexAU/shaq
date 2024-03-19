@@ -1,5 +1,13 @@
 import type { NoSerialize } from "@builder.io/qwik";
-import { $, component$, Slot, useComputed$, useSignal } from "@builder.io/qwik";
+import {
+	$,
+	component$,
+	noSerialize,
+	Slot,
+	useComputed$,
+	useSignal,
+	useVisibleTask$,
+} from "@builder.io/qwik";
 import type { DocumentHead, RequestHandler } from "@builder.io/qwik-city";
 import {
 	useLocation,
@@ -104,16 +112,17 @@ export const Header = component$(() => {
 		override: true,
 	};
 
-	// eslint-disable-next-line qwik/no-use-visible-task
-	// useVisibleTask$(() => {
-	// 	dropdown.value = noSerialize(
-	// 		new Dropdown(
-	// 			// dropdownElement.value,
-	// 			dropdownButtonElement.value,
-	// 			{ placement: "bottom" },
-	// 			instanceOptions
-	// 		)
-	// 	);
+	//eslint-disable-next-line qwik/no-use-visible-task
+	useVisibleTask$(() => {
+		dropdown.value = noSerialize(
+			new Dropdown(
+				dropdownElement.value!,
+				dropdownButtonElement.value,
+				{ placement: "bottom" },
+				instanceOptions
+			)
+		);
+	});
 
 	// 	// Refresh on coming back to tab
 	// 	const refresh = () => {
@@ -156,7 +165,7 @@ export const Header = component$(() => {
 						<span class="sr-only">Open user menu</span>
 						<ExternalImage
 							class="rounded-full"
-							// src={user.value.picture}
+							src={"https://cdn.auth0.com/avatars/df.png"}
 							width={32}
 							height={32}
 							alt="user photo"
@@ -272,7 +281,8 @@ export const Header = component$(() => {
 									"block rounded bg-blue-700 px-3 py-2 text-white md:bg-transparent md:p-0 md:text-blue-700 md:dark:text-blue-500":
 										loc.url.pathname === "/v2/cash/",
 									"block rounded px-3 py-2 text-gray-900 hover:bg-gray-100 dark:border-gray-700 dark:text-white dark:hover:bg-gray-700 dark:hover:text-white md:p-0 md:hover:bg-transparent md:hover:text-blue-700 md:dark:hover:bg-transparent md:dark:hover:text-blue-500":
-										loc.url.pathname !== "/v2/cash/",
+										loc.url.pathname !==
+										"/https://cdn.auth0.com/avatars/df.pngv2/cash/",
 								}}
 								aria-current={
 									loc.url.pathname === "/v2/cash/" ? "page" : undefined

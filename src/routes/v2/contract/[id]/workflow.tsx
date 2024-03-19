@@ -181,7 +181,8 @@ export const WorkflowDocument = component$(
 							showVersions.value = !showVersions.value;
 						}}
 					>
-						{document.name}
+						{document.name}{" "}
+						{latestDoc.value && `(v${latestDoc.value.version + 1})`}
 					</p>
 					<div
 						class={[
