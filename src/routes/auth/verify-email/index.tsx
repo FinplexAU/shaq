@@ -1,6 +1,12 @@
 import { userEmailVerificationCodes, users } from "@/drizzle/schema";
 import { component$ } from "@builder.io/qwik";
-import { Form, routeAction$, z, zod$ } from "@builder.io/qwik-city";
+import {
+	Form,
+	RequestHandler,
+	routeAction$,
+	z,
+	zod$,
+} from "@builder.io/qwik-city";
 import { eq } from "drizzle-orm";
 import { drizzleDb } from "~/db/db";
 import { getSharedMap } from "~/routes/plugin";
@@ -53,6 +59,13 @@ export const useVerifyEmail = routeAction$(
 	})
 );
 
+export const onRequest: RequestHandler = async ({ redirect, sharedMap }) => {
+	const user = getSharedMap(sharedMap, "user");
+	if (user.emailVerified) {
+		throw redirect(302, "/v2/home/");
+	}
+};
+
 export default component$(() => {
 	const action = useVerifyEmail();
 	const signOut = useSignOut();
@@ -93,6 +106,7 @@ export const OTPInput = component$(() => {
 					type="text"
 					id="otp"
 					name="otp"
+					autocomplete="off"
 					class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 ps-10 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500  dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 dark:focus:border-blue-500 dark:focus:ring-blue-500"
 					placeholder="000000"
 					maxLength={6}
