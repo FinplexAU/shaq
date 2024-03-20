@@ -9,7 +9,6 @@ import {
 	entities,
 	userEntityLinks,
 	users,
-	workflowStepTypes,
 	workflowSteps,
 	workflowTypes,
 	workflows,
@@ -22,7 +21,7 @@ import {
 	server$,
 } from "@builder.io/qwik-city";
 import { eq, type InferSelectModel } from "drizzle-orm";
-import { selectFirst, throwIfNone } from "~/utils/drizzle-utils";
+import { selectFirst } from "~/utils/drizzle-utils";
 import { HiPlusCircleSolid } from "@qwikest/icons/heroicons";
 import { Button } from "~/components/button";
 
@@ -62,24 +61,17 @@ export const useCreateContract = routeAction$(
 		const user = getSharedMap(sharedMap, "user");
 
 		const db = await drizzleDb;
-		// now create contract
 
-		const jointVentureWorkflow = await createWorkflow("Joint Venture Set-up");
-		const tradeSetup = await createWorkflow("Trade Set-up");
-		const bankInstrumentSetup = await createWorkflow("Bank Instrument Set-up");
-		const tradeBankInstrumentSetup = await createWorkflow(
-			"Trade Bank Instrument Set-up"
-		);
 		const contract = await db
 			.insert(contracts)
-			.values({
-				jointVenture: jointVentureWorkflow.id,
-				tradeSetup: tradeSetup.id,
-				bankInstrumentSetup: bankInstrumentSetup.id,
-				tradeBankInstrumentSetup: tradeBankInstrumentSetup.id,
-			})
+			.values({})
 			.returning({ id: contracts.id })
 			.then(selectFirst);
+
+		await createWorkflow("Joint Venture Set-up", contract.id);
+		await createWorkflow("Trade Set-up", contract.id);
+		await createWorkflow("Bank Instrument Set-up", contract.id);
+		await createWorkflow("Trade Bank Instrument Set-up", contract.id);
 
 		// first create the admin entity for the contract
 		const [adminEntity] = await db
@@ -98,7 +90,7 @@ export const useCreateContract = routeAction$(
 		throw redirect(302, `/v2/contract/${contract.id}/`);
 	}
 );
-const createWorkflow = async (workflowName: string) => {
+const createWorkflow = async (workflowName: string, contractId: string) => {
 	const db = await drizzleDb;
 
 	const template = await db.query.workflowTypes.findFirst({
@@ -112,7 +104,7 @@ const createWorkflow = async (workflowName: string) => {
 
 	const workflow = await db
 		.insert(workflows)
-		.values({ workflowType: template.id })
+		.values({ workflowType: template.id, contractId })
 		.returning({ id: workflows.id })
 		.then(selectFirst);
 

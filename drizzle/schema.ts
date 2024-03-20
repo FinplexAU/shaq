@@ -25,37 +25,11 @@ export const contracts = pgTable("contracts", {
 	deliveryPort: text("delivery_port"),
 	loadingPort: text("loading_port"),
 	productPricing: numeric("product_pricing"),
-	jointVenture: uuid("joint_venture_id").references(() => workflows.id),
-	tradeSetup: uuid("trade_setup_id").references(() => workflows.id),
-	bankInstrumentSetup: uuid("bank_instrument_setup_id").references(
-		() => workflows.id
-	),
-	tradeBankInstrumentSetup: uuid("trade_bank_instrument_setup_id").references(
-		() => workflows.id
-	),
 });
-export const contractsRelations = relations(contracts, ({ many, one }) => ({
+export const contractsRelations = relations(contracts, ({ many }) => ({
+	workflows: many(workflows),
 	entities: many(entities),
-	jointVenture: one(workflows, {
-		fields: [contracts.jointVenture],
-		references: [workflows.id],
-		relationName: "joint_venture",
-	}),
-	tradeSetup: one(workflows, {
-		fields: [contracts.tradeSetup],
-		references: [workflows.id],
-		relationName: "trade_setup",
-	}),
-	bankInstrumentSetup: one(workflows, {
-		fields: [contracts.bankInstrumentSetup],
-		references: [workflows.id],
-		relationName: "bank_instrument_setup",
-	}),
-	tradeBankInstrumentSetup: one(workflows, {
-		fields: [contracts.tradeBankInstrumentSetup],
-		references: [workflows.id],
-		relationName: "trade_bank_instrument_setup",
-	}),
+	tradeBankInstrumentSetup: many(workflows),
 }));
 
 export const entityRole = pgEnum("entity_role", [
@@ -94,7 +68,9 @@ export const documentVersions = pgTable("document_versions", {
 	id: uuid("id").primaryKey().defaultRandom(),
 	investorApproval: timestamp("investor_approval"),
 	traderApproval: timestamp("trader_approval"),
-	documentTypeId: uuid("document_type_id").references(() => documentTypes.id),
+	documentTypeId: uuid("document_type_id")
+		.references(() => documentTypes.id)
+		.notNull(),
 	version: integer("version").notNull(),
 	createdAt: timestamp("created_at").notNull().defaultNow(),
 	workflowStepId: uuid("workflow_step_id")
@@ -143,6 +119,9 @@ export const workflowStepsRelations = relations(
 
 export const workflows = pgTable("workflows", {
 	id: uuid("id").primaryKey().defaultRandom(),
+	contractId: uuid("contract_id")
+		.references(() => contracts.id)
+		.notNull(),
 	workflowType: uuid("workflow_type")
 		.references(() => workflowTypes.id)
 		.notNull(),
@@ -152,6 +131,10 @@ export const workflows = pgTable("workflows", {
 
 export const workflowsRelations = relations(workflows, ({ many, one }) => ({
 	workflowSteps: many(workflowSteps),
+	contract: one(contracts, {
+		fields: [workflows.contractId],
+		references: [contracts.id],
+	}),
 	workflowType: one(workflowTypes, {
 		fields: [workflows.workflowType],
 		references: [workflowTypes.id],

@@ -3,14 +3,13 @@ import { WorkflowButton } from "./workflow";
 import {
 	contracts,
 	workflows,
-	workflowSteps,
 	documentTypes,
 	documentVersions,
+	workflowTypes,
 } from "@/drizzle/schema";
 import { routeAction$, routeLoader$, z, zod$ } from "@builder.io/qwik-city";
-import { eq, asc, desc, or } from "drizzle-orm";
+import { eq, asc, desc, and } from "drizzle-orm";
 import { drizzleDb } from "~/db/db";
-import { selectFirst } from "~/utils/drizzle-utils";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { v4 } from "uuid";
 import { s3 } from "~/utils/aws";
@@ -64,31 +63,44 @@ export const useLoadContract = routeLoader$(
 export const useWorkflow = routeLoader$(
 	async ({ pathname, resolveValue, error }) => {
 		const db = await drizzleDb;
+		const contract = await resolveValue(useLoadContract);
 
 		const workflowParam = pathname
 			.split("/")
 			.filter((v) => v)
 			.at(-1);
 
-		const contract = await resolveValue(useLoadContract);
-
-		let workflowId;
+		let workflowName;
 		if (workflowParam === "joint-venture") {
-			workflowId = contract.jointVenture;
+			workflowName = "Joint Venture Set-up";
 		} else if (workflowParam === "contract-setup") {
-			workflowId = contract.tradeSetup;
+			workflowName = "Trade Set-up";
 		} else if (workflowParam === "bank-instrument-setup") {
-			workflowId = contract.bankInstrumentSetup;
+			workflowName = "Bank Instrument Set-up";
 		} else if (workflowParam === "trade-bank-instrument-setup") {
-			workflowId = contract.tradeBankInstrumentSetup;
+			workflowName = "Trade Bank Instrument Set-up";
 		}
 
-		if (!workflowId) {
+		if (!workflowName) {
+			return;
+		}
+
+		// This intermediatory lookup required unless the query below is rewritten with joins.
+		// Because drizzle doesn't let you filter based on the child of a table. This change is in progress within drizzle.
+		// https://github.com/drizzle-team/drizzle-orm/discussions/1152
+		const workflowTypeId = await db.query.workflowTypes.findFirst({
+			where: eq(workflowTypes.name, workflowName),
+			columns: { id: true },
+		});
+		if (!workflowTypeId) {
 			return;
 		}
 
 		const queryResult = await db.query.workflows.findFirst({
-			where: eq(workflows.id, workflowId),
+			where: and(
+				eq(workflows.workflowType, workflowTypeId.id),
+				eq(workflows.contractId, contract.id)
+			),
 			with: {
 				workflowType: true,
 				workflowSteps: {
@@ -228,46 +240,47 @@ export const useApproveDocument = routeAction$(
 
 		console.log("Hi", data.documentVersionId);
 
-		const doc = await db
-			.select()
-			.from(documentVersions)
-			.innerJoin(
-				documentTypes,
-				eq(documentTypes.id, documentVersions.documentTypeId)
-			)
-			.innerJoin(
-				workflowSteps,
-				eq(workflowSteps.id, documentVersions.workflowStepId)
-			)
-			.innerJoin(
-				contracts,
-				or(
-					eq(contracts.jointVenture, workflowSteps.workflowId),
-					eq(contracts.tradeSetup, workflowSteps.workflowId),
-					eq(contracts.bankInstrumentSetup, workflowSteps.workflowId),
-					eq(contracts.tradeBankInstrumentSetup, workflowSteps.workflowId)
-				)
-			)
-			.where(eq(documentVersions.id, data.documentVersionId))
-			.then(selectFirst);
+		const doc = await db.query.documentVersions.findFirst({
+			where: eq(documentVersions.id, data.documentVersionId),
+			with: {
+				documentType: true,
+				workflowStep: {
+					with: {
+						workflow: {
+							with: {
+								contract: true,
+							},
+						},
+					},
+				},
+			},
+		});
 
-		const traderApproval = doc.document_versions.traderApproval;
-		const investorApproval = doc.document_versions.investorApproval;
+		if (!doc) {
+			return error(404, "Not found");
+		}
 
-		console.log(doc.workflow_steps.complete, traderApproval, investorApproval);
-		if (doc.workflow_steps.complete || (traderApproval && investorApproval)) {
+		if (doc.workflowStep.workflow.contract.id !== params.id) {
+			return error(404, "Not found");
+		}
+
+		const traderApproval = doc.traderApproval;
+		const investorApproval = doc.investorApproval;
+
+		console.log(doc.workflowStep.complete, traderApproval, investorApproval);
+		if (doc.workflowStep.complete || (traderApproval && investorApproval)) {
 			return fail(400, { message: "Document cannot be approved again." });
 		}
 
 		const setTraderApproval =
 			!traderApproval &&
 			contract.isTrader &&
-			doc.document_types.traderApprovalRequired;
+			doc.documentType.traderApprovalRequired;
 
 		const setInvestorApproval =
 			!investorApproval &&
 			contract.isInvestor &&
-			doc.document_types.investorApprovalRequired;
+			doc.documentType.investorApprovalRequired;
 
 		const date = new Date();
 
@@ -279,7 +292,7 @@ export const useApproveDocument = routeAction$(
 			})
 			.where(eq(documentVersions.id, data.documentVersionId));
 
-		await completeWorkflowStepIfNeeded(doc.workflow_steps.id);
+		await completeWorkflowStepIfNeeded(doc.workflowStep.id);
 	},
 	zod$({
 		documentVersionId: z.string().uuid(),
@@ -291,26 +304,32 @@ export const useContractCompletion = routeLoader$(async ({ resolveValue }) => {
 
 	const db = await drizzleDb;
 
-	const workflowsComplete = await db.query.contracts.findFirst({
+	const contractWorkflows = await db.query.contracts.findFirst({
 		where: eq(contracts.id, contract.id),
 		columns: {},
 		with: {
-			jointVenture: { columns: { complete: true } },
-			tradeSetup: { columns: { complete: true } },
-			bankInstrumentSetup: { columns: { complete: true } },
-			tradeBankInstrumentSetup: { columns: { complete: true } },
+			workflows: {
+				columns: {
+					complete: true,
+				},
+				with: {
+					workflowType: {
+						columns: {
+							name: true,
+						},
+					},
+				},
+			},
 		},
 	});
 
-	if (!workflowsComplete)
-		return {
-			jointVenture: { complete: null },
-			tradeSetup: { complete: null },
-			bankInstrumentSetup: { complete: null },
-			tradeBankInstrumentSetup: { complete: null },
-		};
-
-	return workflowsComplete;
+	const output: Record<string, Date | null> = {};
+	if (contractWorkflows) {
+		for (const workflow of contractWorkflows.workflows) {
+			output[workflow.workflowType.name] = workflow.complete;
+		}
+	}
+	return output;
 });
 
 export default component$(() => {
@@ -330,23 +349,21 @@ export default component$(() => {
 						<WorkflowButton
 							title="Joint Venture Set-up"
 							completion={Boolean(
-								contractCompletion.value.jointVenture?.complete
+								contractCompletion.value["Joint Venture Set-up"]
 							)}
 							route="/v2/contract/[id]/joint-venture/"
 							param:id={contract.value.id}
 						></WorkflowButton>
 						<WorkflowButton
 							title="Trade Set-up"
-							completion={Boolean(
-								contractCompletion.value.tradeSetup?.complete
-							)}
+							completion={Boolean(contractCompletion.value["Trade Set-up"])}
 							route="/v2/contract/[id]/contract-setup/"
 							param:id={contract.value.id}
 						></WorkflowButton>
 						<WorkflowButton
 							title="Bank Instrument Set-up"
 							completion={Boolean(
-								contractCompletion.value.bankInstrumentSetup?.complete
+								contractCompletion.value["Bank Instrument Set-up"]
 							)}
 							route="/v2/contract/[id]/bank-instrument-setup/"
 							param:id={contract.value.id}
@@ -354,7 +371,7 @@ export default component$(() => {
 						<WorkflowButton
 							title="Trade Instrument Set-up"
 							completion={Boolean(
-								contractCompletion.value.tradeBankInstrumentSetup?.complete
+								contractCompletion.value["Trade Bank Instrument Set-up"]
 							)}
 							route="/v2/contract/[id]/trade-bank-instrument-setup/"
 							param:id={contract.value.id}

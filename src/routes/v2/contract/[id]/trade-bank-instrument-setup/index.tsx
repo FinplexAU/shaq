@@ -15,7 +15,9 @@ export default component$(() => {
 
 	const isAvailable = useStepGroupAvailable(
 		contractSteps.value?.stepGroups,
-		contractCompletion.value.tradeBankInstrumentSetup
+		contractCompletion.value["Joint Venture Set-up"],
+		contractCompletion.value["Trade Set-up"],
+		contractCompletion.value["Bank Instrument Set-up"]
 	);
 
 	return (

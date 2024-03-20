@@ -62,7 +62,7 @@ export default component$(() => {
 
 	const isAvailable = useStepGroupAvailable(
 		workflow.value?.stepGroups,
-		contractCompletion.value.jointVenture?.complete
+		contractCompletion.value["Joint Venture Set-up"]
 	);
 
 	return (
