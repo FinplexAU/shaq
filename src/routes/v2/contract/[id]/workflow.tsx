@@ -435,7 +435,7 @@ export const WorkflowButton = component$(
 
 export const useStepGroupAvailable = (
 	stepGroups?: TWorkflowStep[][],
-	...previousWorkflows: (Date | null)[]
+	...previousWorkflows: (Date | null | undefined)[]
 ) => {
 	const incompletePrevious = useComputed$(() =>
 		previousWorkflows.some((p) => !p)

@@ -33,17 +33,20 @@ export const useEntityEmails = routeLoader$(async ({ resolveValue }) => {
 	const contract = await resolveValue(useLoadContract);
 	const db = await drizzleDb;
 
-	const emails = await db
-		.select()
-		.from(entities)
-		.innerJoin(userEntityLinks, eq(userEntityLinks.entityId, entities.id))
-		.leftJoin(users, eq(users.email, userEntityLinks.email))
-		.where(
-			and(
-				eq(entities.contractId, contract.id),
-				inArray(entities.role, ["trader", "investor"])
-			)
-		);
+	const entityLookup = await db.query.entities.findMany({
+		where: and(
+			eq(entities.contractId, contract.id),
+			inArray(entities.role, ["trader", "investor"])
+		),
+		with: {
+			userEntityLinks: {
+				columns: { email: true },
+				with: {
+					user: { columns: { id: true } },
+				},
+			},
+		},
+	});
 
 	const result: {
 		trader: { email: string; created: boolean }[];
@@ -53,18 +56,22 @@ export const useEntityEmails = routeLoader$(async ({ resolveValue }) => {
 		investor: [],
 	};
 
-	for (const row of emails) {
-		if (row.entities.role === "trader") {
-			result.trader.push({
-				email: row.user_entity_links.email,
-				created: Boolean(row.users),
-			});
+	for (const entity of entityLookup) {
+		if (entity.role === "trader") {
+			for (const link of entity.userEntityLinks) {
+				result.trader.push({
+					email: link.email,
+					created: Boolean(link.user),
+				});
+			}
 		}
-		if (row.entities.role === "investor") {
-			result.investor.push({
-				email: row.user_entity_links.email,
-				created: Boolean(row.users),
-			});
+		if (entity.role === "investor") {
+			for (const link of entity.userEntityLinks) {
+				result.investor.push({
+					email: link.email,
+					created: Boolean(link.user),
+				});
+			}
 		}
 	}
 	return result;
@@ -244,6 +251,7 @@ export const useAddEntityUser = globalAction$(
 	async (data, { error, url, params, env }) => {
 		const id = params.id!;
 		const db = await drizzleDb;
+
 		const entries = await db
 			.select({ count: count(userEntityLinks.id) })
 			.from(userEntityLinks)

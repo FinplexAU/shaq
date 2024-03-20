@@ -1,17 +1,10 @@
 import { userEmailVerificationCodes, users } from "@/drizzle/schema";
 import { component$ } from "@builder.io/qwik";
-import {
-	Form,
-	RequestHandler,
-	routeAction$,
-	z,
-	zod$,
-} from "@builder.io/qwik-city";
+import type { RequestHandler } from "@builder.io/qwik-city";
+import { Form, routeAction$, z, zod$ } from "@builder.io/qwik-city";
 import { eq } from "drizzle-orm";
 import { drizzleDb } from "~/db/db";
 import { getSharedMap } from "~/routes/plugin";
-import { selectFirst } from "~/utils/drizzle-utils";
-import { safe } from "~/utils/utils";
 import { HiKeySolid } from "@qwikest/icons/heroicons";
 import { Button } from "~/components/button";
 import { useSignOut } from "~/routes/layout";
@@ -25,16 +18,12 @@ export const useVerifyEmail = routeAction$(
 			return error(400, "Email already verified");
 		}
 
-		const code = await safe(
-			db
-				.select()
-				.from(userEmailVerificationCodes)
-				.where(eq(userEmailVerificationCodes.userId, user.id))
-				.then(selectFirst)
-		);
+		const code = await db.query.userEmailVerificationCodes.findFirst({
+			where: eq(userEmailVerificationCodes.userId, user.id),
+		});
 
 		console.log(code);
-		if (!code.success) {
+		if (!code) {
 			return error(400, "Invalid code");
 		}
 

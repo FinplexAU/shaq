@@ -6,20 +6,17 @@ import {
 	workflowSteps,
 	documentTypes,
 	documentVersions,
-	entities,
 } from "@/drizzle/schema";
 import { routeAction$, routeLoader$, z, zod$ } from "@builder.io/qwik-city";
-import { eq, and, asc, desc, or } from "drizzle-orm";
+import { eq, asc, desc, or } from "drizzle-orm";
 import { drizzleDb } from "~/db/db";
-import { selectFirst, throwIfNone } from "~/utils/drizzle-utils";
+import { selectFirst } from "~/utils/drizzle-utils";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { v4 } from "uuid";
 import { s3 } from "~/utils/aws";
 import { getSharedMap } from "~/routes/plugin";
-import { alias } from "drizzle-orm/pg-core";
 import { getContractPermissions } from "~/db/permissions";
 import { completeWorkflowStepIfNeeded } from "~/db/completion";
-import { safe } from "~/utils/utils";
 
 export const useLoadContract = routeLoader$(
 	async ({ redirect, params, sharedMap, error }) => {
@@ -31,20 +28,22 @@ export const useLoadContract = routeLoader$(
 
 		const db = await drizzleDb;
 
-		const contract = await db
-			.select()
-			.from(contracts)
-			.leftJoin(entities, eq(contracts.id, entities.contractId))
-			.where(eq(contracts.id, params.id))
-			.then(throwIfNone);
+		const contract = await db.query.contracts.findFirst({
+			where: eq(contracts.id, params.id),
+			with: {
+				entities: true,
+			},
+		});
 
-		const admin = contract.find((x) => x.entities?.role === "admin")?.entities;
-		const trader = contract.find(
-			(x) => x.entities?.role === "trader"
-		)?.entities;
-		const investor = contract.find(
-			(x) => x.entities?.role === "investor"
-		)?.entities;
+		if (!contract) {
+			throw error(404, "Not found");
+		}
+
+		const admin = contract.entities.find((entity) => entity.role === "admin");
+		const trader = contract.entities.find((entity) => entity.role === "trader");
+		const investor = contract.entities.find(
+			(entity) => entity.role === "investor"
+		);
 
 		const permissions = await getContractPermissions(params.id, user.id);
 
@@ -53,7 +52,7 @@ export const useLoadContract = routeLoader$(
 		}
 
 		return {
-			...contract[0].contracts,
+			...contract,
 			admin,
 			investor,
 			trader,
@@ -158,30 +157,23 @@ export const useUploadDocument = routeAction$(
 			return error(404, "Workflow step not found");
 		}
 
-		const previousDocument = await safe(
-			db
-				.select({ version: documentVersions.version })
-				.from(documentVersions)
-				.innerJoin(
-					documentTypes,
-					eq(documentTypes.id, documentVersions.documentTypeId)
-				)
-				.orderBy(desc(documentVersions.version))
-				.limit(1)
-				.where(
-					and(
-						eq(documentVersions.workflowStepId, data.stepId),
-						eq(documentTypes.id, data.documentTypeId)
-					)
-				)
-				.then(selectFirst)
-		);
+		const previousDocumentLookup = await db.query.documentTypes.findFirst({
+			where: eq(documentTypes.id, data.documentTypeId),
+			with: {
+				documentVersions: {
+					limit: 1,
+					orderBy: desc(documentVersions.version),
+					where: eq(documentVersions.workflowStepId, data.stepId),
+				},
+			},
+		});
 
 		// if (dbResult[0].workflow_steps.complete) {
 		// 	return error(400, "Step already complete");
 		// }
 
-		const newVersion: number = previousDocument.success
+		const previousDocument = previousDocumentLookup?.documentVersions[0];
+		const newVersion: number = previousDocument
 			? previousDocument.version + 1
 			: 0;
 
@@ -299,32 +291,26 @@ export const useContractCompletion = routeLoader$(async ({ resolveValue }) => {
 
 	const db = await drizzleDb;
 
-	const jointVenture = alias(workflows, "jointVenture");
-	const tradeSetup = alias(workflows, "tradeSetup");
-	const bankInstrumentSetup = alias(workflows, "bankInstrumentSetup");
-	const tradeBankInstrumentSetup = alias(workflows, "tradeBankInstrumentSetup");
+	const workflowsComplete = await db.query.contracts.findFirst({
+		where: eq(contracts.id, contract.id),
+		columns: {},
+		with: {
+			jointVenture: { columns: { complete: true } },
+			tradeSetup: { columns: { complete: true } },
+			bankInstrumentSetup: { columns: { complete: true } },
+			tradeBankInstrumentSetup: { columns: { complete: true } },
+		},
+	});
 
-	const workflowsQuery = await db
-		.select({
-			jointVenture: jointVenture.complete,
-			tradeSetup: tradeSetup.complete,
-			bankInstrumentSetup: bankInstrumentSetup.complete,
-			tradeBankInstrumentSetup: tradeBankInstrumentSetup.complete,
-		})
-		.from(jointVenture)
-		.innerJoin(tradeSetup, eq(tradeSetup.id, contract.tradeSetup!))
-		.innerJoin(
-			bankInstrumentSetup,
-			eq(bankInstrumentSetup.id, contract.bankInstrumentSetup!)
-		)
-		.innerJoin(
-			tradeBankInstrumentSetup,
-			eq(tradeBankInstrumentSetup.id, contract.bankInstrumentSetup!)
-		)
-		.where(eq(jointVenture.id, contract.jointVenture!))
-		.then(selectFirst);
+	if (!workflowsComplete)
+		return {
+			jointVenture: { complete: null },
+			tradeSetup: { complete: null },
+			bankInstrumentSetup: { complete: null },
+			tradeBankInstrumentSetup: { complete: null },
+		};
 
-	return workflowsQuery;
+	return workflowsComplete;
 });
 
 export default component$(() => {
@@ -343,26 +329,32 @@ export default component$(() => {
 						></WorkflowButton>
 						<WorkflowButton
 							title="Joint Venture Set-up"
-							completion={Boolean(contractCompletion.value.jointVenture)}
+							completion={Boolean(
+								contractCompletion.value.jointVenture?.complete
+							)}
 							route="/v2/contract/[id]/joint-venture/"
 							param:id={contract.value.id}
 						></WorkflowButton>
 						<WorkflowButton
 							title="Trade Set-up"
-							completion={Boolean(contractCompletion.value.tradeSetup)}
+							completion={Boolean(
+								contractCompletion.value.tradeSetup?.complete
+							)}
 							route="/v2/contract/[id]/contract-setup/"
 							param:id={contract.value.id}
 						></WorkflowButton>
 						<WorkflowButton
 							title="Bank Instrument Set-up"
-							completion={Boolean(contractCompletion.value.bankInstrumentSetup)}
+							completion={Boolean(
+								contractCompletion.value.bankInstrumentSetup?.complete
+							)}
 							route="/v2/contract/[id]/bank-instrument-setup/"
 							param:id={contract.value.id}
 						></WorkflowButton>
 						<WorkflowButton
 							title="Trade Instrument Set-up"
 							completion={Boolean(
-								contractCompletion.value.tradeBankInstrumentSetup
+								contractCompletion.value.tradeBankInstrumentSetup?.complete
 							)}
 							route="/v2/contract/[id]/trade-bank-instrument-setup/"
 							param:id={contract.value.id}

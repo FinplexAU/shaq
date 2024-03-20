@@ -30,15 +30,25 @@ export const useAllowedContracts = routeLoader$(async ({ sharedMap }) => {
 	const user = getSharedMap(sharedMap, "user");
 	const db = await drizzleDb;
 
-	const permissionLookup = await db
-		.select()
-		.from(contracts)
-		.innerJoin(entities, eq(contracts.id, entities.contractId))
-		.innerJoin(userEntityLinks, eq(userEntityLinks.entityId, entities.id))
-		.innerJoin(users, eq(users.email, userEntityLinks.email))
-		.where(eq(users.id, user.id));
+	const getContracts = await db.query.users.findFirst({
+		where: eq(users.id, user.id),
+		columns: {},
+		with: {
+			userEntityLinks: {
+				columns: {},
+				with: {
+					entity: {
+						columns: {},
+						with: {
+							contract: true,
+						},
+					},
+				},
+			},
+		},
+	});
 
-	return permissionLookup.map((x) => x.contracts);
+	return getContracts?.userEntityLinks.map((x) => x.entity.contract) ?? [];
 });
 
 const getServerHours = server$(function () {
@@ -91,28 +101,26 @@ export const useCreateContract = routeAction$(
 const createWorkflow = async (workflowName: string) => {
 	const db = await drizzleDb;
 
-	const template = await db
-		.select()
-		.from(workflowTypes)
-		.leftJoin(
-			workflowStepTypes,
-			eq(workflowTypes.id, workflowStepTypes.workflowTypeId)
-		)
-		.where(eq(workflowTypes.name, workflowName))
-		.then(throwIfNone);
+	const template = await db.query.workflowTypes.findFirst({
+		where: eq(workflowTypes.name, workflowName),
+		with: {
+			workflowStepTypes: true,
+		},
+	});
+
+	if (!template) throw new Error("Workflow not found");
 
 	const workflow = await db
 		.insert(workflows)
-		.values({ workflowType: template[0].workflow_types.id })
+		.values({ workflowType: template.id })
 		.returning({ id: workflows.id })
 		.then(selectFirst);
 
-	const templatedSteps = template
-		.filter(({ workflow_step_types }) => workflow_step_types)
-		.map(({ workflow_step_types }) => ({
-			workflowId: workflow!.id,
-			stepType: workflow_step_types!.id,
-		}));
+	const templatedSteps = template.workflowStepTypes.map((stepType) => ({
+		workflowId: workflow.id,
+		stepType: stepType.id,
+	}));
+
 	if (templatedSteps.length > 0)
 		await db.insert(workflowSteps).values(templatedSteps);
 

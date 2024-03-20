@@ -1,5 +1,5 @@
 import { component$, useSignal, useTask$, $, Slot } from "@builder.io/qwik";
-import type { WorkflowStep } from "./layout";
+import type { WorkflowDocumentType, WorkflowStep } from "./layout";
 import { useUploadDocument } from "./layout";
 import { Form } from "@builder.io/qwik-city";
 import {
@@ -13,7 +13,7 @@ import { Button } from "~/components/button";
 
 export const UploadDocumentModal = component$<{
 	step: WorkflowStep;
-	document: WorkflowStep["documents"][number];
+	document: WorkflowDocumentType;
 	disabled?: boolean;
 }>((props) => {
 	const showSig = useSignal(false);
@@ -52,9 +52,9 @@ export const UploadDocumentModal = component$<{
 			>
 				<div class="p-4">
 					<ModalHeader>
-						<h2 class="font-bold">{props.step.stepName}</h2>
+						<h2 class="font-bold">{props.step.stepType.name}</h2>
 						<h3 class="pb-4 pr-10 text-lg font-semibold">
-							Upload {props.document.name}
+							Upload {props.document.documentName}
 						</h3>
 						<div class="pb-4">
 							<h4 class="font-semibold">Required Approval</h4>
@@ -88,13 +88,13 @@ export const UploadDocumentModal = component$<{
 							<input
 								type="hidden"
 								name="stepId"
-								value={props.step.stepId}
+								value={props.step.id}
 								required
 							/>
 							<input
 								type="hidden"
 								name="documentTypeId"
-								value={props.document.typeId}
+								value={props.document.id}
 							/>
 							{errorMessage.value && (
 								<p class="pb-2 font-semibold text-red-600">
