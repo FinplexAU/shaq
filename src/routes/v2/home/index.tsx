@@ -22,7 +22,7 @@ import {
 	server$,
 } from "@builder.io/qwik-city";
 import { eq, type InferSelectModel } from "drizzle-orm";
-import { selectFirst } from "~/utils/drizzle-utils";
+import { selectFirst, throwIfNone } from "~/utils/drizzle-utils";
 import { HiPlusCircleSolid } from "@qwikest/icons/heroicons";
 import { Button } from "~/components/button";
 
@@ -98,11 +98,12 @@ const createWorkflow = async (workflowName: string) => {
 			workflowStepTypes,
 			eq(workflowTypes.id, workflowStepTypes.workflowTypeId)
 		)
-		.where(eq(workflowTypes.name, workflowName));
+		.where(eq(workflowTypes.name, workflowName))
+		.then(throwIfNone);
 
 	const workflow = await db
 		.insert(workflows)
-		.values({ workflowType: template[0]?.workflow_types.id })
+		.values({ workflowType: template[0].workflow_types.id })
 		.returning({ id: workflows.id })
 		.then(selectFirst);
 

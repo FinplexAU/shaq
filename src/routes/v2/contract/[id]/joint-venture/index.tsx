@@ -78,13 +78,13 @@ export default component$(() => {
 
 	return (
 		<Workflow>
-			<WorkflowTitle>{contractSteps.value?.workflowName}</WorkflowTitle>
+			<WorkflowTitle>{contractSteps.value?.workflowType.name}</WorkflowTitle>
 			<WorkflowSteps>
 				{contractSteps.value?.stepGroups.map((stepGroup, i) => (
 					<WorkflowStepGroup key={i} available={isAvailable(i)}>
 						{stepGroup.map((step) => (
-							<WorkflowStep key={step.stepId} step={step}>
-								{step.stepName === "Investor Information" && (
+							<WorkflowStep key={step.id} step={step}>
+								{step.stepType.name === "Investor Information" && (
 									<>
 										{step.complete && contract.value.investor ? (
 											<>
@@ -117,12 +117,12 @@ export default component$(() => {
 											<EntityInfoForm
 												role="investor"
 												contractId={contract.value.id}
-												stepId={step.stepId}
+												stepId={step.id}
 											></EntityInfoForm>
 										)}
 									</>
 								)}
-								{step.stepName === "Trader Information" && (
+								{step.stepType.name === "Trader Information" && (
 									<>
 										{step.complete && contract.value.trader ? (
 											<>
@@ -153,7 +153,7 @@ export default component$(() => {
 											<EntityInfoForm
 												role="trader"
 												contractId={contract.value.id}
-												stepId={step.stepId}
+												stepId={step.id}
 											></EntityInfoForm>
 										)}
 									</>

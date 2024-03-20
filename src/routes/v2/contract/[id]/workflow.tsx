@@ -7,11 +7,12 @@ import {
 	useContextProvider,
 	useSignal,
 } from "@builder.io/qwik";
-import {
-	useLoadContract,
-	type WorkflowStep as TWorkflowStep,
-	useApproveDocument,
+import type {
+	WorkflowDocumentType as TWorkflowDocumentType,
+	WorkflowStep as TWorkflowStep,
+	WorkflowDocumentVersion as TWorkflowDocumentVersion,
 } from "./layout";
+import { useLoadContract, useApproveDocument } from "./layout";
 
 import { Form, Link, useLocation } from "@builder.io/qwik-city";
 import {
@@ -82,11 +83,11 @@ export const WorkflowStepGroup = component$((props: { available: boolean }) => {
 
 export const WorkflowStep = component$(({ step }: { step: TWorkflowStep }) => {
 	return (
-		<div class=" flex-1 py-8" key={step.stepId}>
-			<h3 class="pb-4 text-xl font-semibold">{step.stepName}</h3>
+		<div class=" flex-1 py-8" key={step.id}>
+			<h3 class="pb-4 text-xl font-semibold">{step.stepType.name}</h3>
 			<Slot></Slot>
 			<ul class="grid gap-2">
-				{step.documents.length > 0 ? (
+				{step.stepType.documentTypes.length > 0 ? (
 					<div class="grid grid-cols-12 items-center gap-1 text-xs [&>*]:px-2 ">
 						<p class="">View</p>
 						<p class="col-span-6 ">Title</p>
@@ -95,9 +96,9 @@ export const WorkflowStep = component$(({ step }: { step: TWorkflowStep }) => {
 						<p>Upload</p>
 					</div>
 				) : undefined}
-				{step.documents.map((document) => (
+				{step.stepType.documentTypes.map((document) => (
 					<WorkflowDocument
-						key={document.typeId}
+						key={document.id}
 						document={document}
 						step={step}
 					></WorkflowDocument>
@@ -112,7 +113,7 @@ export const WorkflowDocument = component$(
 		document,
 		step,
 	}: {
-		document: TWorkflowStep["documents"][number];
+		document: TWorkflowDocumentType;
 		step: TWorkflowStep;
 	}) => {
 		const approveDocument = useApproveDocument();
@@ -121,7 +122,7 @@ export const WorkflowDocument = component$(
 
 		const showVersions = useSignal(false);
 		const latestDoc = useComputed$(() => {
-			return document.versions.at(0);
+			return document.documentVersions.at(0);
 		});
 
 		const requiresUserApproval = useComputed$(() => {
@@ -158,7 +159,7 @@ export const WorkflowDocument = component$(
 		});
 
 		return (
-			<li key={document.typeId}>
+			<li key={document.id}>
 				<div class="grid grid-cols-12 items-center gap-1 overflow-hidden rounded [&>*]:h-full [&>*]:bg-gray-100 [&>*]:px-2 [&>*]:py-1">
 					<div
 						class={[
@@ -185,7 +186,7 @@ export const WorkflowDocument = component$(
 							showVersions.value = !showVersions.value;
 						}}
 					>
-						{document.name}{" "}
+						{document.documentName}{" "}
 						<span class="text-sm font-light text-neutral-400">
 							{latestDoc.value && `(v${latestDoc.value.version + 1})`}
 						</span>
@@ -255,9 +256,9 @@ export const WorkflowDocument = component$(
 					</UploadDocumentModal>
 					{showVersions.value && (
 						<div class="col-span-full">
-							{document.versions.length > 0 ? (
+							{document.documentVersions.length > 0 ? (
 								<Timeline class="max-w-prose">
-									{document.versions.map((version) => (
+									{document.documentVersions.map((version) => (
 										<TimelineItem key={version.id}>
 											<TimelinePoint></TimelinePoint>
 											<TimelineContent>
@@ -286,11 +287,11 @@ export const WorkflowDocument = component$(
 
 export const WorkflowDocumentVersion = component$(
 	(props: {
-		document: TWorkflowStep["documents"][number];
-		version: TWorkflowStep["documents"][number]["versions"][number];
+		document: TWorkflowDocumentType;
+		version: TWorkflowDocumentVersion;
 	}) => {
 		const isLatest = useComputed$(
-			() => props.document.versions.at(0)?.id === props.version.id
+			() => props.document.documentVersions.at(0)?.id === props.version.id
 		);
 		TimeAgo.addLocale(en);
 		const timeAgo = new TimeAgo("en-US");
@@ -332,7 +333,7 @@ export const WorkflowDocumentVersion = component$(
 					target="_blank"
 					href={`/v2/document/${props.version.id}/`}
 				>
-					{`${props.document.name} - Version ${props.version.version + 1}`}
+					{`${props.document.documentName} - Version ${props.version.version + 1}`}
 					{isLatest.value && <span class="font-semibold"> (Latest)</span>}
 					<HiEyeSolid class="ml-1 inline align-icon"></HiEyeSolid>
 				</Link>

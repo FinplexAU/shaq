@@ -4,11 +4,9 @@ import {
 	contracts,
 	workflows,
 	workflowSteps,
-	workflowStepTypes,
 	documentTypes,
 	documentVersions,
 	entities,
-	workflowTypes,
 } from "@/drizzle/schema";
 import { routeAction$, routeLoader$, z, zod$ } from "@builder.io/qwik-city";
 import { eq, and, asc, desc, or } from "drizzle-orm";
@@ -22,38 +20,6 @@ import { alias } from "drizzle-orm/pg-core";
 import { getContractPermissions } from "~/db/permissions";
 import { completeWorkflowStepIfNeeded } from "~/db/completion";
 import { safe } from "~/utils/utils";
-
-export type WorkflowStep = {
-	stepId: string;
-	stepName: string;
-	stepNumber: number;
-	complete: Date | null;
-	completeReason: string | null;
-	documents: {
-		typeId: string;
-		name: string;
-		investorApprovalRequired: boolean;
-		traderApprovalRequired: boolean;
-		versions: {
-			id: string;
-			investorApproval: Date | null;
-			traderApproval: Date | null;
-			version: number;
-			createdAt: Date;
-		}[];
-	}[];
-};
-
-export type Workflow = {
-	workflowId: string;
-	workflowName: string;
-	complete: Date | null;
-	completeReason: string | null;
-	stepGroups: WorkflowStep[][];
-	isAdmin: boolean;
-	isTrader: boolean;
-	isInvestor: boolean;
-};
 
 export const useLoadContract = routeLoader$(
 	async ({ redirect, params, sharedMap, error }) => {
@@ -96,118 +62,93 @@ export const useLoadContract = routeLoader$(
 	}
 );
 
-export const useWorkflow = routeLoader$(async ({ pathname, resolveValue }) => {
-	const db = await drizzleDb;
+export const useWorkflow = routeLoader$(
+	async ({ pathname, resolveValue, error }) => {
+		const db = await drizzleDb;
 
-	const workflowParam = pathname
-		.split("/")
-		.filter((v) => v)
-		.at(-1);
+		const workflowParam = pathname
+			.split("/")
+			.filter((v) => v)
+			.at(-1);
 
-	const contract = await resolveValue(useLoadContract);
+		const contract = await resolveValue(useLoadContract);
 
-	let workflowId;
-	if (workflowParam === "joint-venture") {
-		workflowId = contract.jointVenture;
-	} else if (workflowParam === "contract-setup") {
-		workflowId = contract.tradeSetup;
-	} else if (workflowParam === "bank-instrument-setup") {
-		workflowId = contract.bankInstrumentSetup;
-	} else if (workflowParam === "trade-bank-instrument-setup") {
-		workflowId = contract.tradeBankInstrumentSetup;
-	}
-
-	if (!workflowId) {
-		return;
-	}
-
-	const workflowQuery = await db
-		.select()
-		.from(workflows)
-		.innerJoin(workflowTypes, eq(workflows.workflowType, workflowTypes.id))
-		.innerJoin(workflowSteps, eq(workflowSteps.workflowId, workflows.id))
-		.innerJoin(
-			workflowStepTypes,
-			eq(workflowSteps.stepType, workflowStepTypes.id)
-		)
-		.leftJoin(
-			documentTypes,
-			eq(documentTypes.requiredBy, workflowSteps.stepType)
-		)
-		.leftJoin(
-			documentVersions,
-			and(
-				eq(documentVersions.documentTypeId, documentTypes.id),
-				eq(documentVersions.workflowStepId, workflowSteps.id)
-			)
-		)
-		.where(eq(workflows.id, workflowId))
-		.orderBy(
-			asc(workflowStepTypes.stepNumber),
-			asc(workflowStepTypes.name),
-			asc(documentTypes.documentName),
-			desc(documentVersions.version)
-		)
-		.then(throwIfNone);
-
-	const workflow: Workflow = {
-		isAdmin: contract.isAdmin,
-		isInvestor: contract.isInvestor,
-		isTrader: contract.isTrader,
-		workflowId: workflowQuery[0].workflows.id,
-		workflowName: workflowQuery[0].workflow_types.name,
-		complete: workflowQuery[0].workflows.complete,
-		completeReason: workflowQuery[0].workflows.completionReason,
-		stepGroups: [],
-	};
-
-	for (const sql of workflowQuery) {
-		let stepGroup: WorkflowStep[] | undefined = workflow.stepGroups.find(
-			(step) => step[0]?.stepNumber === sql.workflow_step_types.stepNumber
-		);
-
-		if (!stepGroup) {
-			stepGroup = [];
-			workflow.stepGroups.push(stepGroup);
+		let workflowId;
+		if (workflowParam === "joint-venture") {
+			workflowId = contract.jointVenture;
+		} else if (workflowParam === "contract-setup") {
+			workflowId = contract.tradeSetup;
+		} else if (workflowParam === "bank-instrument-setup") {
+			workflowId = contract.bankInstrumentSetup;
+		} else if (workflowParam === "trade-bank-instrument-setup") {
+			workflowId = contract.tradeBankInstrumentSetup;
 		}
 
-		let step: WorkflowStep | undefined = stepGroup.find(
-			(step) => step.stepId === sql.workflow_steps.id
-		);
-		if (!step) {
-			step = {
-				stepId: sql.workflow_steps.id,
-				stepName: sql.workflow_step_types.name,
-				complete: sql.workflow_steps.complete,
-				completeReason: sql.workflow_steps.completionReason,
-				stepNumber: sql.workflow_step_types.stepNumber,
-				documents: [],
-			};
-			stepGroup.push(step);
+		if (!workflowId) {
+			return;
 		}
 
-		if (sql.document_types) {
-			let document = step.documents.find(
-				(a) => a.typeId === sql.document_types?.id
-			);
-			if (!document) {
-				document = {
-					versions: [],
-					typeId: sql.document_types.id,
-					name: sql.document_types.documentName,
-					investorApprovalRequired: sql.document_types.investorApprovalRequired,
-					traderApprovalRequired: sql.document_types.traderApprovalRequired,
-				};
-				step.documents.push(document);
+		const queryResult = await db.query.workflows.findFirst({
+			where: eq(workflows.id, workflowId),
+			with: {
+				workflowType: true,
+				workflowSteps: {
+					with: {
+						stepType: {
+							with: {
+								documentTypes: {
+									orderBy: asc(documentTypes.documentName),
+									with: {
+										documentVersions: {
+											orderBy: desc(documentVersions.version),
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		});
+
+		if (!queryResult) throw error(404, "Not Found");
+
+		const { workflowSteps, ...workflow } = queryResult;
+
+		workflowSteps.sort((a, b) => {
+			const x = a.stepType.stepNumber - b.stepType.stepNumber;
+			if (x !== 0) {
+				return x;
 			}
-			if (sql.document_versions) {
-				document.versions.push(sql.document_versions);
-			}
-		}
-	}
+			if (a.stepType.name === b.stepType.name) return 0;
+			return a.stepType.name > b.stepType.name ? 1 : -1;
+		});
 
-	return workflow;
-});
+		const stepGroups: (typeof workflowSteps)[] = [];
+		for (const workflowStep of workflowSteps) {
+			let stepGroup = stepGroups[workflowStep.stepType.stepNumber];
+			if (!stepGroup) {
+				stepGroup = [];
+				stepGroups[workflowStep.stepType.stepNumber] = stepGroup;
+			}
+			stepGroup.push(workflowStep);
+		}
+
+		const x = {
+			...workflow,
+			stepGroups: stepGroups,
+		};
+
+		return x;
+	}
+);
+
+export type Workflow = NonNullable<ReturnType<typeof useWorkflow>["value"]>;
+export type WorkflowStep = Workflow["stepGroups"][number][number];
+export type WorkflowStepType = WorkflowStep["stepType"];
+export type WorkflowDocumentType = WorkflowStepType["documentTypes"][number];
+export type WorkflowDocumentVersion =
+	WorkflowDocumentType["documentVersions"][number];
 
 export const useUploadDocument = routeAction$(
 	async (data, { error, sharedMap, params }) => {

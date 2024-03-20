@@ -1,3 +1,4 @@
+import { relations } from "drizzle-orm";
 import {
 	boolean,
 	pgTable,
@@ -12,6 +13,9 @@ import {
 export const bankDetails = pgTable("bank_details", {
 	id: uuid("id").primaryKey().defaultRandom(),
 });
+export const bankDetailsRelations = relations(bankDetails, ({ many }) => ({
+	entities: many(entities),
+}));
 
 export const contracts = pgTable("contracts", {
 	id: uuid("id").primaryKey().defaultRandom(),
@@ -30,6 +34,29 @@ export const contracts = pgTable("contracts", {
 		() => workflows.id
 	),
 });
+export const contractsRelations = relations(contracts, ({ many, one }) => ({
+	entities: many(entities),
+	jointVenture: one(workflows, {
+		fields: [contracts.jointVenture],
+		references: [workflows.id],
+		relationName: "joint_venture",
+	}),
+	tradeSetup: one(workflows, {
+		fields: [contracts.tradeSetup],
+		references: [workflows.id],
+		relationName: "trade_setup",
+	}),
+	bankInstrumentSetup: one(workflows, {
+		fields: [contracts.bankInstrumentSetup],
+		references: [workflows.id],
+		relationName: "bank_instrument_setup",
+	}),
+	tradeBankInstrumentSetup: one(workflows, {
+		fields: [contracts.tradeBankInstrumentSetup],
+		references: [workflows.id],
+		relationName: "trade_bank_instrument_setup",
+	}),
+}));
 
 export const entityRole = pgEnum("entity_role", [
 	"admin",
@@ -51,6 +78,18 @@ export const entities = pgTable("entities", {
 	role: entityRole("role").notNull(),
 });
 
+export const entitiesRelations = relations(entities, ({ many, one }) => ({
+	userEntityLinks: many(userEntityLinks),
+	bankDetails: one(bankDetails, {
+		fields: [entities.bankDetailsId],
+		references: [bankDetails.id],
+	}),
+	contract: one(contracts, {
+		fields: [entities.contractId],
+		references: [contracts.id],
+	}),
+}));
+
 export const documentVersions = pgTable("document_versions", {
 	id: uuid("id").primaryKey().defaultRandom(),
 	investorApproval: timestamp("investor_approval"),
@@ -62,6 +101,19 @@ export const documentVersions = pgTable("document_versions", {
 		.references(() => workflowSteps.id)
 		.notNull(),
 });
+export const documentVersionsRelations = relations(
+	documentVersions,
+	({ one }) => ({
+		documentType: one(documentTypes, {
+			fields: [documentVersions.documentTypeId],
+			references: [documentTypes.id],
+		}),
+		workflowStep: one(workflowSteps, {
+			fields: [documentVersions.workflowStepId],
+			references: [workflowSteps.id],
+		}),
+	})
+);
 
 export const workflowSteps = pgTable("workflow_steps", {
 	id: uuid("id").primaryKey().defaultRandom(),
@@ -74,13 +126,37 @@ export const workflowSteps = pgTable("workflow_steps", {
 		.references(() => workflowStepTypes.id)
 		.notNull(),
 });
+export const workflowStepsRelations = relations(
+	workflowSteps,
+	({ many, one }) => ({
+		workflow: one(workflows, {
+			fields: [workflowSteps.workflowId],
+			references: [workflows.id],
+		}),
+		stepType: one(workflowStepTypes, {
+			fields: [workflowSteps.stepType],
+			references: [workflowStepTypes.id],
+		}),
+		documentVersions: many(documentVersions),
+	})
+);
 
 export const workflows = pgTable("workflows", {
 	id: uuid("id").primaryKey().defaultRandom(),
-	workflowType: uuid("workflow_type").references(() => workflowTypes.id),
+	workflowType: uuid("workflow_type")
+		.references(() => workflowTypes.id)
+		.notNull(),
 	complete: timestamp("complete"),
 	completionReason: text("completion_reason"),
 });
+
+export const workflowsRelations = relations(workflows, ({ many, one }) => ({
+	workflowSteps: many(workflowSteps),
+	workflowType: one(workflowTypes, {
+		fields: [workflows.workflowType],
+		references: [workflowTypes.id],
+	}),
+}));
 
 export const users = pgTable("users", {
 	id: uuid("id").primaryKey().defaultRandom(),
@@ -89,6 +165,12 @@ export const users = pgTable("users", {
 	emailVerified: boolean("email_verified").notNull().default(false),
 	hashedPassword: text("hashed_password").notNull(),
 });
+
+export const usersRelations = relations(users, ({ many }) => ({
+	sessions: many(userSessions),
+	emailVerificationCodes: many(userEmailVerificationCodes),
+	userEntityLinks: many(userEntityLinks),
+}));
 
 export const userSessions = pgTable("user_session", {
 	id: uuid("id").primaryKey(),
@@ -100,6 +182,13 @@ export const userSessions = pgTable("user_session", {
 		mode: "date",
 	}).notNull(),
 });
+
+export const userSessionsRelations = relations(userSessions, ({ one }) => ({
+	user: one(users, {
+		fields: [userSessions.userId],
+		references: [users.id],
+	}),
+}));
 
 export const userEmailVerificationCodes = pgTable(
 	"user_email_verification_codes",
@@ -117,6 +206,16 @@ export const userEmailVerificationCodes = pgTable(
 	}
 );
 
+export const userEmailVerificationCodesRelations = relations(
+	userEmailVerificationCodes,
+	({ one }) => ({
+		user: one(users, {
+			fields: [userEmailVerificationCodes.userId],
+			references: [users.id],
+		}),
+	})
+);
+
 export const userEntityLinks = pgTable("user_entity_links", {
 	id: uuid("id").primaryKey().defaultRandom(),
 	email: text("email").notNull(),
@@ -125,20 +224,28 @@ export const userEntityLinks = pgTable("user_entity_links", {
 		.notNull(),
 });
 
-export const userPermissions = pgTable("user_permissions", {
-	id: uuid("id").references(() => users.id),
-	permissionId: uuid("permission_id").references(() => permissions.id),
-});
-
-export const permissions = pgTable("permissions", {
-	id: uuid("id").primaryKey().defaultRandom(),
-	permission: text("permission").notNull(),
-});
+export const userEntityLinksRelation = relations(
+	userEntityLinks,
+	({ one }) => ({
+		user: one(users, {
+			fields: [userEntityLinks.email],
+			references: [users.email],
+		}),
+		entity: one(entities, {
+			fields: [userEntityLinks.entityId],
+			references: [entities.id],
+		}),
+	})
+);
 
 export const workflowTypes = pgTable("workflow_types", {
 	id: uuid("id").primaryKey().defaultRandom(),
 	name: text("name").notNull(),
 });
+export const workflowTypesRelations = relations(workflowTypes, ({ many }) => ({
+	workflows: many(workflows),
+	workflowStepTypes: many(workflowStepTypes),
+}));
 
 export const workflowStepTypes = pgTable("workflow_step_types", {
 	id: uuid("id").primaryKey().defaultRandom(),
@@ -149,6 +256,18 @@ export const workflowStepTypes = pgTable("workflow_step_types", {
 		.notNull(),
 });
 
+export const workflowStepTypesRelations = relations(
+	workflowStepTypes,
+	({ many, one }) => ({
+		documentTypes: many(documentTypes),
+		workflowSteps: many(workflowSteps),
+		workflowType: one(workflowTypes, {
+			fields: [workflowStepTypes.workflowTypeId],
+			references: [workflowTypes.id],
+		}),
+	})
+);
+
 export const documentTypes = pgTable("document_types", {
 	id: uuid("id").primaryKey().defaultRandom(),
 	documentName: text("document_name").notNull(),
@@ -158,3 +277,14 @@ export const documentTypes = pgTable("document_types", {
 		.references(() => workflowStepTypes.id)
 		.notNull(),
 });
+
+export const documentTypeRelations = relations(
+	documentTypes,
+	({ one, many }) => ({
+		workflowStepType: one(workflowStepTypes, {
+			fields: [documentTypes.requiredBy],
+			references: [workflowStepTypes.id],
+		}),
+		documentVersions: many(documentVersions),
+	})
+);

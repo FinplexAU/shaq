@@ -81,12 +81,12 @@ export default component$(() => {
 
 	return (
 		<Workflow>
-			<WorkflowTitle>{contractSteps.value?.workflowName}</WorkflowTitle>
+			<WorkflowTitle>{contractSteps.value?.workflowType.name}</WorkflowTitle>
 			<WorkflowSteps>
 				{contractSteps.value?.stepGroups.map((stepGroup, i) => (
 					<WorkflowStepGroup key={i} available={isAvailable(i)}>
 						{stepGroup.map((step) => (
-							<WorkflowStep key={step.stepId} step={step}></WorkflowStep>
+							<WorkflowStep key={step.id} step={step}></WorkflowStep>
 						))}
 					</WorkflowStepGroup>
 				))}

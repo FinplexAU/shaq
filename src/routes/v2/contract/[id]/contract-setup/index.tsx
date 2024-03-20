@@ -67,12 +67,12 @@ export default component$(() => {
 
 	return (
 		<Workflow>
-			<WorkflowTitle>{workflow.value?.workflowName}</WorkflowTitle>
+			<WorkflowTitle>{workflow.value?.workflowType.name}</WorkflowTitle>
 			<WorkflowSteps>
 				{workflow.value?.stepGroups.map((stepGroup, i) => (
 					<WorkflowStepGroup key={i} available={isAvailable(i)}>
 						{stepGroup.map((step) => (
-							<WorkflowStep key={step.stepId} step={step}>
+							<WorkflowStep key={step.id} step={step}>
 								{i === 0 && step.complete && (
 									<Debugger
 										value={{
@@ -100,7 +100,7 @@ export default component$(() => {
 										<Input
 											disabled={!contractCompletion.value.jointVenture}
 											type="hidden"
-											value={step.stepId}
+											value={step.id}
 											name="stepId"
 										></Input>
 										<Input
