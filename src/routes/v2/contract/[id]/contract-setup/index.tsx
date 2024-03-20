@@ -32,10 +32,13 @@ export const useSubmitTradeInfo = routeAction$(
 			})
 			.where(eq(contracts.id, data.contractId));
 
-		await db.update(workflowSteps).set({
-			complete: new Date(),
-			completionReason: "Received trade information",
-		});
+		await db
+			.update(workflowSteps)
+			.set({
+				complete: new Date(),
+				completionReason: "Received trade information",
+			})
+			.where(eq(workflowSteps.id, data.stepId));
 	},
 	zod$(
 		z.object({

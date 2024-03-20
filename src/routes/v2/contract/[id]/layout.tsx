@@ -21,6 +21,7 @@ import { getSharedMap } from "~/routes/plugin";
 import { alias } from "drizzle-orm/pg-core";
 import { getContractPermissions } from "~/db/permissions";
 import { completeWorkflowStepIfNeeded } from "~/db/completion";
+import { safe } from "~/utils/utils";
 
 export type WorkflowStep = {
 	stepId: string;
@@ -218,24 +219,32 @@ export const useUploadDocument = routeAction$(
 			return error(404, "Workflow step not found");
 		}
 
-		const [previousDocument] = await db
-			.select({ version: documentVersions.version })
-			.from(documentVersions)
-			.innerJoin(
-				documentTypes,
-				eq(documentTypes.id, documentVersions.documentTypeId)
-			)
-			.orderBy(desc(documentVersions.version))
-			.limit(1)
-			.where(and(eq(documentVersions.workflowStepId, data.stepId)));
-
-		console.log(previousDocument);
+		const previousDocument = await safe(
+			db
+				.select({ version: documentVersions.version })
+				.from(documentVersions)
+				.innerJoin(
+					documentTypes,
+					eq(documentTypes.id, documentVersions.documentTypeId)
+				)
+				.orderBy(desc(documentVersions.version))
+				.limit(1)
+				.where(
+					and(
+						eq(documentVersions.workflowStepId, data.stepId),
+						eq(documentTypes.id, data.documentTypeId)
+					)
+				)
+				.then(selectFirst)
+		);
 
 		// if (dbResult[0].workflow_steps.complete) {
 		// 	return error(400, "Step already complete");
 		// }
 
-		const newVersion: number = previousDocument?.version ?? 0;
+		const newVersion: number = previousDocument.success
+			? previousDocument.version + 1
+			: 0;
 
 		const contentType = data.document.type;
 
@@ -286,6 +295,8 @@ export const useApproveDocument = routeAction$(
 			return fail(401, { message: "Not authorized to approve a document" });
 		}
 
+		console.log("Hi", data.documentVersionId);
+
 		const doc = await db
 			.select()
 			.from(documentVersions)
@@ -301,7 +312,9 @@ export const useApproveDocument = routeAction$(
 				contracts,
 				or(
 					eq(contracts.jointVenture, workflowSteps.workflowId),
-					eq(contracts.tradeSetup, workflowSteps.id)
+					eq(contracts.tradeSetup, workflowSteps.workflowId),
+					eq(contracts.bankInstrumentSetup, workflowSteps.workflowId),
+					eq(contracts.tradeBankInstrumentSetup, workflowSteps.workflowId)
 				)
 			)
 			.where(eq(documentVersions.id, data.documentVersionId))
@@ -310,6 +323,7 @@ export const useApproveDocument = routeAction$(
 		const traderApproval = doc.document_versions.traderApproval;
 		const investorApproval = doc.document_versions.investorApproval;
 
+		console.log(doc.workflow_steps.complete, traderApproval, investorApproval);
 		if (doc.workflow_steps.complete || (traderApproval && investorApproval)) {
 			return fail(400, { message: "Document cannot be approved again." });
 		}

@@ -62,7 +62,7 @@ export const completeWorkflowStepIfNeeded = async (workflowStepId: string) => {
 			complete: new Date(),
 		})
 		.where(eq(workflowSteps.id, workflowStepId));
-	console.log("Comeplete");
+	console.log("Complete");
 
 	await completeWorkflowIfNeeded(docs[0].workflow_steps.workflowId);
 };
@@ -82,6 +82,7 @@ export const completeWorkflowIfNeeded = async (workflowId: string) => {
 			return;
 		}
 	}
+	console.log("Workflow Complete");
 
 	await db
 		.update(workflows)
