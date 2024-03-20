@@ -104,37 +104,37 @@ export default component$(() => {
 											disabled={!contractCompletion.value.jointVenture}
 											type="text"
 											name="product"
-											placeholder="product"
+											placeholder="Product"
 										></Input>
 										<Input
 											disabled={!contractCompletion.value.jointVenture}
 											type="number"
 											name="volume"
-											placeholder="volume"
+											placeholder="Volume"
 										></Input>
 										<Input
 											disabled={!contractCompletion.value.jointVenture}
 											type="text"
 											name="logistics"
-											placeholder="logistics"
+											placeholder="Logistics"
 										></Input>
 										<Input
 											disabled={!contractCompletion.value.jointVenture}
 											type="text"
 											name="deliveryPort"
-											placeholder="deliveryPort"
+											placeholder="Delivery Port"
 										></Input>
 										<Input
 											disabled={!contractCompletion.value.jointVenture}
 											type="text"
 											name="loadingPort"
-											placeholder="loadingPort"
+											placeholder="Loading Port"
 										></Input>
 										<Input
 											disabled={!contractCompletion.value.jointVenture}
 											type="number"
 											name="productPricing"
-											placeholder="productPricing"
+											placeholder="Product Pricing"
 										></Input>
 										<Button disabled={!contractCompletion.value.jointVenture}>
 											Submit
