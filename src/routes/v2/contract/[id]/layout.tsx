@@ -134,12 +134,10 @@ export const useWorkflow = routeLoader$(
 			stepGroup.push(workflowStep);
 		}
 
-		const x = {
+		return {
 			...workflow,
 			stepGroups: stepGroups,
 		};
-
-		return x;
 	}
 );
 
