@@ -71,7 +71,16 @@ export default component$(() => {
 						{stepGroup.map((step) => (
 							<WorkflowStep key={step.stepId} step={step}>
 								{i === 0 && step.complete && (
-									<Debugger value={contract.value.logistics}></Debugger>
+									<Debugger
+										value={{
+											deliveryPort: contract.value.deliveryPort,
+											loadingPort: contract.value.loadingPort,
+											logistics: contract.value.logistics,
+											productPricing: contract.value.productPricing?.toString(),
+											volume: contract.value.volume?.toString(),
+											product: contract.value.product,
+										}}
+									></Debugger>
 								)}
 								{i === 0 && !step.complete && (
 									<Form

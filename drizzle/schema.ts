@@ -23,6 +23,12 @@ export const contracts = pgTable("contracts", {
 	productPricing: numeric("product_pricing"),
 	jointVenture: uuid("joint_venture_id").references(() => workflows.id),
 	tradeSetup: uuid("trade_setup_id").references(() => workflows.id),
+	bankInstrumentSetup: uuid("bank_instrument_setup_id").references(
+		() => workflows.id
+	),
+	tradeBankInstrumentSetup: uuid("trade_bank_instrument_setup_id").references(
+		() => workflows.id
+	),
 });
 
 export const entityRole = pgEnum("entity_role", [

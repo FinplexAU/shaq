@@ -110,6 +110,10 @@ export const useWorkflow = routeLoader$(async ({ pathname, resolveValue }) => {
 		workflowId = contract.jointVenture;
 	} else if (workflowParam === "contract-setup") {
 		workflowId = contract.tradeSetup;
+	} else if (workflowParam === "bank-instrument-setup") {
+		workflowId = contract.bankInstrumentSetup;
+	} else if (workflowParam === "trade-bank-instrument-setup") {
+		workflowId = contract.tradeBankInstrumentSetup;
 	}
 
 	if (!workflowId) {
@@ -344,14 +348,26 @@ export const useContractCompletion = routeLoader$(async ({ resolveValue }) => {
 
 	const jointVenture = alias(workflows, "jointVenture");
 	const tradeSetup = alias(workflows, "tradeSetup");
+	const bankInstrumentSetup = alias(workflows, "bankInstrumentSetup");
+	const tradeBankInstrumentSetup = alias(workflows, "tradeBankInstrumentSetup");
 
 	const workflowsQuery = await db
 		.select({
 			jointVenture: jointVenture.complete,
 			tradeSetup: tradeSetup.complete,
+			bankInstrumentSetup: bankInstrumentSetup.complete,
+			tradeBankInstrumentSetup: tradeBankInstrumentSetup.complete,
 		})
 		.from(jointVenture)
 		.innerJoin(tradeSetup, eq(tradeSetup.id, contract.tradeSetup!))
+		.innerJoin(
+			bankInstrumentSetup,
+			eq(bankInstrumentSetup.id, contract.bankInstrumentSetup!)
+		)
+		.innerJoin(
+			tradeBankInstrumentSetup,
+			eq(tradeBankInstrumentSetup.id, contract.bankInstrumentSetup!)
+		)
 		.where(eq(jointVenture.id, contract.jointVenture!))
 		.then(selectFirst);
 
@@ -382,6 +398,20 @@ export default component$(() => {
 							title="Trade Set-up"
 							completion={Boolean(contractCompletion.value.tradeSetup)}
 							route="/v2/contract/[id]/contract-setup/"
+							param:id={contract.value.id}
+						></WorkflowButton>
+						<WorkflowButton
+							title="Bank Instrument Set-up"
+							completion={Boolean(contractCompletion.value.bankInstrumentSetup)}
+							route="/v2/contract/[id]/bank-instrument-setup/"
+							param:id={contract.value.id}
+						></WorkflowButton>
+						<WorkflowButton
+							title="Trade Instrument Set-up"
+							completion={Boolean(
+								contractCompletion.value.tradeBankInstrumentSetup
+							)}
+							route="/v2/contract/[id]/trade-bank-instrument-setup/"
 							param:id={contract.value.id}
 						></WorkflowButton>
 						{/* <WorkflowButton

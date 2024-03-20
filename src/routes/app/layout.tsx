@@ -77,7 +77,7 @@ export const Header = component$(() => {
 		<nav class="sticky top-0 z-20 select-none border-b border-gray-200  bg-white dark:bg-gray-900">
 			<div class="mx-auto flex max-w-screen-xl flex-wrap items-center justify-between p-4">
 				<AppLink
-					route="/app/"
+					route="/v2/home/"
 					class="flex items-center space-x-3 rtl:space-x-reverse"
 				>
 					{/* <img
