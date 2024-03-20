@@ -1,0 +1,106 @@
+{
+	"type": "FeatureCollection",
+	"features": [
+		{
+			"type": "Feature",
+			"properties": {
+				"distance": 25253,
+				"mode": "sea",
+				"departure": 1676559612000,
+				"arrival": 1676563074000,
+				"duration": 3462000,
+				"speed": 26.26,
+				"areas": {
+					"type": "FeatureCollection",
+					"features": [
+						{
+							"type": "Feature",
+							"properties": {
+								"id": 11100,
+								"name": "Gibraltar",
+								"alternatives": []
+							},
+							"geometry": {
+								"type": "Point",
+								"coordinates": [-5.7470196407155925, 35.95714400373309]
+							}
+						}
+					],
+					"properties": null
+				},
+				"details": [],
+				"secaIntersection": 0,
+				"hraIntersection": 0,
+				"speedInKts": 14.179,
+				"intersectsIceArea": false,
+				"vessel": {
+					"imo": 9245756,
+					"name": "Cornelia Maersk",
+					"length": 346.98,
+					"width": 42.8,
+					"maxDraft": 14.5,
+					"draft": 14.5
+				}
+			},
+			"geometry": {
+				"type": "MultiLineString",
+				"coordinates": [
+					[
+						[-5.857407, 35.894555],
+						[-5.800363, 35.89553],
+						[-5.786423, 35.895967],
+						[-5.766007, 35.896687],
+						[-5.744198, 35.897383],
+						[-5.704142, 35.898273],
+						[-5.691172, 35.898773],
+						[-5.686122, 35.898958],
+						[-5.651702, 35.900198],
+						[-5.64053, 35.90073],
+						[-5.62797, 35.901402],
+						[-5.619048, 35.90225],
+						[-5.579532, 35.911547]
+					]
+				]
+			}
+		}
+	],
+	"properties": {
+		"distance": 25253,
+		"mode": "sea",
+		"departure": 1676559612000,
+		"arrival": 1676563074000,
+		"duration": 3462000,
+		"speed": 26.26,
+		"areas": {
+			"type": "FeatureCollection",
+			"features": [
+				{
+					"type": "Feature",
+					"properties": {
+						"id": 11100,
+						"name": "Gibraltar",
+						"alternatives": []
+					},
+					"geometry": {
+						"type": "Point",
+						"coordinates": [-5.7470196407155925, 35.95714400373309]
+					}
+				}
+			],
+			"properties": null
+		},
+		"details": [],
+		"secaIntersection": 0,
+		"hraIntersection": 0,
+		"speedInKts": 14.179,
+		"intersectsIceArea": false,
+		"vessel": {
+			"imo": 9245756,
+			"name": "Cornelia Maersk",
+			"length": 346.98,
+			"width": 42.8,
+			"maxDraft": 14.5,
+			"draft": 14.5
+		}
+	}
+}
