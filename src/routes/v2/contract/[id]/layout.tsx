@@ -6,6 +6,7 @@ import {
 	documentTypes,
 	documentVersions,
 	workflowTypes,
+	workflowSteps,
 } from "@/drizzle/schema";
 import { routeAction$, routeLoader$, z, zod$ } from "@builder.io/qwik-city";
 import { eq, asc, desc, and } from "drizzle-orm";
@@ -136,8 +137,9 @@ export const useWorkflow = routeLoader$(
 
 		if (!queryResult) throw error(404, "Not Found");
 		const { workflowSteps, ...workflow } = queryResult;
+		const { workflowSteps: steps, ...workflow } = queryResult;
 
-		workflowSteps.sort((a, b) => {
+		steps.sort((a, b) => {
 			const sortIndex = a.stepType.stepNumber - b.stepType.stepNumber;
 			if (sortIndex !== 0) {
 				return sortIndex;
@@ -146,8 +148,8 @@ export const useWorkflow = routeLoader$(
 			return a.stepType.name > b.stepType.name ? 1 : -1;
 		});
 
-		const stepGroups: (typeof workflowSteps)[] = [];
-		for (const workflowStep of workflowSteps) {
+		const stepGroups: (typeof steps)[] = [];
+		for (const workflowStep of steps) {
 			workflowStep.documentVersions.forEach((version) => {
 				const docTypeId = version.documentTypeId;
 				const docTypeIndex = workflowStep.stepType.documentTypes?.findIndex(
@@ -158,6 +160,13 @@ export const useWorkflow = routeLoader$(
 					workflowStep?.stepType?.documentTypes?.push(version.documentType);
 				}
 			});
+			workflowStep.stepType.documentTypes =
+				workflowStep.stepType.documentTypes.map((step) => ({
+					...step,
+					documentVersions: step.documentVersions.filter(
+						(version) => version.workflowStepId === workflowStep.id
+					),
+				}));
 
 			let stepGroup = stepGroups[workflowStep.stepType.stepNumber];
 			if (!stepGroup) {
