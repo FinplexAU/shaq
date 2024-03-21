@@ -88,7 +88,11 @@ export default component$(() => {
 			<WorkflowTitle>{workflow.value.workflowType.name}</WorkflowTitle>
 			<WorkflowSteps>
 				{workflow.value.stepGroups.map((stepGroup, i) => (
-					<WorkflowStepGroup key={i} available={isAvailable(i)}>
+					<WorkflowStepGroup
+						key={i}
+						available={isAvailable(i)}
+						completed={stepGroup.filter((step) => !step.complete).length === 0}
+					>
 						{stepGroup.map((step) => (
 							<WorkflowStep key={step.id} step={step}>
 								{step.stepType.name === "Investor Information" && (

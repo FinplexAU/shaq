@@ -1,11 +1,11 @@
 import {
-	Signal,
+	type Signal,
 	Slot,
 	component$,
 	createContextId,
 	useComputed$,
-	useContext,
 	useContextProvider,
+	useContext,
 	useSignal,
 } from "@builder.io/qwik";
 import type {
@@ -28,6 +28,7 @@ import {
 	HiArrowRightSolid,
 	HiArrowUpCircleSolid,
 	HiCheckSolid,
+	HiChevronDownSolid,
 	HiDocumentSolid,
 	HiEyeSolid,
 } from "@qwikest/icons/heroicons";
@@ -57,61 +58,112 @@ export const WorkflowSteps = component$(() => {
 	);
 });
 
-export const StepGroupContext = createContextId<{ available: Signal<boolean> }>(
-	"step-group"
+export const StepGroupContext = createContextId<{
+	available: Readonly<Signal<boolean>>;
+	showSteps: Signal<boolean>;
+}>("step-group");
+
+export const WorkflowStepGroup = component$(
+	(props: { available: boolean; completed: boolean }) => {
+		const showSteps = useSignal(!props.completed);
+		useContextProvider(StepGroupContext, {
+			available: useComputed$(() => props.available),
+			showSteps: showSteps,
+		});
+
+		return (
+			<li
+				class={[
+					"relative flex flex-wrap gap-8 border-b-2 border-dashed p-4 pt-12 ",
+					{ "opacity-20": !props.available },
+				]}
+			>
+				{props.completed && (
+					<div class="absolute right-20 top-8 rotate-12 rounded border-8 border-double border-green-500 p-1 ">
+						<p class=" select-none text-4xl font-black text-green-500">
+							Completed
+						</p>
+					</div>
+				)}
+				{!props.available && (
+					<div class="absolute left-0 top-0 z-10 h-full w-full"></div>
+				)}
+
+				<button
+					onClick$={() => {
+						showSteps.value = !showSteps.value;
+					}}
+					class="absolute flex items-center text-sm"
+				>
+					<p class="list-item text-sm">View</p>
+					<HiChevronDownSolid
+						class={[
+							"ml-1 transition-transform",
+							{
+								"rotate-90": !showSteps.value,
+							},
+						]}
+					></HiChevronDownSolid>
+				</button>
+				<Slot></Slot>
+			</li>
+		);
+	}
 );
 
-export const WorkflowStepGroup = component$((props: { available: boolean }) => {
-	useContextProvider(StepGroupContext, {
-		available: useComputed$(() => props.available),
-	});
-
-	return (
-		<li
-			class={[
-				"relative flex flex-wrap gap-8 border-b-2 border-dashed p-4",
-				{ "opacity-20": !props.available },
-			]}
-		>
-			{!props.available && (
-				<div class="absolute left-0 top-0 z-10 h-full w-full"></div>
-			)}
-			<p class="absolute list-item text-sm text-gray-400"></p>
-			<Slot></Slot>
-		</li>
-	);
-});
-
 export const WorkflowStep = component$(({ step }: { step: TWorkflowStep }) => {
+	const groupContext = useContext(StepGroupContext);
 	return (
-		<div class="flex-1 py-8" key={step.id}>
-			<h3 class="pb-4 text-xl font-semibold">{step.stepType.name}</h3>
-			<Slot></Slot>
-			<ul class="grid gap-2 pt-8">
-				{step.stepType.documentTypes.length > 0 ? (
-					<li class="grid grid-cols-12 items-center gap-1 text-xs [&>*]:px-2 ">
-						<p class="">View</p>
-						<p class="col-span-6 ">Title</p>
-						<p class="col-span-2 ">Trader</p>
-						<p class="col-span-2 ">Investor</p>
-						<p>Upload</p>
-					</li>
-				) : undefined}
-				{step.stepType.documentTypes.map((document) => (
-					<WorkflowDocument
-						key={document.id}
-						document={document}
-						step={step}
-					></WorkflowDocument>
-				))}
-				{!step.complete && (
-					<li class="hover grid cursor-pointer items-center gap-1 overflow-hidden rounded [&>*]:bg-gray-100 [&>*]:px-2 [&>*]:py-1">
-						<UploadDocumentModal step={step}>
-							<div class="p-1 hover:bg-gray-200">Add Document</div>
-						</UploadDocumentModal>
-					</li>
-				)}
-			</ul>
+		<div class="flex-1 pt-8" key={step.id}>
+			<div class="flex items-center gap-2">
+				{/* <button
+					onClick$={() => {
+						groupContext.value = !groupContext.value;
+					}}
+				> */}
+				<h3 class="pb-4 text-xl font-semibold hover:underline">
+					{step.stepType.name}
+					{/* <HiChevronDownSolid
+							class={[
+								"ml-1 inline text-lg transition-transform align-icon",
+								{
+									"rotate-90": !groupContext.value,
+								},
+							]}
+						></HiChevronDownSolid> */}
+				</h3>
+				{/* </button> */}
+			</div>
+			{groupContext.showSteps.value ? (
+				<>
+					<Slot></Slot>
+					<ul class="grid gap-2 pt-8">
+						{step.stepType.documentTypes.length > 0 ? (
+							<li class="grid grid-cols-12 items-center gap-1 text-xs [&>*]:px-2 ">
+								<p class="">View</p>
+								<p class="col-span-6 ">Title</p>
+								<p class="col-span-2 ">Trader</p>
+								<p class="col-span-2 ">Investor</p>
+								<p>Upload</p>
+							</li>
+						) : undefined}
+						{step.stepType.documentTypes.map((document) => (
+							<WorkflowDocument
+								key={document.id}
+								document={document}
+								step={step}
+							></WorkflowDocument>
+						))}
+						{!step.complete && (
+							<li class="hover grid cursor-pointer items-center gap-1 overflow-hidden rounded [&>*]:bg-gray-100 [&>*]:px-2 [&>*]:py-1">
+								<UploadDocumentModal step={step}>
+									<div class="p-1 hover:bg-gray-200">Add Document</div>
+								</UploadDocumentModal>
+							</li>
+						)}
+					</ul>
+				</>
+			) : undefined}
 		</div>
 	);
 });
@@ -193,7 +245,7 @@ export const WorkflowDocument = component$(
 							showVersions.value = !showVersions.value;
 						}}
 					>
-						{document.documentName}{" "}
+						{document.documentName}
 						<span class="text-sm font-light text-neutral-400">
 							{latestDoc.value && `(v${latestDoc.value.version + 1})`}
 						</span>
