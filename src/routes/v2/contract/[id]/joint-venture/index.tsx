@@ -78,16 +78,16 @@ export const useEntityEmails = routeLoader$(async ({ resolveValue }) => {
 });
 
 export default component$(() => {
-	const contractSteps = useWorkflow();
+	const workflow = useWorkflow();
 	const contract = useLoadContract();
 	const emails = useEntityEmails();
-	const isAvailable = useStepGroupAvailable(contractSteps.value?.stepGroups);
+	const isAvailable = useStepGroupAvailable(workflow.value.stepGroups);
 
 	return (
 		<Workflow>
-			<WorkflowTitle>{contractSteps.value?.workflowType.name}</WorkflowTitle>
+			<WorkflowTitle>{workflow.value.workflowType.name}</WorkflowTitle>
 			<WorkflowSteps>
-				{contractSteps.value?.stepGroups.map((stepGroup, i) => (
+				{workflow.value.stepGroups.map((stepGroup, i) => (
 					<WorkflowStepGroup key={i} available={isAvailable(i)}>
 						{stepGroup.map((step) => (
 							<WorkflowStep key={step.id} step={step}>

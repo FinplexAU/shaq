@@ -16,6 +16,7 @@ import { s3 } from "~/utils/aws";
 import { getSharedMap } from "~/routes/plugin";
 import { getContractPermissions } from "~/db/permissions";
 import { completeWorkflowStepIfNeeded } from "~/db/completion";
+import { selectFirst } from "~/utils/drizzle-utils";
 
 export const useLoadContract = routeLoader$(
 	async ({ redirect, params, sharedMap, error }) => {
@@ -82,7 +83,7 @@ export const useWorkflow = routeLoader$(
 		}
 
 		if (!workflowName) {
-			return;
+			throw error(404, "Workflow not found.");
 		}
 
 		// This intermediatory lookup required unless the query below is rewritten with joins.
@@ -93,7 +94,7 @@ export const useWorkflow = routeLoader$(
 			columns: { id: true },
 		});
 		if (!workflowTypeId) {
-			return;
+			throw error(404, "Workflow not found.");
 		}
 
 		const queryResult = await db.query.workflows.findFirst({
@@ -105,6 +106,17 @@ export const useWorkflow = routeLoader$(
 				workflowType: true,
 				workflowSteps: {
 					with: {
+						documentVersions: {
+							with: {
+								documentType: {
+									with: {
+										documentVersions: {
+											orderBy: desc(documentVersions.version),
+										},
+									},
+								},
+							},
+						},
 						stepType: {
 							with: {
 								documentTypes: {
@@ -123,13 +135,12 @@ export const useWorkflow = routeLoader$(
 		});
 
 		if (!queryResult) throw error(404, "Not Found");
-
 		const { workflowSteps, ...workflow } = queryResult;
 
 		workflowSteps.sort((a, b) => {
-			const x = a.stepType.stepNumber - b.stepType.stepNumber;
-			if (x !== 0) {
-				return x;
+			const sortIndex = a.stepType.stepNumber - b.stepType.stepNumber;
+			if (sortIndex !== 0) {
+				return sortIndex;
 			}
 			if (a.stepType.name === b.stepType.name) return 0;
 			return a.stepType.name > b.stepType.name ? 1 : -1;
@@ -137,6 +148,17 @@ export const useWorkflow = routeLoader$(
 
 		const stepGroups: (typeof workflowSteps)[] = [];
 		for (const workflowStep of workflowSteps) {
+			workflowStep.documentVersions.forEach((version) => {
+				const docTypeId = version.documentTypeId;
+				const docTypeIndex = workflowStep.stepType.documentTypes?.findIndex(
+					(docType) => docType?.id === docTypeId
+				);
+
+				if (docTypeIndex === -1) {
+					workflowStep?.stepType?.documentTypes?.push(version.documentType);
+				}
+			});
+
 			let stepGroup = stepGroups[workflowStep.stepType.stepNumber];
 			if (!stepGroup) {
 				stepGroup = [];
@@ -146,23 +168,91 @@ export const useWorkflow = routeLoader$(
 		}
 
 		return {
-			...workflow,
+			complete: workflow.complete,
+			completionReason: workflow.completionReason,
+			contractId: workflow.contractId,
+			id: workflow.id,
+			workflowType: workflow.workflowType,
 			stepGroups: stepGroups,
 		};
 	}
 );
 
-export type Workflow = NonNullable<ReturnType<typeof useWorkflow>["value"]>;
-export type WorkflowStep = Workflow["stepGroups"][number][number];
-export type WorkflowStepType = WorkflowStep["stepType"];
-export type WorkflowDocumentType = WorkflowStepType["documentTypes"][number];
-export type WorkflowDocumentVersion =
-	WorkflowDocumentType["documentVersions"][number];
+export type Workflow = {
+	id: string;
+	contractId: string;
+	workflowType: {
+		id: string;
+		name: string;
+	};
+	complete: Date | null;
+	completionReason: string | null;
+	stepGroups: WorkflowStep[][];
+};
+export type WorkflowStep = {
+	id: string;
+	complete: Date | null;
+	completionReason: string | null;
+	workflowId: string;
+	stepType: WorkflowStepType;
+};
+
+export type WorkflowStepType = {
+	id: string;
+	name: string;
+	stepNumber: number;
+	workflowTypeId: string;
+	documentTypes: WorkflowDocumentType[];
+};
+
+export type WorkflowDocumentType = {
+	id: string;
+	documentName: string;
+	investorApprovalRequired: boolean;
+	traderApprovalRequired: boolean;
+	requiredBy: string | null;
+	documentVersions: WorkflowDocumentVersion[];
+};
+
+export type WorkflowDocumentVersion = {
+	id: string;
+	investorApproval: Date | null;
+	traderApproval: Date | null;
+	documentTypeId: string;
+	version: number;
+	createdAt: Date;
+	workflowStepId: string;
+};
+
+// export type Workflow = NonNullable<ReturnType<typeof useWorkflow>["value"]>;
+// export type WorkflowStep = Workflow["stepGroups"][number][number];
+// export type WorkflowStepType = WorkflowStep["stepType"];
+// export type WorkflowDocumentType = WorkflowStepType["documentTypes"][number];
+// export type WorkflowDocumentVersion =
+// 	WorkflowDocumentType["documentVersions"][number];
 
 export const useUploadDocument = routeAction$(
 	async (data, { error, sharedMap, params }) => {
 		const user = getSharedMap(sharedMap, "user");
 		const db = await drizzleDb;
+		console.log(data);
+		let docTypeId: string;
+
+		if (data.documentTypeId === undefined) {
+			const docType = await db
+				.insert(documentTypes)
+				.values({
+					documentName: data.documentName,
+					investorApprovalRequired: data.investorApprovalRequired,
+					traderApprovalRequired: data.traderApprovalRequired,
+				})
+				.returning({ id: documentTypes.id })
+				.then(selectFirst);
+
+			docTypeId = docType.id;
+		} else {
+			docTypeId = data.documentTypeId;
+		}
 
 		const contract = await getContractPermissions(params.id!, user.id);
 		if (!contract.isPermitted) {
@@ -170,7 +260,7 @@ export const useUploadDocument = routeAction$(
 		}
 
 		const previousDocumentLookup = await db.query.documentTypes.findFirst({
-			where: eq(documentTypes.id, data.documentTypeId),
+			where: eq(documentTypes.id, docTypeId),
 			with: {
 				documentVersions: {
 					limit: 1,
@@ -206,21 +296,39 @@ export const useUploadDocument = routeAction$(
 				id: key,
 				version: newVersion,
 				workflowStepId: data.stepId,
-				documentTypeId: data.documentTypeId,
+				documentTypeId: docTypeId,
 			},
 		]);
 	},
-	zod$({
-		document: z
-			.any()
-			.refine((arg): arg is Blob => arg instanceof Blob)
-			.refine(
-				(arg) => arg.size > 0,
-				"Document must have a size greater than 0"
-			),
-		documentTypeId: z.string().uuid(),
-		stepId: z.string().uuid(),
-	})
+	zod$(
+		z.union([
+			z.object({
+				document: z
+					.any()
+					.refine((arg): arg is Blob => arg instanceof Blob)
+					.refine(
+						(arg) => arg.size > 0,
+						"Document must have a size greater than 0"
+					),
+				documentTypeId: z.string().uuid(),
+				stepId: z.string().uuid(),
+			}),
+			z.object({
+				document: z
+					.any()
+					.refine((arg): arg is Blob => arg instanceof Blob)
+					.refine(
+						(arg) => arg.size > 0,
+						"Document must have a size greater than 0"
+					),
+				documentName: z.string(),
+				documentTypeId: z.undefined(),
+				investorApprovalRequired: z.coerce.boolean(),
+				traderApprovalRequired: z.coerce.boolean(),
+				stepId: z.string().uuid(),
+			}),
+		])
+	)
 );
 
 export const useApproveDocument = routeAction$(
@@ -237,8 +345,6 @@ export const useApproveDocument = routeAction$(
 		if (!contract.isTrader && !contract.isInvestor) {
 			return fail(401, { message: "Not authorized to approve a document" });
 		}
-
-		console.log("Hi", data.documentVersionId);
 
 		const doc = await db.query.documentVersions.findFirst({
 			where: eq(documentVersions.id, data.documentVersionId),

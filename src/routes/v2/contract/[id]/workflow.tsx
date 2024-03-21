@@ -13,7 +13,6 @@ import type {
 	WorkflowDocumentVersion as TWorkflowDocumentVersion,
 } from "./layout";
 import { useLoadContract, useApproveDocument } from "./layout";
-
 import { Form, Link, useLocation } from "@builder.io/qwik-city";
 import {
 	Timeline,
@@ -83,18 +82,18 @@ export const WorkflowStepGroup = component$((props: { available: boolean }) => {
 
 export const WorkflowStep = component$(({ step }: { step: TWorkflowStep }) => {
 	return (
-		<div class=" flex-1 py-8" key={step.id}>
+		<div class="flex-1 py-8" key={step.id}>
 			<h3 class="pb-4 text-xl font-semibold">{step.stepType.name}</h3>
 			<Slot></Slot>
-			<ul class="grid gap-2">
+			<ul class="grid gap-2 pt-8">
 				{step.stepType.documentTypes.length > 0 ? (
-					<div class="grid grid-cols-12 items-center gap-1 text-xs [&>*]:px-2 ">
+					<li class="grid grid-cols-12 items-center gap-1 text-xs [&>*]:px-2 ">
 						<p class="">View</p>
 						<p class="col-span-6 ">Title</p>
 						<p class="col-span-2 ">Trader</p>
 						<p class="col-span-2 ">Investor</p>
 						<p>Upload</p>
-					</div>
+					</li>
 				) : undefined}
 				{step.stepType.documentTypes.map((document) => (
 					<WorkflowDocument
@@ -103,6 +102,13 @@ export const WorkflowStep = component$(({ step }: { step: TWorkflowStep }) => {
 						step={step}
 					></WorkflowDocument>
 				))}
+				{!step.complete && (
+					<li class="hover grid cursor-pointer items-center gap-1 overflow-hidden rounded [&>*]:bg-gray-100 [&>*]:px-2 [&>*]:py-1">
+						<UploadDocumentModal step={step}>
+							<div class="p-1 hover:bg-gray-200">Add Document</div>
+						</UploadDocumentModal>
+					</li>
+				)}
 			</ul>
 		</div>
 	);
@@ -141,19 +147,19 @@ export const WorkflowDocument = component$(
 		});
 
 		const latestStatus = useComputed$<{
-			trader: "Approved" | "Awaiting" | "Not Required";
-			investor: "Approved" | "Awaiting" | "Not Required";
+			trader: "Approved" | "Awaiting" | "-";
+			investor: "Approved" | "Awaiting" | "-";
 		}>(() => {
 			const trader = document.traderApprovalRequired
 				? latestDoc.value?.traderApproval
 					? "Approved"
 					: "Awaiting"
-				: "Not Required";
+				: "-";
 			const investor = document.investorApprovalRequired
 				? latestDoc.value?.investorApproval
 					? "Approved"
 					: "Awaiting"
-				: "Not Required";
+				: "-";
 
 			return { trader, investor };
 		});
@@ -193,14 +199,13 @@ export const WorkflowDocument = component$(
 					</p>
 					<div
 						class={[
-							"col-span-2 border",
+							"col-span-2 border text-center",
 							{
 								"border-amber-300 !bg-amber-50 text-amber-500":
 									latestStatus.value.trader === "Awaiting",
 								"border-green-300 !bg-green-50 text-green-700":
 									latestStatus.value.trader === "Approved",
-								"text-neutral-500":
-									latestStatus.value.trader === "Not Required",
+								"text-neutral-500": latestStatus.value.trader === "-",
 								"hover:!bg-amber-100": requiresUserApproval.value?.trader,
 							},
 						]}
@@ -220,14 +225,13 @@ export const WorkflowDocument = component$(
 					</div>
 					<div
 						class={[
-							"col-span-2 border",
+							"col-span-2 border text-center",
 							{
 								"border-amber-300 !bg-amber-50 text-amber-500":
 									latestStatus.value.investor === "Awaiting",
 								"border-green-300 !bg-green-50 text-green-700":
 									latestStatus.value.investor === "Approved",
-								"text-neutral-500":
-									latestStatus.value.investor === "Not Required",
+								"text-neutral-500": latestStatus.value.investor === "-",
 								"hover:!bg-amber-100": requiresUserApproval.value?.investor,
 							},
 						]}

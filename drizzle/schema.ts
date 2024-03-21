@@ -256,9 +256,7 @@ export const documentTypes = pgTable("document_types", {
 	documentName: text("document_name").notNull(),
 	investorApprovalRequired: boolean("investor_approval_required").notNull(),
 	traderApprovalRequired: boolean("trader_approval_required").notNull(),
-	requiredBy: uuid("required_by")
-		.references(() => workflowStepTypes.id)
-		.notNull(),
+	requiredBy: uuid("required_by").references(() => workflowStepTypes.id),
 });
 
 export const documentTypeRelations = relations(

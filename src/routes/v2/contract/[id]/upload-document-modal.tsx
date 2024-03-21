@@ -10,10 +10,12 @@ import {
 } from "@qwik-ui/headless";
 import { HiXMarkSolid } from "@qwikest/icons/heroicons";
 import { Button } from "~/components/button";
+import { Input } from "~/components/input";
+import Debugger from "~/components/debugger";
 
 export const UploadDocumentModal = component$<{
 	step: WorkflowStep;
-	document: WorkflowDocumentType;
+	document?: WorkflowDocumentType;
 	disabled?: boolean;
 }>((props) => {
 	const showSig = useSignal(false);
@@ -51,22 +53,14 @@ export const UploadDocumentModal = component$<{
 				class="!h-auto max-h-fit w-[65ch] rounded shadow-md backdrop:backdrop-blur backdrop:backdrop-brightness-50 dark:backdrop:backdrop-brightness-100"
 			>
 				<div class="p-4">
+					<Debugger value={upload.value}></Debugger>
 					<ModalHeader>
 						<h2 class="font-bold">{props.step.stepType.name}</h2>
-						<h3 class="pb-4 pr-10 text-lg font-semibold">
-							Upload {props.document.documentName}
-						</h3>
-						<div class="pb-4">
-							<h4 class="font-semibold">Required Approval</h4>
-							<ul>
-								{props.document.investorApprovalRequired && (
-									<li class="list-inside list-disc">Investor</li>
-								)}
-								{props.document.traderApprovalRequired && (
-									<li class="list-inside list-disc">Trader</li>
-								)}
-							</ul>
-						</div>
+						{props.document ? (
+							<h3 class="pb-4 pr-10 text-lg font-semibold">
+								Upload {props.document.documentName}
+							</h3>
+						) : undefined}
 					</ModalHeader>
 					<Form
 						action={upload}
@@ -85,22 +79,62 @@ export const UploadDocumentModal = component$<{
 						}}
 					>
 						<ModalContent>
+							<div class="py-4">
+								<Input
+									name="documentName"
+									title="Document Name"
+									type="input"
+									placeholder="Document Name"
+								></Input>
+							</div>
+							<div class="pb-4">
+								<h4 class="font-semibold">Required Approval</h4>
+								<ul class="space-y-2">
+									{props.document ? (
+										<>
+											{props.document.investorApprovalRequired && (
+												<li class="list-inside list-disc">Investor</li>
+											)}
+											{props.document.traderApprovalRequired && (
+												<li class="list-inside list-disc">Trader</li>
+											)}
+										</>
+									) : (
+										<>
+											<li>
+												<Input
+													name="investorApprovalRequired"
+													class="inline w-4 focus:ring-0"
+													type="checkbox"
+													title="Investor"
+												></Input>
+											</li>
+											<li>
+												<Input
+													name="traderApprovalRequired"
+													class="w-4 focus:ring-0"
+													type="checkbox"
+													title="Trader"
+												></Input>
+											</li>
+										</>
+									)}
+								</ul>
+							</div>
 							<input
 								type="hidden"
 								name="stepId"
 								value={props.step.id}
 								required
 							/>
-							<input
-								type="hidden"
-								name="documentTypeId"
-								value={props.document.id}
-							/>
-							{errorMessage.value && (
-								<p class="pb-2 font-semibold text-red-600">
-									{errorMessage.value}
-								</p>
+							{props.document && (
+								<input
+									type="hidden"
+									name="documentTypeId"
+									value={props.document.id}
+								/>
 							)}
+
 							<div class="flex">
 								<input
 									class="block w-full cursor-pointer rounded-lg border border-gray-300 bg-gray-50 text-sm text-gray-900 outline-none file:!bg-gradient-to-t file:!from-blue-400 file:!to-blue-500/80 "
@@ -117,6 +151,9 @@ export const UploadDocumentModal = component$<{
 									</button>
 								)}
 							</div>
+							{errorMessage.value && (
+								<p class="pb-2 text-sm text-red-600">{errorMessage.value}</p>
+							)}
 						</ModalContent>
 						<ModalFooter class="flex justify-end gap-4 pt-4">
 							<Button onClick$={() => (showSig.value = false)} type="button">

@@ -34,18 +34,23 @@ export const useGenerateWorkflow = routeAction$(
 				id: workflowStepTypes.id,
 			});
 
-		const documents: InferSelectModel<typeof documentTypes> = data.workflowSteps
-			.flatMap((foo, i) =>
-				foo.documents?.flatMap((bar) => ({
-					documentName: bar.name,
-					investorApprovalRequired: bar.requiredByInvestor,
-					traderApprovalRequired: bar.requiredByTrader,
-					requiredBy: stepTypes[i]?.id,
-				}))
-			)
-			.filter((doc) => doc !== undefined);
-
-		await db.insert(documentTypes).values(documents);
+		const documents: InferSelectModel<typeof documentTypes>[] =
+			data.workflowSteps
+				.flatMap((foo, i) =>
+					foo.documents?.flatMap((bar) => ({
+						documentName: bar.name,
+						investorApprovalRequired: bar.requiredByInvestor,
+						traderApprovalRequired: bar.requiredByTrader,
+						requiredBy: stepTypes[i]?.id,
+					}))
+				)
+				.filter(
+					(doc): doc is InferSelectModel<typeof documentTypes> =>
+						doc !== undefined
+				);
+		if (documents.length > 0) {
+			await db.insert(documentTypes).values(documents);
+		}
 	},
 	zod$(
 		z.object({
