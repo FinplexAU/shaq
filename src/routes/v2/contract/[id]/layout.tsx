@@ -238,8 +238,6 @@ export const useApproveDocument = routeAction$(
 			return fail(401, { message: "Not authorized to approve a document" });
 		}
 
-		console.log("Hi", data.documentVersionId);
-
 		const doc = await db.query.documentVersions.findFirst({
 			where: eq(documentVersions.id, data.documentVersionId),
 			with: {
@@ -267,7 +265,6 @@ export const useApproveDocument = routeAction$(
 		const traderApproval = doc.traderApproval;
 		const investorApproval = doc.investorApproval;
 
-		console.log(doc.workflowStep.complete, traderApproval, investorApproval);
 		if (doc.workflowStep.complete || (traderApproval && investorApproval)) {
 			return fail(400, { message: "Document cannot be approved again." });
 		}
