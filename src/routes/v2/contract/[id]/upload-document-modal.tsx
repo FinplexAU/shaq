@@ -86,12 +86,14 @@ export const UploadDocumentModal = component$<{
 					>
 						<ModalContent>
 							<div class="py-4">
-								<Input
-									name="documentName"
-									title="Document Name"
-									type="input"
-									placeholder="Document Name"
-								></Input>
+								{!props.document && (
+									<Input
+										name="documentName"
+										title="Document Name"
+										type="input"
+										placeholder="Document Name"
+									></Input>
+								)}
 							</div>
 							<div class="pb-4">
 								<h4 class="font-semibold">Required Approval</h4>
