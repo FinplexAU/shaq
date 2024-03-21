@@ -92,54 +92,74 @@ export default component$(() => {
 										class="flex max-w-prose flex-col gap-4"
 									>
 										<Input
-											disabled={!contractCompletion.value.jointVenture}
+											disabled={
+												!contractCompletion.value["Joint Venture Set-up"]
+											}
 											type="hidden"
 											value={contract.value.id}
 											name="contractId"
 										></Input>
 										<Input
-											disabled={!contractCompletion.value.jointVenture}
+											disabled={
+												!contractCompletion.value["Joint Venture Set-up"]
+											}
 											type="hidden"
 											value={step.id}
 											name="stepId"
 										></Input>
 										<Input
-											disabled={!contractCompletion.value.jointVenture}
+											disabled={
+												!contractCompletion.value["Joint Venture Set-up"]
+											}
 											type="text"
 											name="product"
 											placeholder="Product"
 										></Input>
 										<Input
-											disabled={!contractCompletion.value.jointVenture}
+											disabled={
+												!contractCompletion.value["Joint Venture Set-up"]
+											}
 											type="number"
 											name="volume"
 											placeholder="Volume"
 										></Input>
 										<Input
-											disabled={!contractCompletion.value.jointVenture}
+											disabled={
+												!contractCompletion.value["Joint Venture Set-up"]
+											}
 											type="text"
 											name="logistics"
 											placeholder="Logistics"
 										></Input>
 										<Input
-											disabled={!contractCompletion.value.jointVenture}
+											disabled={
+												!contractCompletion.value["Joint Venture Set-up"]
+											}
 											type="text"
 											name="deliveryPort"
 											placeholder="Delivery Port"
 										></Input>
 										<Input
-											disabled={!contractCompletion.value.jointVenture}
+											disabled={
+												!contractCompletion.value["Joint Venture Set-up"]
+											}
 											type="text"
 											name="loadingPort"
 											placeholder="Loading Port"
 										></Input>
 										<Input
-											disabled={!contractCompletion.value.jointVenture}
+											disabled={
+												!contractCompletion.value["Joint Venture Set-up"]
+											}
 											type="number"
 											name="productPricing"
 											placeholder="Product Pricing"
 										></Input>
-										<Button disabled={!contractCompletion.value.jointVenture}>
+										<Button
+											disabled={
+												!contractCompletion.value["Joint Venture Set-up"]
+											}
+										>
 											Submit
 										</Button>
 									</Form>
