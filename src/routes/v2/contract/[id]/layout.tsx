@@ -373,7 +373,6 @@ export const useApproveDocument = routeAction$(
 		const traderApproval = doc.traderApproval;
 		const investorApproval = doc.investorApproval;
 
-		console.log(doc.workflowStep.complete, traderApproval, investorApproval);
 		if (doc.workflowStep.complete || (traderApproval && investorApproval)) {
 			return fail(400, { message: "Document cannot be approved again." });
 		}

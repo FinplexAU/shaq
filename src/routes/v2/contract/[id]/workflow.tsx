@@ -1,4 +1,5 @@
 import {
+	Signal,
 	Slot,
 	component$,
 	createContextId,
@@ -56,14 +57,15 @@ export const WorkflowSteps = component$(() => {
 	);
 });
 
-export const StepGroupContext = createContextId<{ available: boolean }>(
+export const StepGroupContext = createContextId<{ available: Signal<boolean> }>(
 	"step-group"
 );
 
 export const WorkflowStepGroup = component$((props: { available: boolean }) => {
 	useContextProvider(StepGroupContext, {
-		available: props.available,
+		available: useComputed$(() => props.available),
 	});
+
 	return (
 		<li
 			class={[
@@ -123,7 +125,6 @@ export const WorkflowDocument = component$(
 		step: TWorkflowStep;
 	}) => {
 		const approveDocument = useApproveDocument();
-		const stepGroupContext = useContext(StepGroupContext);
 		const contract = useLoadContract();
 
 		const showVersions = useSignal(false);
@@ -249,11 +250,7 @@ export const WorkflowDocument = component$(
 							latestStatus.value.investor
 						)}
 					</div>
-					<UploadDocumentModal
-						document={document}
-						step={step}
-						disabled={!stepGroupContext.available}
-					>
+					<UploadDocumentModal document={document} step={step}>
 						<div class="grid h-full w-full cursor-pointer place-items-center hover:bg-gray-200">
 							<HiArrowUpCircleSolid class="text-xl"></HiArrowUpCircleSolid>
 						</div>

@@ -39,7 +39,7 @@ const GlobeVis = component$(() => {
 
 		const pointSeries = chart.series.push(am5map.MapPointSeries.new(root, {}));
 
-		pointSeries.bullets.push(function () {
+		pointSeries.bullets.push(function() {
 			const sprite = am5.Circle.new(root, {
 				radius: 7,
 				tooltipY: 0,
