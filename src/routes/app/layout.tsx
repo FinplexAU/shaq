@@ -75,7 +75,7 @@ export const Header = component$(() => {
 
 	return (
 		<nav class="sticky top-0 z-20 select-none border-b border-gray-200  bg-white dark:bg-gray-900">
-			<div class="mx-auto flex max-w-screen-xl flex-wrap items-center justify-between p-4">
+			<div class="mx-auto flex max-w-screen-2xl flex-wrap items-center justify-between p-4">
 				<AppLink
 					route="/v2/home/"
 					class="flex items-center space-x-3 rtl:space-x-reverse"
@@ -85,8 +85,8 @@ export const Header = component$(() => {
             class="h-8"
             alt="Flowbite Logo"
           /> */}
-					<span class="self-center whitespace-nowrap text-2xl font-semibold dark:text-white">
-						DieselTrade
+					<span class="self-center whitespace-nowrap text-2xl font-black dark:text-white">
+						Fuel Flow Exchange
 					</span>
 				</AppLink>
 				<div class="flex items-center space-x-3 rtl:space-x-reverse md:order-2 md:space-x-0">
