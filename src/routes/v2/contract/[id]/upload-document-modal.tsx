@@ -1,4 +1,11 @@
-import { component$, useSignal, useTask$, $, Slot } from "@builder.io/qwik";
+import {
+	component$,
+	useSignal,
+	useTask$,
+	$,
+	Slot,
+	useContext,
+} from "@builder.io/qwik";
 import type { WorkflowDocumentType, WorkflowStep } from "./layout";
 import { useUploadDocument } from "./layout";
 import { Form } from "@builder.io/qwik-city";
@@ -10,12 +17,13 @@ import {
 } from "@qwik-ui/headless";
 import { HiXMarkSolid } from "@qwikest/icons/heroicons";
 import { Button } from "~/components/button";
+import { StepGroupContext } from "./workflow";
 
 export const UploadDocumentModal = component$<{
 	step: WorkflowStep;
 	document: WorkflowDocumentType;
-	disabled?: boolean;
 }>((props) => {
+	const context = useContext(StepGroupContext);
 	const showSig = useSignal(false);
 	const fileInputRef = useSignal<HTMLInputElement>();
 	const buttonEnabled = useSignal(false);
@@ -38,7 +46,7 @@ export const UploadDocumentModal = component$<{
 	return (
 		<>
 			<button
-				disabled={props.disabled}
+				disabled={!context.available.value}
 				onClick$={() => {
 					showSig.value = true;
 				}}
