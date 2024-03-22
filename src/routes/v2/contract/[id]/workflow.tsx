@@ -270,7 +270,9 @@ export const WorkflowDocument = component$(
 									name="documentVersionId"
 									value={latestDoc.value?.id}
 								/>
-								<button class="h-full w-full text-left">Approve</button>
+								<button class="h-full w-full text-left text-center">
+									Approve
+								</button>
 							</Form>
 						) : (
 							latestStatus.value.trader
