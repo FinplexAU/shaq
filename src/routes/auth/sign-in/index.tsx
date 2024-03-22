@@ -6,6 +6,7 @@ import { eq } from "drizzle-orm";
 import { Argon2id } from "oslo/password";
 import { v4 } from "uuid";
 import { Button } from "~/components/button";
+import { Input } from "~/components/input";
 import { drizzleDb } from "~/db/db";
 import { AppLink } from "~/routes.config";
 import { generateVerificationCode, getSharedMap } from "~/routes/plugin";
@@ -22,7 +23,7 @@ export const useSignIn = routeAction$(
 
 		if (!user) {
 			return fail(400, {
-				message: "Incorrect email or password.",
+				message: "Incorrect email or password",
 			});
 		}
 
@@ -71,89 +72,33 @@ export default component$(() => {
 	return (
 		<>
 			<h1 class="pb-4 text-center text-3xl">Sign In</h1>
-			<Form action={signIn} class="flex flex-col py-2">
-				<EmailInput error={signIn.value?.fieldErrors?.email?.at(0)} />
-				<PasswordInput error={signIn.value?.fieldErrors?.password?.at(0)} />
+			<Form action={signIn} class="flex flex-col gap-6 py-2">
+				<Input
+					name="email"
+					type="email"
+					required
+					placeholder="Email"
+					error={signIn.value?.fieldErrors?.email}
+				/>
+				<Input
+					name="password"
+					type="password"
+					required
+					placeholder="Password"
+					error={signIn.value?.fieldErrors?.password}
+				/>
 
 				<Button>Sign In</Button>
 			</Form>
 
+			<span class="text-sm text-red-500">
+				{signIn.value?.message || signIn.value?.formErrors}
+			</span>
 			<div class="flex w-full justify-between">
-				<span class="text-sm text-red-500">
-					{signIn.value?.failed && signIn.value.message}
-				</span>
 				<AppLink route="/auth/sign-up/" class="min-w-max text-sm text-black/80">
 					No account? Sign Up
 				</AppLink>
 			</div>
 		</>
-	);
-});
-
-export const PasswordInput = component$((props: { error?: string }) => {
-	return (
-		<div class="relative pb-6">
-			<label
-				for="password"
-				class="sr-only mb-2 block text-sm font-medium text-gray-900 dark:text-white"
-			>
-				Password
-			</label>
-			<div class="relative">
-				<div class="pointer-events-none absolute inset-y-0 start-0 flex items-center ps-3.5">
-					<HiKeySolid class="h-4 w-4" />
-				</div>
-				<input
-					type="password"
-					id="password"
-					name="password"
-					class={[
-						"block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 ps-10 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500  dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 dark:focus:border-blue-500 dark:focus:ring-blue-500",
-						{
-							"outline outline-red-700": props.error,
-						},
-					]}
-					placeholder="Password"
-					required
-				/>
-			</div>
-			{props.error && (
-				<span class="absolute text-sm text-red-500">Invalid password.</span>
-			)}
-		</div>
-	);
-});
-
-export const EmailInput = component$((props: { error?: string }) => {
-	return (
-		<div class="relative pb-6">
-			<label
-				for="email"
-				class="sr-only mb-2 block text-sm font-medium text-gray-900 dark:text-white"
-			>
-				Email
-			</label>
-			<div class="relative">
-				<div class="pointer-events-none absolute inset-y-0 start-0 flex items-center ps-3.5">
-					<HiEnvelopeSolid class="h-4 w-4" />
-				</div>
-				<input
-					type="email"
-					id="email"
-					name="email"
-					class={[
-						"block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 ps-10 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500  dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 dark:focus:border-blue-500 dark:focus:ring-blue-500",
-						{
-							"outline outline-red-700": props.error,
-						},
-					]}
-					placeholder="name@example.com"
-					required
-				/>
-			</div>
-			{props.error && (
-				<span class="absolute text-sm text-red-500">{props.error}</span>
-			)}
-		</div>
 	);
 });
