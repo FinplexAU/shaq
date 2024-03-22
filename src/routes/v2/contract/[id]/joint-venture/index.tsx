@@ -81,13 +81,13 @@ export default component$(() => {
 	const workflow = useWorkflow();
 	const contract = useLoadContract();
 	const emails = useEntityEmails();
-	const isAvailable = useStepGroupAvailable(workflow.value.stepGroups);
+	const isAvailable = useStepGroupAvailable(workflow.value?.stepGroups);
 
 	return (
 		<Workflow>
-			<WorkflowTitle>{workflow.value.workflowType.name}</WorkflowTitle>
+			<WorkflowTitle>{workflow.value?.workflowType.name}</WorkflowTitle>
 			<WorkflowSteps>
-				{workflow.value.stepGroups.map((stepGroup, i) => (
+				{workflow.value?.stepGroups.map((stepGroup, i) => (
 					<WorkflowStepGroup
 						key={i}
 						available={isAvailable(i)}

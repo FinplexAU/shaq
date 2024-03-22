@@ -6,7 +6,6 @@ import {
 	documentTypes,
 	documentVersions,
 	workflowTypes,
-	workflowSteps,
 } from "@/drizzle/schema";
 import { routeAction$, routeLoader$, z, zod$ } from "@builder.io/qwik-city";
 import { eq, asc, desc, and } from "drizzle-orm";
@@ -82,9 +81,8 @@ export const useWorkflow = routeLoader$(
 		} else if (workflowParam === "trade-bank-instrument-setup") {
 			workflowName = "Trade Bank Instrument Set-up";
 		}
-
 		if (!workflowName) {
-			throw error(404, "Workflow not found.");
+			return;
 		}
 
 		// This intermediatory lookup required unless the query below is rewritten with joins.
@@ -136,7 +134,6 @@ export const useWorkflow = routeLoader$(
 		});
 
 		if (!queryResult) throw error(404, "Not Found");
-		const { workflowSteps, ...workflow } = queryResult;
 		const { workflowSteps: steps, ...workflow } = queryResult;
 
 		steps.sort((a, b) => {
@@ -152,12 +149,12 @@ export const useWorkflow = routeLoader$(
 		for (const workflowStep of steps) {
 			workflowStep.documentVersions.forEach((version) => {
 				const docTypeId = version.documentTypeId;
-				const docTypeIndex = workflowStep.stepType.documentTypes?.findIndex(
-					(docType) => docType?.id === docTypeId
+				const docTypeIndex = workflowStep.stepType.documentTypes.findIndex(
+					(docType) => docType.id === docTypeId
 				);
 
 				if (docTypeIndex === -1) {
-					workflowStep?.stepType?.documentTypes?.push(version.documentType);
+					workflowStep.stepType.documentTypes.push(version.documentType);
 				}
 			});
 			workflowStep.stepType.documentTypes =
