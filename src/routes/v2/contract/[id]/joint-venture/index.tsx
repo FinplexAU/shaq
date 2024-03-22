@@ -18,16 +18,12 @@ import { useWorkflow, useLoadContract } from "../layout";
 import { Input } from "~/components/input";
 import { Button } from "~/components/button";
 import { drizzleDb } from "~/db/db";
-import {
-	entities,
-	userEntityLinks,
-	users,
-	workflowSteps,
-} from "@/drizzle/schema";
+import { entities, userEntityLinks, users } from "@/drizzle/schema";
 import { selectFirst } from "~/utils/drizzle-utils";
 import { safe } from "~/utils/utils";
 import { and, count, eq, inArray } from "drizzle-orm";
 import { sendContractInvite } from "~/utils/email";
+import { completeWorkflowStepIfNeeded } from "~/db/completion";
 
 export const useEntityEmails = routeLoader$(async ({ resolveValue }) => {
 	const contract = await resolveValue(useLoadContract);
@@ -97,7 +93,7 @@ export default component$(() => {
 							<WorkflowStep key={step.id} step={step}>
 								{step.stepType.name === "Investor Information" && (
 									<>
-										{step.complete && contract.value.investor ? (
+										{contract.value.investor ? (
 											<>
 												<div class="pb-4">
 													<h4 class="text-lg font-bold">
@@ -135,7 +131,7 @@ export default component$(() => {
 								)}
 								{step.stepType.name === "Trader Information" && (
 									<>
-										{step.complete && contract.value.trader ? (
+										{contract.value.trader ? (
 											<>
 												<div class="pb-4">
 													<h4 class="text-lg font-bold">
@@ -194,15 +190,7 @@ export const useCreateEntity = globalAction$(
 
 		if (entity.success) {
 			if (data.stepId) {
-				await safe(
-					db
-						.update(workflowSteps)
-						.set({
-							complete: new Date(),
-							completionReason: "Entity Information Received",
-						})
-						.where(eq(workflowSteps.id, data.stepId))
-				);
+				await completeWorkflowStepIfNeeded(data.stepId);
 			}
 		}
 	},

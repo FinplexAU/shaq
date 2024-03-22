@@ -7,6 +7,7 @@ import {
 	useContextProvider,
 	useContext,
 	useSignal,
+	useVisibleTask$,
 } from "@builder.io/qwik";
 import type {
 	WorkflowDocumentType as TWorkflowDocumentType,
@@ -37,7 +38,7 @@ import type { AppLinkProps } from "~/routes.gen";
 import { UploadDocumentModal } from "./upload-document-modal";
 
 export const Workflow = component$(() => (
-	<div class="py-4">
+	<div class=" py-4">
 		<Slot></Slot>
 	</div>
 ));
@@ -66,13 +67,36 @@ export const StepGroupContext = createContextId<{
 export const WorkflowStepGroup = component$(
 	(props: { available: boolean; completed: boolean }) => {
 		const showSteps = useSignal(!props.completed);
+		const ref = useSignal<HTMLElement | undefined>();
 		useContextProvider(StepGroupContext, {
 			available: useComputed$(() => props.available),
 			showSteps: showSteps,
 		});
 
+		useVisibleTask$(
+			({ track }) => {
+				const trackedRef = track(ref);
+				if (props.completed || !props.available) {
+					return;
+				}
+				if (!trackedRef) {
+					return;
+				}
+
+				window.scrollTo({
+					left: 0,
+					top: trackedRef.getBoundingClientRect().y,
+					behavior: "smooth",
+				});
+			},
+			{
+				strategy: "document-ready",
+			}
+		);
+
 		return (
 			<li
+				ref={ref}
 				class={[
 					"relative flex flex-wrap gap-8 border-b-2 border-dashed p-4 pt-12 ",
 					{ "opacity-20": !props.available },
@@ -116,28 +140,14 @@ export const WorkflowStep = component$(({ step }: { step: TWorkflowStep }) => {
 	return (
 		<div class="flex-1 pt-8" key={step.id}>
 			<div class="flex items-center gap-2">
-				{/* <button
-					onClick$={() => {
-						groupContext.value = !groupContext.value;
-					}}
-				> */}
 				<h3 class="pb-4 text-xl font-semibold hover:underline">
 					{step.stepType.name}
-					{/* <HiChevronDownSolid
-							class={[
-								"ml-1 inline text-lg transition-transform align-icon",
-								{
-									"rotate-90": !groupContext.value,
-								},
-							]}
-						></HiChevronDownSolid> */}
 				</h3>
-				{/* </button> */}
 			</div>
 			{groupContext.showSteps.value ? (
 				<>
 					<Slot></Slot>
-					<ul class="grid gap-2 pt-8">
+					<ul class="grid max-w-prose gap-2 pt-8">
 						{step.stepType.documentTypes.length > 0 ? (
 							<li class="grid grid-cols-12 items-center gap-1 text-xs [&>*]:px-2 ">
 								<p class="">View</p>

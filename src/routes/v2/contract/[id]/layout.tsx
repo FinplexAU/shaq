@@ -78,8 +78,8 @@ export const useWorkflow = routeLoader$(
 			workflowName = "Trade Set-up";
 		} else if (workflowParam === "bank-instrument-setup") {
 			workflowName = "Bank Instrument Set-up";
-		} else if (workflowParam === "trade-bank-instrument-setup") {
-			workflowName = "Trade Bank Instrument Set-up";
+		} else if (workflowParam === "bank-instrument") {
+			workflowName = "Bank Instrument";
 		}
 		if (!workflowName) {
 			return;
@@ -452,7 +452,7 @@ export default component$(() => {
 				<nav class="relative col-span-2 border-r ">
 					<div class="sticky top-16 p-4">
 						<WorkflowButton
-							title="Contract Info"
+							title="Contract Overview"
 							completion={false}
 							route="/v2/contract/[id]/"
 							param:id={contract.value.id}
@@ -480,11 +480,9 @@ export default component$(() => {
 							param:id={contract.value.id}
 						></WorkflowButton>
 						<WorkflowButton
-							title="Trade Instrument Set-up"
-							completion={Boolean(
-								contractCompletion.value["Trade Bank Instrument Set-up"]
-							)}
-							route="/v2/contract/[id]/trade-bank-instrument-setup/"
+							title="Bank Instrument"
+							completion={Boolean(contractCompletion.value["Bank Instrument"])}
+							route="/v2/contract/[id]/bank-instrument/"
 							param:id={contract.value.id}
 						></WorkflowButton>
 						{/* <WorkflowButton

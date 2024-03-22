@@ -9,7 +9,7 @@ export const useUser = routeLoader$(({ sharedMap }) => {
 
 export default component$(() => {
 	return (
-		<div class="flex h-screen min-h-screen flex-col">
+		<div class="flex min-h-screen flex-col">
 			<Header></Header>
 			<Slot></Slot>
 		</div>

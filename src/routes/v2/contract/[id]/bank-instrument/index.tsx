@@ -8,6 +8,9 @@ import {
 	useStepGroupAvailable,
 } from "../workflow";
 import { useWorkflow, useContractCompletion } from "../layout";
+import { Button } from "~/components/button";
+import { completeWorkflowStepIfNeeded } from "~/db/completion";
+import { server$ } from "@builder.io/qwik-city";
 
 export default component$(() => {
 	const contractSteps = useWorkflow();
@@ -25,9 +28,29 @@ export default component$(() => {
 			<WorkflowTitle>{contractSteps.value?.workflowType.name}</WorkflowTitle>
 			<WorkflowSteps>
 				{contractSteps.value?.stepGroups.map((stepGroup, i) => (
-					<WorkflowStepGroup key={i} available={isAvailable(i)}>
+					<WorkflowStepGroup
+						completed={stepGroup.filter((step) => !step.complete).length === 0}
+						key={i}
+						available={isAvailable(i)}
+					>
 						{stepGroup.map((step) => (
-							<WorkflowStep key={step.id} step={step}></WorkflowStep>
+							<WorkflowStep key={step.id} step={step}>
+								{step.stepType.name === "Engage Supplier" &&
+									(!step.complete ? (
+										<Button
+											onClick$={() => {
+												const server = server$(() => {
+													completeWorkflowStepIfNeeded(step.id);
+												});
+												server();
+											}}
+										>
+											Complete
+										</Button>
+									) : (
+										<p>Engaged {step.complete.toLocaleDateString([])}</p>
+									))}
+							</WorkflowStep>
 						))}
 					</WorkflowStepGroup>
 				))}
