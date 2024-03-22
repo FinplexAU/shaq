@@ -69,8 +69,8 @@ export const useCreateContract = routeAction$(
 			.then(selectFirst);
 
 		await createWorkflow("Joint Venture Set-up", contract.id);
-		// await createWorkflow("Trade Set-up", contract.id);
-		// await createWorkflow("Bank Instrument Set-up", contract.id);
+		await createWorkflow("Trade Set-up", contract.id);
+		await createWorkflow("Bank Instrument Set-up", contract.id);
 		await createWorkflow("Bank Instrument", contract.id);
 
 		// first create the admin entity for the contract

@@ -1,7 +1,6 @@
 import { documentVersions, workflowSteps, workflows } from "@/drizzle/schema";
 import { desc, eq } from "drizzle-orm";
 import { drizzleDb } from "./db";
-import { as } from "@upstash/redis/zmscore-5d82e632";
 
 export const completeWorkflowStepIfNeeded = async (workflowStepId: string) => {
 	const db = await drizzleDb;

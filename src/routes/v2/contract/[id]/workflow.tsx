@@ -73,6 +73,7 @@ export const WorkflowStepGroup = component$(
 			showSteps: showSteps,
 		});
 
+		// eslint-disable-next-line qwik/no-use-visible-task
 		useVisibleTask$(
 			({ track }) => {
 				const trackedRef = track(ref);
@@ -147,7 +148,7 @@ export const WorkflowStep = component$(({ step }: { step: TWorkflowStep }) => {
 			{groupContext.showSteps.value ? (
 				<>
 					<Slot></Slot>
-					<ul class="grid max-w-prose gap-2 pt-8">
+					<ul class="grid  max-w-3xl gap-2 pt-8">
 						{step.stepType.documentTypes.length > 0 ? (
 							<li class="grid grid-cols-12 items-center gap-1 text-xs [&>*]:px-2 ">
 								<p class="">View</p>
