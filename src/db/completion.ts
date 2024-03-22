@@ -8,15 +8,15 @@ export const completeWorkflowStepIfNeeded = async (workflowStepId: string) => {
 	const step = await db.query.workflowSteps.findFirst({
 		where: eq(workflowSteps.id, workflowStepId),
 		with: {
+			documentVersions: {
+				orderBy: desc(documentVersions.version),
+				limit: 1,
+				with: { documentType: true },
+			},
 			stepType: {
 				with: {
 					documentTypes: {
-						with: {
-							documentVersions: {
-								orderBy: desc(documentVersions.version),
-								limit: 1,
-							},
-						},
+						columns: { id: true },
 					},
 				},
 			},
@@ -27,19 +27,31 @@ export const completeWorkflowStepIfNeeded = async (workflowStepId: string) => {
 		return;
 	}
 
-	for (const doc of step.stepType.documentTypes) {
-		const version = doc.documentVersions[0];
-		if (!version) {
-			// There is an expected document that is not uploaded
-			return;
-		}
+	let stepRequiredDocs = step.stepType.documentTypes;
 
-		if (doc.investorApprovalRequired && !version.investorApproval) {
+	for (const doc of step.documentVersions) {
+		console.log(JSON.stringify(doc, null, 2));
+		if (
+			doc.documentType.investorApprovalRequired &&
+			doc.investorApproval === null
+		) {
 			return;
 		}
-		if (doc.traderApprovalRequired && !version.traderApproval) {
+		if (
+			doc.documentType.traderApprovalRequired &&
+			doc.traderApproval === null
+		) {
 			return;
 		}
+		console.log(stepRequiredDocs);
+		stepRequiredDocs = stepRequiredDocs.filter(
+			(requiredDoc) => requiredDoc.id !== doc.documentType.id
+		);
+		console.log(stepRequiredDocs);
+	}
+
+	if (stepRequiredDocs.length !== 0) {
+		return;
 	}
 
 	await db
@@ -49,7 +61,7 @@ export const completeWorkflowStepIfNeeded = async (workflowStepId: string) => {
 		})
 		.where(eq(workflowSteps.id, workflowStepId));
 
-	console.log("Complete");
+	console.log("Completed");
 
 	await completeWorkflowIfNeeded(step.workflowId);
 };

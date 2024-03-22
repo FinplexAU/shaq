@@ -1,5 +1,5 @@
 import { entities, userEntityLinks } from "@/drizzle/schema";
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { drizzleDb } from "~/db/db";
 
 export const getContractPermissions = async (
