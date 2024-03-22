@@ -1,6 +1,7 @@
 import { documentVersions, workflowSteps, workflows } from "@/drizzle/schema";
 import { desc, eq } from "drizzle-orm";
 import { drizzleDb } from "./db";
+import { as } from "@upstash/redis/zmscore-5d82e632";
 
 export const completeWorkflowStepIfNeeded = async (workflowStepId: string) => {
 	const db = await drizzleDb;
@@ -10,13 +11,12 @@ export const completeWorkflowStepIfNeeded = async (workflowStepId: string) => {
 		with: {
 			documentVersions: {
 				orderBy: desc(documentVersions.version),
-				limit: 1,
 				with: { documentType: true },
 			},
 			stepType: {
 				with: {
 					documentTypes: {
-						columns: { id: true },
+						columns: { id: true, documentName: true },
 					},
 				},
 			},
@@ -28,29 +28,49 @@ export const completeWorkflowStepIfNeeded = async (workflowStepId: string) => {
 	}
 
 	let stepRequiredDocs = step.stepType.documentTypes;
+	const stepDocuments = step.documentVersions.reduce<
+		Record<string, (typeof step.documentVersions)[number]>
+	>((a, b) => {
+		console.log(a[b.documentTypeId], b.version);
+		if (b.version > (a[b.documentTypeId]?.version ?? -1)) {
+			return { ...a, [b.documentTypeId]: b };
+		} else {
+			return a;
+		}
+	}, {});
+	console.log("REQUIRED DOCS FOR STEP COMPLETION", stepRequiredDocs);
 
-	for (const doc of step.documentVersions) {
-		console.log(JSON.stringify(doc, null, 2));
+	for (const doc of Object.values(stepDocuments)) {
 		if (
 			doc.documentType.investorApprovalRequired &&
 			doc.investorApproval === null
 		) {
+			console.info(
+				"step not complete, investor approval required for: ",
+				doc.documentType.documentName
+			);
 			return;
 		}
 		if (
 			doc.documentType.traderApprovalRequired &&
 			doc.traderApproval === null
 		) {
+			console.info(
+				"step not complete, trader approval required for: ",
+				doc.documentType.documentName
+			);
 			return;
 		}
-		console.log(stepRequiredDocs);
 		stepRequiredDocs = stepRequiredDocs.filter(
 			(requiredDoc) => requiredDoc.id !== doc.documentType.id
 		);
-		console.log(stepRequiredDocs);
 	}
 
 	if (stepRequiredDocs.length !== 0) {
+		console.info(
+			"step not complete, approval still required for: ",
+			stepRequiredDocs.map((doc) => doc.documentName).join(", ")
+		);
 		return;
 	}
 
