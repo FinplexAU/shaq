@@ -45,7 +45,7 @@ export const useLoadContract = routeLoader$(
 			(entity) => entity.role === "investor"
 		);
 
-		const permissions = await getContractPermissions(params.id, user.id);
+		const permissions = await getContractPermissions(params.id, user.email);
 
 		if (!permissions.isPermitted) {
 			throw error(404, "Not found");
@@ -260,7 +260,7 @@ export const useUploadDocument = routeAction$(
 			docTypeId = data.documentTypeId;
 		}
 
-		const contract = await getContractPermissions(params.id!, user.id);
+		const contract = await getContractPermissions(params.id!, user.email);
 		if (!contract.isPermitted) {
 			return error(404, "Workflow step not found");
 		}
@@ -343,7 +343,7 @@ export const useApproveDocument = routeAction$(
 
 		const user = getSharedMap(sharedMap, "user");
 
-		const contract = await getContractPermissions(params.id!, user.id);
+		const contract = await getContractPermissions(params.id!, user.email);
 
 		if (!contract.isPermitted) {
 			return error(404, "Not found");
