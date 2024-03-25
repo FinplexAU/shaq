@@ -1,6 +1,6 @@
-import { type RequestHandler } from "@builder.io/qwik-city";
+import { RequestEventBase, type RequestHandler } from "@builder.io/qwik-city";
 import { type EnvGetter } from "@builder.io/qwik-city/middleware/request-handler";
-import type { Session as ExternalSession } from "lucia";
+import type { Session as ExternalSession, User } from "lucia";
 import { Lucia, TimeSpan } from "lucia";
 import { drizzleDb } from "~/db/db";
 import {
@@ -30,10 +30,6 @@ export const getSharedMap = <T extends keyof SharedMap>(
 ): SharedMap[T] => {
 	return sharedMap.get(key);
 };
-
-// Refresh tokens last 1 week
-// Refresh tokens last 1 day inactive
-// If anything expires, show popup for inactivity - Set nearest date to show up
 
 export function initializeLucia(adapter: DrizzlePostgreSQLAdapter) {
 	return new Lucia(adapter, {
@@ -85,27 +81,33 @@ export const generateVerificationCode = async (userId: string) => {
 	return code;
 };
 
+export const getSession = async (
+	lucia: Lucia,
+	cookie: RequestEventBase["cookie"]
+): Promise<
+	{ session: null; user: null } | { session: ExternalSession; user: User }
+> => {
+	const sessionId = cookie.get(lucia.sessionCookieName)?.value;
+	if (!sessionId) {
+		const result: { session: null; user: null } = {
+			session: null,
+			user: null,
+		};
+		return result;
+	}
+
+	return await lucia.validateSession(sessionId);
+};
+
 export const onRequest: RequestHandler = async (ev) => {
 	const db = await drizzleDb;
 	const adapter = new DrizzlePostgreSQLAdapter(db, userSessions, users);
 	const lucia = initializeLucia(adapter);
 
-	ev.sharedMap.set("lucia", lucia);
+	const authPage = !ev.pathname.startsWith("/v2/");
 
-	if (
-		!ev.pathname.startsWith("/v2/") &&
-		ev.pathname !== "/auth/verify-email/"
-	) {
-		await ev.next();
-		return;
-	}
+	const { session, user } = await getSession(lucia, ev.cookie);
 
-	const sessionId = ev.cookie.get(lucia.sessionCookieName)?.value;
-	if (!sessionId) {
-		throw ev.redirect(302, "/auth/sign-in");
-	}
-
-	const { session, user } = await lucia.validateSession(sessionId);
 	if (session && session.fresh) {
 		const sessionCookie = lucia.createSessionCookie(session.id);
 		ev.cookie.set(
@@ -113,6 +115,16 @@ export const onRequest: RequestHandler = async (ev) => {
 			sessionCookie.value,
 			sessionCookie.attributes
 		);
+	}
+
+	ev.sharedMap.set("lucia", lucia);
+
+	if (authPage) {
+		if (session) {
+			throw ev.redirect(302, "/v2/home/");
+		}
+		await ev.next();
+		return;
 	}
 
 	if (!session) {
