@@ -41,6 +41,23 @@ export default component$(() => {
 	);
 });
 
+const isAlphanumeric = (str: string) => {
+	return /^[a-zA-Z0-9]+$/.test(str);
+};
+
+const getInitials = (name: string) => {
+	const split = name.toLocaleLowerCase("en-US").split(" ");
+	const firstChars = split
+		.map((x) => x[0])
+		.filter((x) => x && isAlphanumeric(x));
+	if (firstChars.length === 0) return "a";
+	else if (firstChars.length === 1) {
+		return firstChars[0];
+	} else {
+		return firstChars[0] + firstChars[firstChars.length - 1]!;
+	}
+};
+
 export const Header = component$(() => {
 	const loc = useLocation();
 	const user = useUser();
@@ -98,7 +115,7 @@ export const Header = component$(() => {
 						<span class="sr-only">Open user menu</span>
 						<ExternalImage
 							class="rounded-full"
-							src={"https://cdn.auth0.com/avatars/df.png"}
+							src={`https://cdn.auth0.com/avatars/${getInitials(user.value.name)}.png`}
 							width={32}
 							height={32}
 							alt="user photo"
