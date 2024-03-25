@@ -1,7 +1,6 @@
 import { users } from "@/drizzle/schema";
 import { component$ } from "@builder.io/qwik";
 import { Form, routeAction$, z, zod$ } from "@builder.io/qwik-city";
-import { HiKeySolid, HiEnvelopeSolid } from "@qwikest/icons/heroicons";
 import { eq } from "drizzle-orm";
 import { Argon2id } from "oslo/password";
 import { v4 } from "uuid";
@@ -76,6 +75,7 @@ export default component$(() => {
 				<Input
 					name="email"
 					type="email"
+					title="Email"
 					required
 					placeholder="Email"
 					error={signIn.value?.fieldErrors?.email}
@@ -83,6 +83,7 @@ export default component$(() => {
 				<Input
 					name="password"
 					type="password"
+					title="Password"
 					required
 					placeholder="Password"
 					error={signIn.value?.fieldErrors?.password}
