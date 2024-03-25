@@ -66,13 +66,21 @@ export const entitiesRelations = relations(entities, ({ many, one }) => ({
 
 export const documentVersions = pgTable("document_versions", {
 	id: uuid("id").primaryKey().defaultRandom(),
-	investorApproval: timestamp("investor_approval"),
-	traderApproval: timestamp("trader_approval"),
+	investorApproval: timestamp("investor_approval", {
+		withTimezone: true,
+		mode: "date",
+	}),
+	traderApproval: timestamp("trader_approval", {
+		withTimezone: true,
+		mode: "date",
+	}),
 	documentTypeId: uuid("document_type_id")
 		.references(() => documentTypes.id)
 		.notNull(),
 	version: integer("version").notNull(),
-	createdAt: timestamp("created_at").notNull().defaultNow(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+		.notNull()
+		.defaultNow(),
 	workflowStepId: uuid("workflow_step_id")
 		.references(() => workflowSteps.id)
 		.notNull(),
@@ -93,7 +101,7 @@ export const documentVersionsRelations = relations(
 
 export const workflowSteps = pgTable("workflow_steps", {
 	id: uuid("id").primaryKey().defaultRandom(),
-	complete: timestamp("complete"),
+	complete: timestamp("complete", { withTimezone: true, mode: "date" }),
 	completionReason: text("completion_reason"),
 	workflowId: uuid("workflow_id")
 		.references(() => workflows.id)
@@ -125,7 +133,7 @@ export const workflows = pgTable("workflows", {
 	workflowType: uuid("workflow_type")
 		.references(() => workflowTypes.id)
 		.notNull(),
-	complete: timestamp("complete"),
+	complete: timestamp("complete", { withTimezone: true, mode: "date" }),
 	completionReason: text("completion_reason"),
 });
 
@@ -139,6 +147,7 @@ export const workflowsRelations = relations(workflows, ({ many, one }) => ({
 		fields: [workflows.workflowType],
 		references: [workflowTypes.id],
 	}),
+	lifts: many(lifts),
 }));
 
 export const users = pgTable("users", {
@@ -269,3 +278,29 @@ export const documentTypeRelations = relations(
 		documentVersions: many(documentVersions),
 	})
 );
+
+export const lifts = pgTable("lifts", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	workflowId: uuid("workflow_id")
+		.references(() => workflows.id)
+		.notNull(),
+	createdAt: timestamp("created_at", {
+		withTimezone: true,
+		mode: "date",
+	})
+		.defaultNow()
+		.notNull(),
+	liftNumber: integer("lift_number").notNull(),
+	settlementDate: timestamp("settlement_date", {
+		withTimezone: true,
+		mode: "date",
+	}),
+	volume: numeric("volume"),
+});
+
+export const liftsRelations = relations(lifts, ({ one }) => ({
+	workflow: one(workflows, {
+		fields: [lifts.workflowId],
+		references: [workflows.id],
+	}),
+}));

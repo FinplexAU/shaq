@@ -485,6 +485,12 @@ export default component$(() => {
 							route="/v2/contract/[id]/bank-instrument/"
 							param:id={contract.value.id}
 						></WorkflowButton>
+						<WorkflowButton
+							title="Lifts"
+							completion={false}
+							route="/v2/contract/[id]/lifts/"
+							param:id={contract.value.id}
+						></WorkflowButton>
 						{/* <WorkflowButton
 						title="Trade Set-up"
 						completion={"disabled"}

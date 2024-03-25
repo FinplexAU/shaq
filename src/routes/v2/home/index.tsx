@@ -24,6 +24,7 @@ import { eq, type InferSelectModel } from "drizzle-orm";
 import { selectFirst } from "~/utils/drizzle-utils";
 import { HiPlusCircleSolid } from "@qwikest/icons/heroicons";
 import { Button } from "~/components/button";
+import { createWorkflow } from "~/db/workflows";
 
 export const useAllowedContracts = routeLoader$(async ({ sharedMap }) => {
 	const user = getSharedMap(sharedMap, "user");
@@ -90,34 +91,6 @@ export const useCreateContract = routeAction$(
 		throw redirect(302, `/v2/contract/${contract.id}/`);
 	}
 );
-const createWorkflow = async (workflowName: string, contractId: string) => {
-	const db = await drizzleDb;
-
-	const template = await db.query.workflowTypes.findFirst({
-		where: eq(workflowTypes.name, workflowName),
-		with: {
-			workflowStepTypes: true,
-		},
-	});
-
-	if (!template) throw new Error("Workflow not found");
-
-	const workflow = await db
-		.insert(workflows)
-		.values({ workflowType: template.id, contractId })
-		.returning({ id: workflows.id })
-		.then(selectFirst);
-
-	const templatedSteps = template.workflowStepTypes.map((stepType) => ({
-		workflowId: workflow.id,
-		stepType: stepType.id,
-	}));
-
-	if (templatedSteps.length > 0)
-		await db.insert(workflowSteps).values(templatedSteps);
-
-	return workflow;
-};
 
 export default component$(() => {
 	const contracts = useAllowedContracts();
