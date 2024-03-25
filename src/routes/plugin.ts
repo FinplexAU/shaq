@@ -104,7 +104,7 @@ export const onRequest: RequestHandler = async (ev) => {
 	const adapter = new DrizzlePostgreSQLAdapter(db, userSessions, users);
 	const lucia = initializeLucia(adapter);
 
-	const authPage = !ev.pathname.startsWith("/v2/");
+	const authPage = ev.pathname.startsWith("/auth/");
 
 	const { session, user } = await getSession(lucia, ev.cookie);
 
