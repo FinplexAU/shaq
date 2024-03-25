@@ -119,15 +119,11 @@ export const onRequest: RequestHandler = async (ev) => {
 
 	ev.sharedMap.set("lucia", lucia);
 
-	if (authPage) {
-		if (session) {
-			throw ev.redirect(302, "/v2/home/");
-		}
-		await ev.next();
-		return;
-	}
-
 	if (!session) {
+		if (authPage) {
+			await ev.next();
+			return;
+		}
 		const sessionCookie = lucia.createBlankSessionCookie();
 		ev.cookie.set(
 			sessionCookie.name,
@@ -137,8 +133,12 @@ export const onRequest: RequestHandler = async (ev) => {
 		throw ev.redirect(302, "/auth/sign-in");
 	}
 
-	if (!user.emailVerified && ev.pathname !== "/auth/verify-email/")
+	if (!user.emailVerified && ev.pathname !== "/auth/verify-email/") {
 		throw ev.redirect(302, "/auth/verify-email/");
+	}
+	if (!authPage) {
+		throw ev.redirect(302, "/v2/home/");
+	}
 
 	ev.sharedMap.set("user", user);
 	ev.sharedMap.set("session", session);
