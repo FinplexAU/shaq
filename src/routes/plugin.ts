@@ -120,7 +120,7 @@ export const onRequest: RequestHandler = async (ev) => {
 	ev.sharedMap.set("lucia", lucia);
 
 	if (!session) {
-		if (authPage) {
+		if (authPage && ev.pathname !== "/auth/verify-email/") {
 			await ev.next();
 			return;
 		}
@@ -136,7 +136,7 @@ export const onRequest: RequestHandler = async (ev) => {
 	if (!user.emailVerified && ev.pathname !== "/auth/verify-email/") {
 		throw ev.redirect(302, "/auth/verify-email/");
 	}
-	if (!authPage) {
+	if (authPage) {
 		throw ev.redirect(302, "/v2/home/");
 	}
 
