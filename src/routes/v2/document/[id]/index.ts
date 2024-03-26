@@ -1,5 +1,9 @@
+import { contracts, documentVersions, userEntityLinks } from "@/drizzle/schema";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
-import type { RequestHandler } from "@builder.io/qwik-city";
+import { z, type RequestHandler } from "@builder.io/qwik-city";
+import { eq } from "drizzle-orm";
+import { drizzleDb } from "~/db/db";
+import { getSharedMap } from "~/routes/plugin";
 import { s3 } from "~/utils/aws";
 import { safe } from "~/utils/utils";
 
@@ -9,11 +13,75 @@ export const onGet: RequestHandler = async ({
 	headers,
 	getWritableStream,
 	params,
+	sharedMap,
 }) => {
-	const key = params.id;
+	const key = z.string().uuid().safeParse(params.id);
+	if (!key.success) {
+		status(404);
+		return;
+	}
+	const db = await drizzleDb;
+	const user = getSharedMap(sharedMap, "user");
+
+	const documentVersion = await safe(
+		db.query.documentVersions.findFirst({
+			where: eq(documentVersions.id, key.data),
+			columns: {},
+			with: {
+				workflowStep: {
+					columns: {},
+					with: {
+						workflow: {
+							columns: { contractId: true },
+						},
+					},
+				},
+			},
+		})
+	);
+	if (!documentVersion.success) {
+		status(404);
+		return;
+	}
+
+	const contract = await safe(
+		db.query.contracts.findFirst({
+			where: eq(contracts.id, documentVersion.workflowStep.workflow.contractId),
+			columns: {},
+			with: {
+				entities: {
+					columns: {},
+					with: {
+						userEntityLinks: {
+							where: eq(userEntityLinks.email, user.email),
+							columns: {},
+							with: {
+								user: true,
+							},
+						},
+					},
+				},
+			},
+		})
+	);
+
+	if (!contract.success) {
+		status(404);
+		return;
+	}
+
+	const users = contract.entities.flatMap((x) =>
+		x.userEntityLinks.map((y) => y.user)
+	);
+
+	if (users.length === 0) {
+		status(404);
+		return;
+	}
+
 	const command = new GetObjectCommand({
 		Bucket: "shaq-dev",
-		Key: key,
+		Key: key.data,
 	});
 	const object = await safe(s3.send(command));
 
