@@ -96,7 +96,7 @@ export default component$(() => {
 				{signIn.value?.message || signIn.value?.formErrors}
 			</span>
 			<div class="flex w-full justify-between">
-				<AppLink route="/auth/sign-up/" class="min-w-max text-sm text-black/80">
+				<AppLink route="/auth/sign-in/" class="min-w-max text-sm text-black/80">
 					No account? Sign Up
 				</AppLink>
 			</div>

@@ -147,7 +147,7 @@ export const workflowsRelations = relations(workflows, ({ many, one }) => ({
 		fields: [workflows.workflowType],
 		references: [workflowTypes.id],
 	}),
-	lifts: many(lifts),
+	lift: one(lifts),
 }));
 
 export const users = pgTable("users", {
@@ -296,6 +296,7 @@ export const lifts = pgTable("lifts", {
 		mode: "date",
 	}),
 	volume: numeric("volume"),
+	cost: numeric("cost"),
 });
 
 export const liftsRelations = relations(lifts, ({ one }) => ({

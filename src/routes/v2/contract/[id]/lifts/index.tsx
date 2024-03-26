@@ -25,7 +25,7 @@ export const useLifts = routeLoader$(async (ev) => {
 		with: {
 			workflows: {
 				with: {
-					lifts: true,
+					lift: true,
 				},
 			},
 		},
@@ -35,7 +35,9 @@ export const useLifts = routeLoader$(async (ev) => {
 		throw ev.error(404, "Not found");
 	}
 
-	const lifts = contract.workflows.flatMap((x) => x.lifts);
+	const lifts = contract.workflows
+		.map((x) => x.lift)
+		.filter((x): x is Exclude<typeof x, null> => Boolean(x));
 
 	console.log(lifts);
 
@@ -50,18 +52,22 @@ export const useCreateLift = routeAction$(async (data, ev) => {
 	}
 
 	const db = await drizzleDb;
+
 	const workflow = await createWorkflow("Create Lift", contractId);
+
 	const liftInsertResult = await safe(
-		db.insert(lifts).values([
-			{
-				workflowId: workflow.id,
-				liftNumber: 0,
-				volume: "1.5",
-			},
-		])
+		db
+			.insert(lifts)
+			.values([
+				{
+					workflowId: workflow.id,
+					liftNumber: 0,
+				},
+			])
+			.returning({ id: lifts.id })
 	);
 
-	if (!liftInsertResult) {
+	if (!liftInsertResult.success) {
 		throw ev.error(500, "Something went wrong when creating a lift");
 	}
 });
