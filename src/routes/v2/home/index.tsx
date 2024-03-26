@@ -4,15 +4,7 @@ import { getSharedMap } from "~/routes/plugin";
 import moment from "moment-timezone";
 import { useUser } from "../layout";
 import { isServer } from "@builder.io/qwik/build";
-import {
-	contracts,
-	entities,
-	userEntityLinks,
-	users,
-	workflowSteps,
-	workflowTypes,
-	workflows,
-} from "@/drizzle/schema";
+import { contracts, entities, userEntityLinks, users } from "@/drizzle/schema";
 import { component$, useComputed$ } from "@builder.io/qwik";
 import {
 	Form,
@@ -112,15 +104,16 @@ export default component$(() => {
 	});
 
 	return (
-		<div class="container p-4">
-			<div class="mb-4 border-l-4 border-stone-800 px-2">
+		<div class="container bg-gradient-to-t p-4">
+			<div class="mb-4 border-l-4 border-blue-400 px-2">
 				<span>{greeting},</span>
 				<h1 class="border-l-stone-300 text-4xl font-semibold">
 					{user.value.name}
 				</h1>
 			</div>
 			<h2 class="pb-4 text-2xl font-semibold">Your Contracts</h2>
-			<ul class="flex flex-row gap-2 ">
+			<ul class="flex max-w-prose flex-col flex-wrap gap-2">
+				<li class="text-sm">Created At</li>
 				{contracts.value.map((contract) => (
 					<li key={contract.id}>
 						<Contract contract={contract}></Contract>
@@ -128,8 +121,11 @@ export default component$(() => {
 				))}
 				<li>
 					<Form class="h-full" action={createContract}>
-						<Button class="h-full" onClick$={() => {}}>
-							<HiPlusCircleSolid class="text-xl"></HiPlusCircleSolid>
+						<Button
+							class="grid h-full w-full place-items-center"
+							onClick$={() => {}}
+						>
+							<HiPlusCircleSolid class=" text-xl"></HiPlusCircleSolid>
 						</Button>
 					</Form>
 				</li>
@@ -142,8 +138,12 @@ export const Contract = component$(
 	(props: { contract: InferSelectModel<typeof contracts> }) => {
 		return (
 			<AppLink route="/v2/contract/[id]/" param:id={props.contract.id}>
-				<div class="rounded border bg-neutral-50 p-2 hover:bg-neutral-200">
-					<p>{props.contract.id}</p>
+				<div class="rounded border bg-neutral-50 p-2 shadow hover:bg-neutral-200">
+					<p>
+						{props.contract.createdAt.toLocaleDateString([], {
+							dateStyle: "full",
+						})}
+					</p>
 					{/* <p>{props.contract.}</p> */}
 				</div>
 			</AppLink>

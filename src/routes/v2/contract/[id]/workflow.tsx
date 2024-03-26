@@ -38,16 +38,22 @@ import type { AppLinkProps } from "~/routes.gen";
 import { UploadDocumentModal } from "./upload-document-modal";
 
 export const Workflow = component$(() => (
-	<div class=" py-4">
+	<div class="py-4">
 		<Slot></Slot>
 	</div>
 ));
 
 export const WorkflowTitle = component$(() => {
 	return (
-		<h2 class="px-4 text-2xl font-bold">
-			<Slot></Slot>
-		</h2>
+		<>
+			<h2 class="p-2 px-4 text-2xl font-bold">
+				<Slot></Slot>
+				<div
+					role="none"
+					class="h-1 bg-gradient-to-r from-blue-300 via-blue-400 to-green-400"
+				></div>
+			</h2>
+		</>
 	);
 });
 
@@ -65,7 +71,7 @@ export const StepGroupContext = createContextId<{
 }>("step-group");
 
 export const WorkflowStepGroup = component$(
-	(props: { available: boolean; completed: boolean }) => {
+	(props: { available: boolean; completed: boolean; groupNumber: number }) => {
 		const showSteps = useSignal(!props.completed);
 		const ref = useSignal<HTMLElement | undefined>();
 		useContextProvider(StepGroupContext, {
@@ -77,9 +83,11 @@ export const WorkflowStepGroup = component$(
 		useVisibleTask$(
 			({ track }) => {
 				const trackedRef = track(ref);
+
 				if (props.completed || !props.available) {
 					return;
 				}
+
 				if (!trackedRef) {
 					return;
 				}
@@ -99,7 +107,7 @@ export const WorkflowStepGroup = component$(
 			<li
 				ref={ref}
 				class={[
-					"relative flex flex-wrap gap-8 border-b-2 border-dashed p-4 pt-12 ",
+					"relative flex flex-wrap gap-8 border-b-2 border-dashed p-4 pt-8 ",
 					{ "opacity-20": !props.available },
 				]}
 			>
@@ -475,12 +483,13 @@ export const WorkflowButton = component$(
 			<AppLink {...props} class="block pb-4">
 				<div
 					class={[
-						"flex items-center justify-between rounded-lg border p-4 transition-transform",
+						"flex items-center justify-between rounded-lg border p-4  shadow-lg transition-transform",
 						{
-							"border-green-300 bg-green-50 text-green-700":
+							"border-green-300 bg-gradient-to-tr from-green-50 via-green-50 to-green-100 text-green-700":
 								props.completion && !isOnPath.value,
-							"border-blue-300 bg-blue-100 text-blue-700": isOnPath.value,
-							"border-gray-300 bg-gray-100 text-gray-900":
+							"border-blue-300 bg-gradient-to-tr  from-green-50 via-green-100 to-blue-200 text-blue-700":
+								isOnPath.value,
+							"border-gray-300  bg-gray-50 text-gray-900":
 								!props.completion && !isOnPath.value,
 						},
 					]}

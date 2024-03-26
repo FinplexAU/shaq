@@ -91,7 +91,7 @@ export const Header = component$(() => {
 	});
 
 	return (
-		<nav class="sticky top-0 z-20 w-full select-none border-b border-gray-200  bg-white dark:bg-gray-900">
+		<nav class="sticky top-0 z-20 w-full select-none border-b border-gray-200  bg-white shadow-md shadow-blue-100 dark:bg-gray-900">
 			<div class="mx-auto flex max-w-screen-2xl flex-wrap items-center justify-between p-4">
 				<AppLink
 					route="/v2/home/"

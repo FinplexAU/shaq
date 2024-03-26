@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { drizzleDb } from "~/db/db";
 import { getSharedMap } from "~/routes/plugin";
 import { s3 } from "~/utils/aws";
+import { selectFirst } from "~/utils/drizzle-utils";
 import { safe } from "~/utils/utils";
 
 // Need to add auth check for object
@@ -24,21 +25,24 @@ export const onGet: RequestHandler = async ({
 	const user = getSharedMap(sharedMap, "user");
 
 	const documentVersion = await safe(
-		db.query.documentVersions.findFirst({
-			where: eq(documentVersions.id, key.data),
-			columns: {},
-			with: {
-				workflowStep: {
-					columns: {},
-					with: {
-						workflow: {
-							columns: { contractId: true },
+		db.query.documentVersions
+			.findMany({
+				where: eq(documentVersions.id, key.data),
+				columns: {},
+				with: {
+					workflowStep: {
+						columns: {},
+						with: {
+							workflow: {
+								columns: { contractId: true },
+							},
 						},
 					},
 				},
-			},
-		})
+			})
+			.then(selectFirst)
 	);
+
 	if (!documentVersion.success) {
 		status(404);
 		return;

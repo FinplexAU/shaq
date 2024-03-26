@@ -10,21 +10,26 @@ import { drizzleDb } from "~/db/db";
 import { AppLink } from "~/routes.config";
 import { generateVerificationCode, getSharedMap } from "~/routes/plugin";
 import { sendVerificationCode } from "~/utils/email";
+import { safe } from "~/utils/utils";
 
 export const useSignIn = routeAction$(
 	async (data, { sharedMap, redirect, cookie, env, fail }) => {
 		const db = await drizzleDb;
 		const lucia = getSharedMap(sharedMap, "lucia");
 
-		const user = await db.query.users.findFirst({
-			where: eq(users.email, data.email),
-		});
+		const userQuery = await safe(
+			db.query.users.findFirst({
+				where: eq(users.email, data.email),
+			})
+		);
 
-		if (!user) {
+		if (!userQuery.success) {
 			return fail(400, {
 				message: "Incorrect email or password",
 			});
 		}
+
+		const user = userQuery;
 
 		const validPassword = await new Argon2id().verify(
 			user.hashedPassword,

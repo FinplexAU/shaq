@@ -448,9 +448,10 @@ export default component$(() => {
 	const contractCompletion = useContractCompletion();
 	return (
 		<>
-			<div class="grid flex-1 grid-cols-12">
-				<nav class="relative col-span-2 border-r ">
-					<div class="sticky top-16 p-4">
+			<div class="relative grid flex-1 grid-cols-12">
+				<div class="fixed left-0 top-0 h-screen w-screen bg-gradient-to-b from-blue-100/30 to-green-200/30"></div>
+				<nav class="relative col-span-2 ">
+					<div class="sticky top-16 p-4 pt-8">
 						<WorkflowButton
 							title="Contract Overview"
 							completion={false}
@@ -491,30 +492,12 @@ export default component$(() => {
 							route="/v2/contract/[id]/lifts/"
 							param:id={contract.value.id}
 						></WorkflowButton>
-						{/* <WorkflowButton
-						title="Trade Set-up"
-						completion={"disabled"}
-					></WorkflowButton>
-					<WorkflowButton
-						title="Bank Instrument Set-up"
-						completion={"disabled"}
-					></WorkflowButton>
-					<WorkflowButton
-						title="Bank Instrument Workflow"
-						completion={"disabled"}
-					></WorkflowButton>
-					<WorkflowButton
-						title="Hedge Process"
-						completion={"disabled"}
-					></WorkflowButton>
-					<WorkflowButton
-						title="Trade Process"
-						completion={"disabled"}
-					></WorkflowButton> */}
 					</div>
 				</nav>
-				<main class="col-span-10 overflow-y-auto">
-					<Slot></Slot>
+				<main class="relative col-span-10 overflow-y-auto p-4 pt-8 ">
+					<div class="h-full rounded-lg border bg-white shadow-lg">
+						<Slot></Slot>
+					</div>
 				</main>
 			</div>
 		</>

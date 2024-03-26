@@ -25,6 +25,12 @@ export const contracts = pgTable("contracts", {
 	deliveryPort: text("delivery_port"),
 	loadingPort: text("loading_port"),
 	productPricing: numeric("product_pricing"),
+	createdAt: timestamp("created_at", {
+		withTimezone: true,
+		mode: "date",
+	})
+		.defaultNow()
+		.notNull(),
 });
 export const contractsRelations = relations(contracts, ({ many }) => ({
 	workflows: many(workflows),

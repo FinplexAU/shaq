@@ -12,6 +12,17 @@ export const useShipData = routeLoader$(async () => {
 
 export default component$(() => {
 	return <GlobeVis></GlobeVis>;
+	return (
+		<div class="flex flex-1 items-stretch p-4">
+			<div class="w-max max-w-xl p-8">
+				<h2 class="text-2xl font-bold">Shipments</h2>
+				<li></li>
+			</div>
+			<div class="flex-1">
+				<GlobeVis></GlobeVis>
+			</div>
+		</div>
+	);
 });
 
 const GlobeVis = component$(() => {
@@ -39,9 +50,9 @@ const GlobeVis = component$(() => {
 
 		const pointSeries = chart.series.push(am5map.MapPointSeries.new(root, {}));
 
-		pointSeries.bullets.push(function() {
+		pointSeries.bullets.push(function () {
 			const sprite = am5.Circle.new(root, {
-				radius: 7,
+				radius: 3,
 				tooltipY: 0,
 				fill: am5.color(0xffba00),
 				tooltipText: "{title}",
@@ -52,17 +63,32 @@ const GlobeVis = component$(() => {
 			});
 		});
 
-		const coords = data.value.features[0]?.geometry.coordinates[0];
+		// const coords = data.value.features[0]?.geometry.coordinates[0];
 
-		if (coords) {
-			pointSeries.data.push({
-				geometry: {
-					type: "Point",
-					coordinates: coords[coords.length - 1],
-				},
-				title: data.value.properties.vessel.name,
-			});
-		}
+		// if (coords) {
+		// 	pointSeries.data.push({
+		// 		geometry: {
+		// 			type: "Point",
+		// 			coordinates: coords[coords.length - 1],
+		// 		},
+		// 		title: data.value.properties.vessel.name,
+		// 	});
+		// }
+
+		pointSeries.data.push({
+			geometry: {
+				type: "Point",
+				coordinates: [4.4777, 51.9244],
+			},
+			title: "Rotterdam",
+		});
+		pointSeries.data.push({
+			geometry: {
+				type: "Point",
+				coordinates: [-95.367697, 29.758938],
+			},
+			title: "Houston",
+		});
 
 		chart.appear(1000, 100);
 
