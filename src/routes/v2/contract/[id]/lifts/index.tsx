@@ -78,22 +78,29 @@ export default component$(() => {
 	const createLift = useCreateLift();
 
 	return (
-		<>
-			{lifts.value.map((x) => (
-				<AppLink
-					route="/v2/contract/[id]/lifts/[liftId]/"
-					param:id={loc.params.id!}
-					param:liftId={x.id}
-					key={x.id}
-				>
-					<p>
-						{x.id} - {x.createdAt.toString()}
-					</p>
-				</AppLink>
-			))}
-			<Form action={createLift}>
-				<Button type="submit">Create a new lift</Button>
-			</Form>
-		</>
+		<div class="max-w-prose p-8">
+			<div class="flex flex-col gap-2">
+				{lifts.value.map((x) => (
+					<AppLink
+						route="/v2/contract/[id]/lifts/[liftId]/"
+						param:id={loc.params.id!}
+						param:liftId={x.id}
+						key={x.id}
+					>
+						<div class="rounded border bg-neutral-50 p-2 shadow hover:bg-neutral-200">
+							<p>
+								{x.createdAt.toLocaleDateString([], {
+									dateStyle: "full",
+								})}
+							</p>
+							{/* <p>{props.contract.}</p> */}
+						</div>
+					</AppLink>
+				))}
+				<Form action={createLift}>
+					<Button type="submit">Create a new trade cycle</Button>
+				</Form>
+			</div>
+		</div>
 	);
 });
