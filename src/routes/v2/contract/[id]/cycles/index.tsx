@@ -296,9 +296,6 @@ export default component$(() => {
 				)}
 			</div>
 		</div>
-		// <div class="max-w-prose p-8">
-
-		// </div>
 	);
 });
 
@@ -359,9 +356,9 @@ export const CycleTab = component$(
 				<div
 					style={{ "--oil-height": `${oilHeight.value}%` }}
 					class={[
-						"absolute bottom-0 left-0 h-[var(--oil-height)] w-full bg-gradient-to-t from-neutral-900 to-neutral-700",
+						"absolute bottom-0 left-0 h-[var(--oil-height)] w-full bg-gradient-to-t from-neutral-950 to-neutral-700",
 						{
-							"opacity-20": displayContext.filter.value === filter,
+							"opacity-60 blur": displayContext.filter.value === filter,
 						},
 					]}
 				></div>
