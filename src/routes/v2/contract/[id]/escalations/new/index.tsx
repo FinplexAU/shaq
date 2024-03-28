@@ -10,7 +10,9 @@ import { Button } from "~/components/button";
 import { AppLink } from "~/routes.config";
 import { Input } from "~/components/input";
 import { drizzleDb } from "~/db/db";
-import { escalations } from "@/drizzle/schema";
+import { contracts, entities, escalations } from "@/drizzle/schema";
+import { sendEscalationMessage } from "~/utils/email";
+import { eq } from "drizzle-orm";
 
 export const useCreateEscalation = routeAction$(
 	async (data, ev) => {
@@ -26,7 +28,47 @@ export const useCreateEscalation = routeAction$(
 
 		// Needs to send emails
 
-		ev.redirect(302, `/v2/contract/${contractId}/escalation/`);
+		const contract = await db.query.contracts.findFirst({
+			where: eq(contracts.id, contractId),
+			columns: {},
+			with: {
+				entities: {
+					where: eq(entities.role, "admin"),
+					columns: {},
+					with: {
+						userEntityLinks: {
+							columns: {},
+							with: {
+								user: {
+									// Go into the actual user to not spam users who are yet to sign up
+									columns: { email: true },
+								},
+							},
+						},
+					},
+				},
+			},
+		});
+
+		if (!contract) {
+			ev.redirect(302, `/v2/contract/${contractId}/escalations/`);
+			return;
+		}
+
+		const emails = contract.entities.flatMap((x) =>
+			x.userEntityLinks
+				// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+				.map((y) => y.user?.email)
+				.filter((email): email is string => Boolean(email))
+		);
+
+		const emailPromises = emails.map((email) =>
+			sendEscalationMessage(ev.env, email, ev.url, contractId, data.title)
+		);
+
+		await Promise.allSettled(emailPromises);
+
+		ev.redirect(302, `/v2/contract/${contractId}/escalations/`);
 	},
 	zod$({
 		title: z.string().min(1),
@@ -62,7 +104,7 @@ export default component$(() => {
 				</span>
 				<Button>Create</Button>
 				<AppLink
-					route="/v2/contract/[id]/escalation/"
+					route="/v2/contract/[id]/escalations/"
 					param:id={loc.params.id!}
 				>
 					<Button>Cancel</Button>

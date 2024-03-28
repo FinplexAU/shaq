@@ -21,7 +21,7 @@ export default component$(() => {
 						</div>
 					))}
 					<AppLink
-						route="/v2/contract/[id]/escalation/new/"
+						route="/v2/contract/[id]/escalations/new/"
 						param:id={loc.params.id!}
 					>
 						<Button>New</Button>

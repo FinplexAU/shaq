@@ -1,5 +1,6 @@
 import type { EnvGetter } from "@builder.io/qwik-city/middleware/request-handler";
 import mail from "@sendgrid/mail";
+import { ba } from "@upstash/redis/zmscore-5d82e632";
 import { getRequiredEnv } from "~/routes/plugin";
 
 export const sendEmail = async (
@@ -51,6 +52,26 @@ export const sendContractInvite = async (
 		to: email,
 		subject: "You have been invited to a contract",
 		text: emailContent,
+	});
+	console.log(result);
+};
+
+export const sendEscalationMessage = async (
+	env: EnvGetter,
+	email: string,
+	baseUrl: URL,
+	contractId: string,
+	title: string
+) => {
+	const accessUrl = new URL(`/v2/contract/${contractId}/escalations/`, baseUrl);
+	const result = await sendEmail(env, {
+		from: {
+			email: "noreply@finplex.com.au",
+			name: "Diesel Platform",
+		},
+		to: email,
+		subject: "Escalation Created",
+		text: `An escalation has been created for a contract with the title: ${title}. You can access the details here: ${accessUrl.toString()}`,
 	});
 	console.log(result);
 };
