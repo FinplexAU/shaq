@@ -5,5 +5,9 @@ import Debugger from "~/components/debugger";
 export default component$(() => {
 	const contract = useLoadContract();
 
-	return <Debugger value={contract.value}></Debugger>;
+	return (
+		<div>
+			<Debugger value={{ contract: contract.value }}></Debugger>
+		</div>
+	);
 });

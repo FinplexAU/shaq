@@ -489,7 +489,7 @@ export default component$(() => {
 						<WorkflowButton
 							title="Trade Cycles"
 							completion={false}
-							route="/v2/contract/[id]/lifts/"
+							route="/v2/contract/[id]/cycles/"
 							param:id={contract.value.id}
 						></WorkflowButton>
 					</div>

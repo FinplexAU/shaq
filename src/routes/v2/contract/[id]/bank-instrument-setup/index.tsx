@@ -25,6 +25,7 @@ export default component$(() => {
 			<WorkflowSteps>
 				{contractSteps.value?.stepGroups.map((stepGroup, i) => (
 					<WorkflowStepGroup
+						groupNumber={i}
 						completed={stepGroup.filter((step) => !step.complete).length === 0}
 						key={i}
 						available={isAvailable(i)}

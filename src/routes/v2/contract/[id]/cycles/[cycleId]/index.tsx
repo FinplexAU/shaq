@@ -1,21 +1,19 @@
 import {
 	documentTypes,
 	documentVersions,
-	lifts,
+	cycles,
 	workflows,
 } from "@/drizzle/schema";
 import {
-	PropsOf,
+	type PropsOf,
 	component$,
 	useSignal,
 	useTask$,
-	useVisibleTask$,
 } from "@builder.io/qwik";
 import {
 	Form,
 	routeAction$,
 	routeLoader$,
-	useNavigate,
 	z,
 	zod$,
 } from "@builder.io/qwik-city";
@@ -31,31 +29,29 @@ import {
 } from "../../workflow";
 import { Input } from "~/components/input";
 import { Button } from "~/components/button";
-import { useVisible } from "@qwik-ui/headless";
 import {
 	HiCheckSolid,
 	HiPencilSolid,
-	HiXCircleSolid,
 	HiXMarkSolid,
 } from "@qwikest/icons/heroicons";
 
-export const useLiftWorkflow = routeLoader$(async (ev) => {
+export const useCycleWorkflow = routeLoader$(async (ev) => {
 	const contractId = ev.params.id;
-	const liftId = ev.params.liftId;
-	if (!contractId || !liftId) {
+	const cycleId = ev.params.cycleId;
+	if (!contractId || !cycleId) {
 		throw ev.error(404, "Not found");
 	}
 
 	const db = await drizzleDb;
-	const liftQuery = await db.query.lifts.findFirst({
-		where: eq(lifts.id, liftId),
+	const cycleQuery = await db.query.cycles.findFirst({
+		where: eq(cycles.id, cycleId),
 	});
-	if (!liftQuery) {
+	if (!cycleQuery) {
 		throw ev.error(404, "Not found");
 	}
 
 	const queryResult = await db.query.workflows.findFirst({
-		where: eq(workflows.id, liftQuery.workflowId),
+		where: eq(workflows.id, cycleQuery.workflowId),
 		with: {
 			workflowType: true,
 			workflowSteps: {
@@ -130,7 +126,7 @@ export const useLiftWorkflow = routeLoader$(async (ev) => {
 	}
 
 	return {
-		lift: liftQuery,
+		cycle: cycleQuery,
 		complete: workflow.complete,
 		completionReason: workflow.completionReason,
 		contractId: workflow.contractId,
@@ -140,67 +136,69 @@ export const useLiftWorkflow = routeLoader$(async (ev) => {
 	};
 });
 
-export const useUpdateLift = routeAction$(
+export const useUpdateCycle = routeAction$(
 	async (data, ev) => {
-		console.log(data);
-		const id = ev.params.liftId;
+		const id = ev.params.cycleId;
 		if (!id) {
 			throw ev.error(404, "Not Found");
 		}
 		const db = await drizzleDb;
 
-		await db.update(lifts).set({
-			cost: data.cost?.toString(),
-			volume: data.volume?.toString(),
-			settlementDate: data.expectedSettlementDate,
-		});
+		await db
+			.update(cycles)
+			.set({
+				cost: data.cost?.toString(),
+				volume: data.volume?.toString(),
+				expectedDate: data.expectedDate,
+			})
+			.where(eq(cycles.id, id));
 	},
 	zod$(
 		z
 			.object({
 				cost: z.coerce.number().positive().optional(),
 				volume: z.coerce.number().positive().optional(),
-				expectedSettlementDate: z.coerce.date().optional(),
+				expectedDate: z.coerce.date().optional(),
 			})
 			.refine(
-				(x) => Object.keys(x).length > 0,
+				(input) => Object.keys(input).length > 0,
 				"At least one value must be set"
 			)
 	)
 );
 
 export default component$(() => {
-	const liftWorkflow = useLiftWorkflow();
-	const isAvailable = useStepGroupAvailable(liftWorkflow.value.stepGroups);
+	const cycleWorkflow = useCycleWorkflow();
+	const isAvailable = useStepGroupAvailable(cycleWorkflow.value.stepGroups);
 
 	return (
 		<>
 			<Workflow>
-				<WorkflowTitle>{liftWorkflow.value.workflowType.name}</WorkflowTitle>
+				<WorkflowTitle>{cycleWorkflow.value.workflowType.name}</WorkflowTitle>
 				<div class="flex max-w-prose flex-col gap-4 p-8 pb-0">
 					<EditableField
 						label="Cost"
-						value={liftWorkflow.value.lift.cost}
+						value={cycleWorkflow.value.cycle.cost}
 						type="number"
 						name="cost"
 					/>
 					<EditableField
 						label="Volume"
-						value={liftWorkflow.value.lift.volume}
+						value={cycleWorkflow.value.cycle.volume}
 						type="number"
 						name="volume"
 					/>
 					<EditableField
 						label="Settlement Date"
-						value={liftWorkflow.value.lift.settlementDate
-							?.toISOString()
+						value={cycleWorkflow.value.cycle.expectedDate
+							.toISOString()
 							.substring(0, 10)}
 						type="date"
-						name="expectedSettlementDate"
+						name="expectedDate"
 					/>
 				</div>
 				<WorkflowSteps>
-					{liftWorkflow.value.stepGroups.map((stepGroup, i) => (
+					{cycleWorkflow.value.stepGroups.map((stepGroup, i) => (
 						<WorkflowStepGroup
 							key={i}
 							available={isAvailable(i)}
@@ -228,7 +226,7 @@ export const EditableField = component$<{
 }>((props) => {
 	const open = useSignal(false);
 	const inputRef = useSignal<HTMLInputElement>();
-	const updateLift = useUpdateLift();
+	const updateCycle = useUpdateCycle();
 
 	useTask$(({ track }) => {
 		track(() => props.value);
@@ -241,7 +239,7 @@ export const EditableField = component$<{
 	});
 
 	return (
-		<Form action={updateLift}>
+		<Form action={updateCycle}>
 			<div class="flex items-center gap-3">
 				<div class="flex items-center">
 					<span class="w-40">{props.label}:</span>

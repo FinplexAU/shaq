@@ -83,7 +83,7 @@ export const WorkflowStepGroup = component$(
 		useVisibleTask$(
 			({ track }) => {
 				const trackedRef = track(ref);
-
+				if (props.groupNumber === 0) return;
 				if (props.completed || !props.available) {
 					return;
 				}

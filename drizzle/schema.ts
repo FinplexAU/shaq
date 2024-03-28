@@ -153,7 +153,7 @@ export const workflowsRelations = relations(workflows, ({ many, one }) => ({
 		fields: [workflows.workflowType],
 		references: [workflowTypes.id],
 	}),
-	lift: one(lifts),
+	cycle: one(cycles),
 }));
 
 export const users = pgTable("users", {
@@ -285,7 +285,7 @@ export const documentTypeRelations = relations(
 	})
 );
 
-export const lifts = pgTable("lifts", {
+export const cycles = pgTable("cycle", {
 	id: uuid("id").primaryKey().defaultRandom(),
 	workflowId: uuid("workflow_id")
 		.references(() => workflows.id)
@@ -296,18 +296,22 @@ export const lifts = pgTable("lifts", {
 	})
 		.defaultNow()
 		.notNull(),
-	liftNumber: integer("lift_number").notNull(),
+	cycleNumber: integer("cycle_number").notNull(),
 	settlementDate: timestamp("settlement_date", {
 		withTimezone: true,
 		mode: "date",
 	}),
+	expectedDate: timestamp("expected_date", {
+		withTimezone: true,
+		mode: "date",
+	}).notNull(),
 	volume: numeric("volume"),
 	cost: numeric("cost"),
 });
 
-export const liftsRelations = relations(lifts, ({ one }) => ({
+export const cycleRelations = relations(cycles, ({ one }) => ({
 	workflow: one(workflows, {
-		fields: [lifts.workflowId],
+		fields: [cycles.workflowId],
 		references: [workflows.id],
 	}),
 }));
