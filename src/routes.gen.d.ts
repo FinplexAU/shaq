@@ -20,6 +20,8 @@ export type AppRoutes =
   | "/v2/contract/[id]/bank-instrument-setup/"
   | "/v2/contract/[id]/bank-instrument/"
   | "/v2/contract/[id]/contract-setup/"
+  | "/v2/contract/[id]/escalation/"
+  | "/v2/contract/[id]/escalation/new/"
   | "/v2/contract/[id]/joint-venture/"
   | "/v2/contract/[id]/lifts/"
   | "/v2/contract/[id]/lifts/[liftId]/"
@@ -46,6 +48,8 @@ export interface AppRouteMap {
   "/v2/contract/[id]/bank-instrument-setup/": { id: string };
   "/v2/contract/[id]/bank-instrument/": { id: string };
   "/v2/contract/[id]/contract-setup/": { id: string };
+  "/v2/contract/[id]/escalation/": { id: string };
+  "/v2/contract/[id]/escalation/new/": { id: string };
   "/v2/contract/[id]/joint-venture/": { id: string };
   "/v2/contract/[id]/lifts/": { id: string };
   "/v2/contract/[id]/lifts/[liftId]/": { id: string; liftId: string };
@@ -76,6 +80,8 @@ export interface AppRouteParamsFunction {
   ): string;
   (route: "/v2/contract/[id]/bank-instrument/", params: { id: string }): string;
   (route: "/v2/contract/[id]/contract-setup/", params: { id: string }): string;
+  (route: "/v2/contract/[id]/escalation/", params: { id: string }): string;
+  (route: "/v2/contract/[id]/escalation/new/", params: { id: string }): string;
   (route: "/v2/contract/[id]/joint-venture/", params: { id: string }): string;
   (route: "/v2/contract/[id]/lifts/", params: { id: string }): string;
   (
@@ -106,6 +112,8 @@ export type AppLinkProps =
   | { route: "/v2/contract/[id]/bank-instrument-setup/"; "param:id": string }
   | { route: "/v2/contract/[id]/bank-instrument/"; "param:id": string }
   | { route: "/v2/contract/[id]/contract-setup/"; "param:id": string }
+  | { route: "/v2/contract/[id]/escalation/"; "param:id": string }
+  | { route: "/v2/contract/[id]/escalation/new/"; "param:id": string }
   | { route: "/v2/contract/[id]/joint-venture/"; "param:id": string }
   | { route: "/v2/contract/[id]/lifts/"; "param:id": string }
   | {

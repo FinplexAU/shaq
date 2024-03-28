@@ -36,6 +36,7 @@ export const contractsRelations = relations(contracts, ({ many }) => ({
 	workflows: many(workflows),
 	entities: many(entities),
 	tradeBankInstrumentSetup: many(workflows),
+	escalations: many(escalations),
 }));
 
 export const entityRole = pgEnum("entity_role", [
@@ -309,5 +310,31 @@ export const liftsRelations = relations(lifts, ({ one }) => ({
 	workflow: one(workflows, {
 		fields: [lifts.workflowId],
 		references: [workflows.id],
+	}),
+}));
+
+export const escalations = pgTable("escalations", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	contractId: uuid("contract_id")
+		.references(() => contracts.id)
+		.notNull(),
+	createdAt: timestamp("created_at", {
+		withTimezone: true,
+		mode: "date",
+	})
+		.defaultNow()
+		.notNull(),
+	title: text("title").notNull(),
+	body: text("body").notNull(),
+	complete: timestamp("settlement_date", {
+		withTimezone: true,
+		mode: "date",
+	}),
+});
+
+export const escalationsRelations = relations(escalations, ({ one }) => ({
+	workflow: one(contracts, {
+		fields: [escalations.contractId],
+		references: [contracts.id],
 	}),
 }));
