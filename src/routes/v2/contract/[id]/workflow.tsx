@@ -474,10 +474,8 @@ export const WorkflowButton = component$(
 	) => {
 		const loc = useLocation();
 		const isOnPath = useComputed$(() => {
-			return (
-				loc.url.pathname ===
-				(appUrl as any)(props.route as any, props, "param:")
-			);
+			const currentPath = (appUrl as any)(props.route as any, props, "param:");
+			return loc.url.pathname === currentPath;
 		});
 		return (
 			<AppLink {...props} class="block pb-4">

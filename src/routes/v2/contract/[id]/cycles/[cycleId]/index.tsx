@@ -14,6 +14,7 @@ import {
 	Form,
 	routeAction$,
 	routeLoader$,
+	useNavigate,
 	z,
 	zod$,
 } from "@builder.io/qwik-city";
@@ -34,6 +35,7 @@ import {
 	HiPencilSolid,
 	HiXMarkSolid,
 } from "@qwikest/icons/heroicons";
+import { AppLink } from "~/routes.config";
 
 export const useCycleWorkflow = routeLoader$(async (ev) => {
 	const contractId = ev.params.id;
@@ -170,26 +172,35 @@ export const useUpdateCycle = routeAction$(
 export default component$(() => {
 	const cycleWorkflow = useCycleWorkflow();
 	const isAvailable = useStepGroupAvailable(cycleWorkflow.value.stepGroups);
-
+	const nav = useNavigate();
 	return (
-		<>
+		<div>
+			<div class="p-2">
+				<Button
+					onClick$={() => {
+						history.back();
+					}}
+				>
+					Back
+				</Button>
+			</div>
 			<Workflow>
 				<WorkflowTitle>{cycleWorkflow.value.workflowType.name}</WorkflowTitle>
-				<div class="flex max-w-prose flex-col gap-4 p-8 pb-0">
+				<div class="grid grid-cols-3 gap-4 p-4 ">
 					<EditableField
-						label="Cost"
+						title="Cost"
 						value={cycleWorkflow.value.cycle.cost}
 						type="number"
 						name="cost"
 					/>
 					<EditableField
-						label="Volume"
+						title="Volume"
 						value={cycleWorkflow.value.cycle.volume}
 						type="number"
 						name="volume"
 					/>
 					<EditableField
-						label="Settlement Date"
+						title="Expected Settlement Date"
 						value={cycleWorkflow.value.cycle.expectedDate
 							.toISOString()
 							.substring(0, 10)}
@@ -214,13 +225,13 @@ export default component$(() => {
 					))}
 				</WorkflowSteps>
 			</Workflow>
-		</>
+		</div>
 	);
 });
 
 export const EditableField = component$<{
 	value: string | number | null | undefined;
-	label: string;
+	title: string;
 	type?: PropsOf<"input">["type"];
 	name: PropsOf<"input">["name"];
 }>((props) => {
@@ -240,21 +251,17 @@ export const EditableField = component$<{
 
 	return (
 		<Form action={updateCycle}>
-			<div class="flex items-center gap-3">
-				<div class="flex items-center">
-					<span class="w-40">{props.label}:</span>
-					{
-						<Input
-							value={props.value}
-							name={props.name}
-							type={props.type}
-							disabled={!open.value}
-							ref={inputRef}
-							class="w-52"
-							placeholder="-"
-						/>
-					}
-				</div>
+			<div class="flex items-end gap-3">
+				<Input
+					title={props.title}
+					value={props.value}
+					name={props.name}
+					type={props.type}
+					disabled={!open.value}
+					ref={inputRef}
+					class="w-52"
+					placeholder="-"
+				/>
 				{open.value && (
 					<Button
 						type="submit"

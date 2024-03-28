@@ -4,11 +4,7 @@ import {
 	Slot,
 	component$,
 	useSignal,
-	createContextId,
-	type Signal,
-	useContextProvider,
 	$,
-	useContext,
 	useComputed$,
 } from "@builder.io/qwik";
 import {
@@ -18,6 +14,7 @@ import {
 	zod$,
 	z,
 	Form,
+	useNavigate,
 } from "@builder.io/qwik-city";
 import { HiMinusSolid, HiPlusSolid } from "@qwikest/icons/heroicons";
 import { eq } from "drizzle-orm";
@@ -183,10 +180,6 @@ export const useCreateCycle = routeAction$(
 	})
 );
 
-export const CyclesContext = createContextId<{
-	filter: Signal<string>;
-}>("cycles-index");
-
 type CycleDateGroup =
 	| "3-months"
 	| "next-month"
@@ -197,13 +190,15 @@ type CycleDateGroup =
 	| "landed";
 
 export default component$(() => {
-	const loc = useLocation();
 	const cycles = useCycles();
 	const createCycle = useCreateCycle();
 	const showCycleCreate = useSignal(false);
-	const filter = useSignal<CycleDateGroup>("in-transit");
-
-	useContextProvider(CyclesContext, { filter });
+	const loc = useLocation();
+	const group = useComputed$<CycleDateGroup>(
+		() =>
+			(loc.url.searchParams.get("group") as CycleDateGroup | undefined) ??
+			"in-transit"
+	);
 
 	return (
 		<div class="relative h-full">
@@ -232,7 +227,7 @@ export default component$(() => {
 					<p>Cost</p>
 					<p>Volume (MT)</p>
 				</div>
-				{cycles.value.sorted[filter.value].map((cycle) => (
+				{cycles.value.sorted[group.value].map((cycle) => (
 					<AppLink
 						route="/v2/contract/[id]/cycles/[cycleId]/"
 						param:id={loc.params.id!}
@@ -306,7 +301,6 @@ export const CycleTab = component$(
 		filter,
 		...props
 	}: PropsOf<"div"> & { filter: CycleDateGroup }) => {
-		const displayContext = useContext(CyclesContext);
 		const cycles = useCycles();
 		const total = useComputed$(() => cycles.value.totals[filter]);
 		const oilHeight = useComputed$(() => {
@@ -316,13 +310,18 @@ export const CycleTab = component$(
 
 			return (total.value.volume / (max * 1.3)) * 100;
 		});
+		const nav = useNavigate();
+		const loc = useLocation();
+		const group = useComputed$(
+			() => loc.url.searchParams.get("group") ?? "in-transit"
+		);
 
 		return (
 			<div
 				onClick$={[
 					propClick,
 					$(() => {
-						displayContext.filter.value = filter;
+						nav("?group=" + filter);
 					}),
 				]}
 				class={cn(
@@ -330,7 +329,7 @@ export const CycleTab = component$(
 						"relative flex-1 cursor-pointer overflow-hidden rounded border bg-neutral-500 py-2 text-center text-sm font-medium text-white shadow",
 						{
 							" border-blue-300  bg-gradient-to-tr from-green-50 via-green-100 to-blue-200 text-blue-700":
-								displayContext.filter.value === filter,
+								group.value === filter,
 						},
 					],
 					propClass
@@ -358,7 +357,7 @@ export const CycleTab = component$(
 					class={[
 						"absolute bottom-0 left-0 h-[var(--oil-height)] w-full bg-gradient-to-t from-neutral-950 to-neutral-700",
 						{
-							"opacity-60 blur": displayContext.filter.value === filter,
+							"opacity-60 blur": group.value === filter,
 						},
 					]}
 				></div>
