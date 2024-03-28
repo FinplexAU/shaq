@@ -22,6 +22,8 @@ export type AppRoutes =
   | "/v2/contract/[id]/contract-setup/"
   | "/v2/contract/[id]/cycles/"
   | "/v2/contract/[id]/cycles/[cycleId]/"
+  | "/v2/contract/[id]/escalations/"
+  | "/v2/contract/[id]/escalations/new/"
   | "/v2/contract/[id]/joint-venture/"
   | "/v2/document/[id]/"
   | "/v2/home/"
@@ -48,6 +50,8 @@ export interface AppRouteMap {
   "/v2/contract/[id]/contract-setup/": { id: string };
   "/v2/contract/[id]/cycles/": { id: string };
   "/v2/contract/[id]/cycles/[cycleId]/": { id: string; cycleId: string };
+  "/v2/contract/[id]/escalations/": { id: string };
+  "/v2/contract/[id]/escalations/new/": { id: string };
   "/v2/contract/[id]/joint-venture/": { id: string };
   "/v2/document/[id]/": { id: string };
   "/v2/home/": {};
@@ -81,6 +85,8 @@ export interface AppRouteParamsFunction {
     route: "/v2/contract/[id]/cycles/[cycleId]/",
     params: { id: string; cycleId: string },
   ): string;
+  (route: "/v2/contract/[id]/escalations/", params: { id: string }): string;
+  (route: "/v2/contract/[id]/escalations/new/", params: { id: string }): string;
   (route: "/v2/contract/[id]/joint-venture/", params: { id: string }): string;
   (route: "/v2/document/[id]/", params: { id: string }): string;
   (route: "/v2/home/", params?: {}): string;
@@ -112,6 +118,8 @@ export type AppLinkProps =
       "param:id": string;
       "param:cycleId": string;
     }
+  | { route: "/v2/contract/[id]/escalations/"; "param:id": string }
+  | { route: "/v2/contract/[id]/escalations/new/"; "param:id": string }
   | { route: "/v2/contract/[id]/joint-venture/"; "param:id": string }
   | { route: "/v2/document/[id]/"; "param:id": string }
   | { route: "/v2/home/" }

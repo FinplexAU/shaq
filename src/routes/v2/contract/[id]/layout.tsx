@@ -492,6 +492,14 @@ export default component$(() => {
 							route="/v2/contract/[id]/cycles/"
 							param:id={contract.value.id}
 						></WorkflowButton>
+						{contract.value.isAdmin && (
+							<WorkflowButton
+								title="Escalations"
+								completion={false}
+								route="/v2/contract/[id]/escalations/"
+								param:id={contract.value.id}
+							></WorkflowButton>
+						)}
 					</div>
 				</nav>
 				<main class="relative col-span-10 overflow-y-auto p-4 pt-8 ">
